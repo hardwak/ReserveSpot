@@ -20,6 +20,8 @@ public class RestaurantDto {
     private String description;
     private String openingHours;
     private Double averageRating;
+    private Double latitude;
+    private Double longitude;
     private String pic;
     private Set<Long> tableIds;
     private Set<Long> reviewIds;
