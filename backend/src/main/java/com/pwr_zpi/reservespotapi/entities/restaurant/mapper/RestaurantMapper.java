@@ -26,6 +26,8 @@ public class RestaurantMapper {
                 .description(restaurant.getDescription())
                 .openingHours(restaurant.getOpeningHours())
                 .averageRating(restaurant.getAverageRating())
+                .latitude(restaurant.getLatitude())
+                .longitude(restaurant.getLongitude())
                 .pic(restaurant.getPic())
                 .tableIds(restaurant.getTables() != null ? 
                     restaurant.getTables().stream().map(table -> table.getId()).collect(Collectors.toSet()) : null)
@@ -53,6 +55,8 @@ public class RestaurantMapper {
                 .city(dto.getCity())
                 .description(dto.getDescription())
                 .openingHours(dto.getOpeningHours())
+                .latitude(dto.getLatitude())
+                .longitude(dto.getLongitude())
                 .pic(dto.getPic())
                 .build();
 
@@ -85,6 +89,12 @@ public class RestaurantMapper {
         }
         if (dto.getOpeningHours() != null) {
             restaurant.setOpeningHours(dto.getOpeningHours());
+        }
+        if (dto.getLatitude() != null) {
+            restaurant.setLatitude(dto.getLatitude());
+        }
+        if (dto.getLongitude() != null) {
+            restaurant.setLongitude(dto.getLongitude());
         }
         if (dto.getPic() != null) {
             restaurant.setPic(dto.getPic());

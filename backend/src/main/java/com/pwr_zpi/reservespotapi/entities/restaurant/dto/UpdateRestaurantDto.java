@@ -17,5 +17,7 @@ public class UpdateRestaurantDto {
     private String city;
     private String description;
     private String openingHours;
+    private Double latitude;
+    private Double longitude;
     private String pic;
 }
