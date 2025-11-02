@@ -70,7 +70,7 @@ fun MainMenuScreen(navController: NavHostController) {
 
         bottomBar = {
             NavigationBar (
-                containerColor = Color.Red
+                containerColor = Color(0xFFD73D4A)
             ) {
                 navBarItems.forEach {
                     item -> NavigationBarItem(
@@ -98,7 +98,7 @@ fun MainMenuScreen(navController: NavHostController) {
                         /* TODO: handle navigation */
                     },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.Red,
+                        selectedIconColor = Color(0xFFD73D4A),
                         unselectedIconColor = Color.White,
                         indicatorColor = Color.White
                     )
