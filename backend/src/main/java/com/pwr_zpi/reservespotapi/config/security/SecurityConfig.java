@@ -55,9 +55,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))
-                        .defaultSuccessUrl("https://www.youtube.com/", true)) //TODO replace youtube
+                        .defaultSuccessUrl("http://localhost:8080/swagger-ui/index.html", true)) //TODO change endpoint for production
                 .formLogin(form -> form
-                        .defaultSuccessUrl("https://www.youtube.com/", true)
+                        .defaultSuccessUrl("http://localhost:8080/swagger-ui/index.html", true)
                         .permitAll())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
