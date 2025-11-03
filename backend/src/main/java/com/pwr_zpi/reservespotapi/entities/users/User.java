@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapi.entities.users;
 
+import com.pwr_zpi.reservespotapi.entities.picture.Picture;
 import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.review.Review;
@@ -8,6 +9,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -16,7 +23,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,16 +33,24 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
     private String passwordHash;
 
     @Column(columnDefinition = "text")
     private String phoneNumber;
 
-    private String role;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
-//    @Column(columnDefinition = "jsonb")
-    private String preferences;
+    //sso
+    private String oauthProviderId;
+
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+    //
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    private Picture picture;
 
     @OneToMany(mappedBy = "owner")
     private Set<Restaurant> restaurants;
@@ -45,4 +60,32 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private Set<Review> reviews;
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return switch (role) {
+            case ADMIN -> List.of(
+                    new SimpleGrantedAuthority("ROLE_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_RESTAURANT"),
+                    new SimpleGrantedAuthority("ROLE_CLIENT")
+            );
+            case CLIENT -> List.of(
+                    new SimpleGrantedAuthority("ROLE_CLIENT")
+            );
+            case RESTAURANT -> List.of(
+                    new SimpleGrantedAuthority("ROLE_RESTAURANT")
+            );
+        };
+    }
+
+    @Override
+    public String getPassword() {
+        return ""; //TODO implement
+    }
+
+    @Override
+    public String getUsername() {
+        return "";
+    }
 }

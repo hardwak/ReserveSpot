@@ -3,8 +3,8 @@ spring:
     name: ReserveSpotAPI
   datasource:
     url: jdbc:postgresql://localhost:5432/reserve-spot
-    username: hardwak
-    password: hardwak
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -15,6 +15,17 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
     database: postgresql
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
 
 #logging:
 #  level:

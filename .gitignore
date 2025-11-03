@@ -1,1 +1,6 @@
 /.idea/
+.idea
+*.iws
+*.iml
+*.ipr
+/backend/src/main/resources/.env

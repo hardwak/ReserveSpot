@@ -44,8 +44,6 @@ public class Restaurant {
 
     private Double averageRating;
 
-    private String pic;
-
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RestaurantTable> tables;
 

@@ -2,6 +2,7 @@ package com.pwr_zpi.reservespotapi.entities.picture;
 
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.review.Review;
+import com.pwr_zpi.reservespotapi.entities.users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,6 +29,9 @@ public class Picture {
 
     @Column(columnDefinition = "text")
     private String description;
+
+    @OneToOne(mappedBy = "picture")
+    private User user;
 
     @ManyToMany(mappedBy = "pictures")
     private Set<Restaurant> restaurants;
