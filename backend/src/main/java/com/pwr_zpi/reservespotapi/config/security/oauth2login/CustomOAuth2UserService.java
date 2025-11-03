@@ -1,7 +1,6 @@
 package com.pwr_zpi.reservespotapi.config.security.oauth2login;
 
 import com.pwr_zpi.reservespotapi.entities.picture.Picture;
-import com.pwr_zpi.reservespotapi.entities.picture.PictureRepository;
 import com.pwr_zpi.reservespotapi.entities.users.AuthProvider;
 import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.users.User;

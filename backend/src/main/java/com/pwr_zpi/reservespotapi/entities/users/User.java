@@ -81,11 +81,11 @@ public class User implements UserDetails {
 
     @Override
     public String getPassword() {
-        return ""; //TODO implement
+        return passwordHash;
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return email;
     }
 }
