@@ -12,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.util.Set;
 
 @Entity
@@ -39,10 +41,17 @@ public class Restaurant {
     @Column(columnDefinition = "text")
     private String description;
 
-//    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String openingHours;
 
     private Double averageRating;
+
+    private Double latitude;
+
+    private Double longitude;
+
+    private String pic;
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RestaurantTable> tables;
