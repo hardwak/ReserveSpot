@@ -4,8 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
 class MainActivity : ComponentActivity() {
@@ -14,12 +12,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
+            Controller(navController)
 
-            NavHost(
-                navController = navController,
-                startDestination = "MainMenu"
-            ) {
-                composable("MainMenu") { MainMenuScreen(navController) }
+//            NavHost(
+//                navController = navController,
+//                startDestination = "MainMenu"
+//            ) {
+//                composable("MainMenu") { MainMenuScreen(navController) }
 //                composable(
 //                    "screentest2/{input}",
 //                    arguments = listOf(navArgument("input") {type = NavType.StringType})
@@ -28,7 +27,7 @@ class MainActivity : ComponentActivity() {
 //                    val userInput = backStackEntry.arguments?.getString("input")
 //                    ScreenTest2(navController, userInput)
 //                }
-            }
+//            }
         }
     }
 }
