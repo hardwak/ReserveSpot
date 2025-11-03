@@ -39,7 +39,7 @@ import androidx.navigation.NavHostController
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(navController: NavHostController) {
-    val navBarItems = listOf("home", "restaurants", "reservations", "favourites", "account")
+    val navBarItems = listOf("home", "reservations", "restaurants", "favourites", "account")
 
     var selectedItem by rememberSaveable { mutableStateOf("home") }
 
@@ -78,8 +78,8 @@ fun MainMenuScreen(navController: NavHostController) {
                         Icon(
                             imageVector = when (item) {
                                 "home" -> Icons.Default.Home
-                                "restaurants" -> Icons.Default.LocationOn
                                 "reservations" -> Icons.Default.DateRange
+                                "restaurants" -> Icons.Default.LocationOn
                                 "favourites" -> Icons.Default.Favorite
                                 "account" -> Icons.Default.AccountCircle
                                 else -> Icons.Default.Close
@@ -94,8 +94,11 @@ fun MainMenuScreen(navController: NavHostController) {
                     ) },
                     selected = selectedItem == item,
                     onClick = {
+
                         selectedItem = item
-                        /* TODO: handle navigation */
+                        when (item) {
+                            "restaurants" -> navController.navigate("ChooseRestaurant")
+                        }
                     },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFFD73D4A),

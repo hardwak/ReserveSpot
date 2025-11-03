@@ -10,12 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 
 @Composable
-fun ScreenTest2(navController: NavHostController, input: String?) {
-    Column (
-        Modifier.fillMaxSize(),
+fun ChooseRestaurantScreen(navController: NavHostController) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Screen 2: $input")
+        Text(text = "Choose Restaurant Screen")
     }
 }

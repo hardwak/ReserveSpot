@@ -12,6 +12,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             val navController = rememberNavController()
 
@@ -19,15 +20,10 @@ class MainActivity : ComponentActivity() {
                 navController = navController,
                 startDestination = "MainMenu"
             ) {
-                composable("MainMenu") { MainMenuScreen(navController) }
-//                composable(
-//                    "screentest2/{input}",
-//                    arguments = listOf(navArgument("input") {type = NavType.StringType})
-//                ) {
-//                    backStackEntry ->
-//                    val userInput = backStackEntry.arguments?.getString("input")
-//                    ScreenTest2(navController, userInput)
-//                }
+                composable("MainMenu") { MainMenuScreen(navController)}
+                composable("ChooseRestaurant") { ChooseRestaurantScreen(navController) }
+
+
             }
         }
     }
