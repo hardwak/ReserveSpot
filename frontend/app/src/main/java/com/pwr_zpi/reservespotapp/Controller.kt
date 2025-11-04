@@ -124,7 +124,7 @@ fun Controller(navController: NavHostController) {
             startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable ("login") { LoginScreen(navController) }
+            composable("login") { LoginScreen(navController) }
             composable("home") { MainMenuScreen(navController) }
 //            composable("restaurants") { RestaurantsScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }

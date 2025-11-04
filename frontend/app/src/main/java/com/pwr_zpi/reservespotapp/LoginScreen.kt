@@ -29,6 +29,8 @@ fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    var loginDataIncorrect by remember { mutableStateOf(false) }
+
     Column (
 
     ) {
@@ -64,19 +66,69 @@ fun LoginScreen(navController: NavHostController) {
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
+        if (loginDataIncorrect) {
+            Text(
+                text = "Login or password are incorrect!",
+                color = RSRed,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { /* TODO handle login logic here */ },
+            onClick = {
+                loginDataIncorrect = true
+            /* TODO handle login logic here */
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = RSRed)
         ) {
             Text(
-                text = "Login",
-                color = Color.White
+                text = "Log in",
+                color = Color.White,
             )
         }
+
+        Button(
+            onClick = {
+                /* TODO handle login logic here */
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+        ) {
+            Text(
+                text = "Log in with Google",
+                color = Color.White,
+            )
+        }
+
+        Text(
+            text = "Don't have an account yet?",
+            fontSize = 16.sp,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 32.dp)
+        )
+
+        Button(
+            onClick = {
+                /* TODO handle login logic here */
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+        ) {
+            Text(
+                text = "Sign Up",
+                color = Color.White,
+            )
+        }
+
     }
 }
