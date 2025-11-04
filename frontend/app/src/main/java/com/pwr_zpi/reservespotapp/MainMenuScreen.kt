@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +71,7 @@ fun MainMenuScreen(navController: NavHostController) {
 
         bottomBar = {
             NavigationBar (
-                containerColor = Color(0xFFD73D4A)
+                containerColor = RSRed
             ) {
                 navBarItems.forEach {
                     item -> NavigationBarItem(
@@ -101,7 +102,7 @@ fun MainMenuScreen(navController: NavHostController) {
                         }
                     },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFFD73D4A),
+                        selectedIconColor = RSRed,
                         unselectedIconColor = Color.White,
                         indicatorColor = Color.White
                     )
