@@ -41,7 +41,7 @@ fun Controller(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
-    val hideBottomBar = currentRoute in listOf("") // List of screens where NavBar should be hidden
+    val hideBottomBar = currentRoute in listOf("login", ) // List of screens where NavBar should be hidden
 
     Scaffold(
         topBar = {
@@ -121,9 +121,10 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable ("login") { LoginScreen(navController) }
             composable("home") { MainMenuScreen(navController) }
 //            composable("restaurants") { RestaurantsScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
