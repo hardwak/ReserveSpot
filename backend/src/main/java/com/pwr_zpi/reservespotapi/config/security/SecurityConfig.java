@@ -49,8 +49,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/login", "/css/**", "/js/**").permitAll();
-                    auth.requestMatchers("/swagger-ui/**").hasRole("ADMIN");
-                    auth.requestMatchers("/v3/api-docs/**").hasRole("ADMIN");
+                    auth.requestMatchers("/swagger-ui/**").permitAll();
+                    auth.requestMatchers("/v3/api-docs/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .formLogin(form -> form
