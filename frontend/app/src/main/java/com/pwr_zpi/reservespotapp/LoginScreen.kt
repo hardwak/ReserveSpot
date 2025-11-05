@@ -49,7 +49,7 @@ fun LoginScreen(navController: NavHostController) {
 
     val googleSignInClient = remember {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("602226136699-0opsl3peb1suirv2ode8go63ir31vkbs.apps.googleusercontent.com")
+            .requestIdToken("622858688727-m3m1ac9sbtk3s7tp0upmfae93rlfu03b.apps.googleusercontent.com")
             .requestEmail()
             .build()
         GoogleSignIn.getClient(context, gso)
@@ -68,7 +68,7 @@ fun LoginScreen(navController: NavHostController) {
                 popUpTo("login") { inclusive = true }
             }
         } catch (e: ApiException) {
-            Log.e("GoogleSSO", "Sign-in failed: ${e.statusCode}")
+            Log.e("GoogleSSO", "Sign-in failed: ${e}")
         }
     }
 
