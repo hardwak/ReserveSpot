@@ -1,8 +1,10 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -94,28 +96,26 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             // Restaurant list
             LazyColumn {
                 items(filteredRestaurants) { restaurant ->
-                    Card(
+                    InfoCard(
+//                        height = 250,
+//                        width = 400,
+                        restaurantName = restaurant.name,
+                        rating = 4.6f,
+                        views = 350,
+
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        onClick = {
-                            // TODO screen about chosen restaurant after clicking on the field
-                        }
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = restaurant.name,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = restaurant.address,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                            .height(250.dp)
+                            .padding(vertical = 8.dp, horizontal = 4.dp) //outside padding
+
+                            .clickable {
+                                // TODO more info about restaurant screen
+                            }
+                    )
+                }
+            }
                 }
             }
         }
-    }
-}
+
+
