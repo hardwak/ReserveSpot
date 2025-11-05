@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -49,11 +51,13 @@ fun LoginScreen(navController: NavHostController) {
 
     val googleSignInClient = remember {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("622858688727-m3m1ac9sbtk3s7tp0upmfae93rlfu03b.apps.googleusercontent.com")
+            .requestIdToken("622858688727-cfpvp191t9den54uiht2islfvosns021.apps.googleusercontent.com")
             .requestEmail()
             .build()
         GoogleSignIn.getClient(context, gso)
     }
+
+    val coroutineScope = rememberCoroutineScope()
 
     val signInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -62,10 +66,36 @@ fun LoginScreen(navController: NavHostController) {
         try {
             val account = task.getResult(ApiException::class.java)
             val idToken = account.idToken
-            // TODO: Send idToken to your backend for verification, or navigate forward
-            Log.d("GoogleSSO", "Token: $idToken")
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
+
+            if (idToken != null) {
+                // Send token to backend
+                coroutineScope.launch {
+                    try {
+                        val response = RetrofitClient.authApi.googleLogin(
+                            GoogleTokenRequest(googleToken = idToken)
+                        )
+
+                        if (response.isSuccessful && response.code() == 200) {
+                            val authResponse = response.body()
+                            val backendToken = authResponse?.token
+
+                            // Store the token (SharedPreferences, DataStore, etc.)
+                            // TODO: Save backendToken for future API calls
+                            Log.d("GoogleSSO", "Backend token: $backendToken")
+
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e("GoogleSSO", "Backend auth failed: $errorBody")
+                            // TODO: Show error to user
+                        }
+                    } catch (e: Exception) {
+                        Log.e("GoogleSSO", "Network error: ${e.message}")
+                        // TODO: Show error to user
+                    }
+                }
             }
         } catch (e: ApiException) {
             Log.e("GoogleSSO", "Sign-in failed: ${e}")
