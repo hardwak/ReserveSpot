@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -27,6 +30,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 
+
 data class Restaurant(
     val name: String,
     val address: String
@@ -36,6 +40,9 @@ data class Restaurant(
 @Composable
 fun ChooseRestaurantScreen(navController: NavHostController) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var isGeminiSearchVisible by remember { mutableStateOf(false) }
+    // field for putting prompt in it
+    var geminiPrompt by remember { mutableStateOf(TextFieldValue("")) }
 
 
     val restaurants = listOf(
@@ -62,8 +69,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
-
+                .padding(horizontal = 16.dp)
 
 
         ) {
@@ -74,7 +80,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 label = { Text("Search restaurants") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(vertical = 16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
 //                   same red color as in our app logo
 //                    searchbar outline color parameters
@@ -87,18 +93,51 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
 
                 )
-
-
             )
 
+            Button(
+                onClick = {
+                    isGeminiSearchVisible = !isGeminiSearchVisible
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFD73D4A)
+                )
+            )
+            {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "AI Search",
+                    tint = Color.White,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Text(if (isGeminiSearchVisible) "Hide AI prompt" else "Search with Gemini AI")
+            }
+            if (isGeminiSearchVisible) {
+                OutlinedTextField(
+                    value = geminiPrompt,
+                    onValueChange = { geminiPrompt = it },
+                    label = { Text("Describe what you are looking for (e.g., 'Italian food near my office')") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2196F3),
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedLabelColor = Color.DarkGray,
+                        unfocusedLabelColor = Color.DarkGray
+                    )
+                )
+            }
 
 
             // Restaurant list
             LazyColumn {
                 items(filteredRestaurants) { restaurant ->
                     InfoCard(
-//                        height = 250,
-//                        width = 400,
                         restaurantName = restaurant.name,
                         rating = 4.6f,
                         views = 350,
@@ -114,8 +153,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     )
                 }
             }
-                }
-            }
         }
-
+    }
+}
 
