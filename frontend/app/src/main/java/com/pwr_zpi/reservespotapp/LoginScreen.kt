@@ -34,17 +34,12 @@ import androidx.navigation.NavHostController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    var loginDataIncorrect by remember { mutableStateOf(false) }
-
-    val BUTTON_HEIGHT = 70.dp
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -56,6 +51,10 @@ fun LoginScreen(navController: NavHostController) {
             .build()
         GoogleSignIn.getClient(context, gso)
     }
+
+
+    val dataStoreManager = remember { DataStoreManager(context) }
+    // var rememberMe by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -80,7 +79,10 @@ fun LoginScreen(navController: NavHostController) {
                             val backendToken = authResponse?.token
 
                             // Store the token (SharedPreferences, DataStore, etc.)
-                            // TODO: Save backendToken for future API calls
+                            if (backendToken != null) {
+                                dataStoreManager.saveBackendToken(backendToken)
+                                // dataStoreManager.saveRememberMe(rememberMe)
+                            }
                             Log.d("GoogleSSO", "Backend token: $backendToken")
 
                             navController.navigate("home") {
@@ -101,6 +103,14 @@ fun LoginScreen(navController: NavHostController) {
             Log.e("GoogleSSO", "Sign-in failed: ${e}")
         }
     }
+
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    var loginDataIncorrect by remember { mutableStateOf(false) }
+
+    val BUTTON_HEIGHT = 70.dp
 
 
     Column (
@@ -142,9 +152,27 @@ fun LoginScreen(navController: NavHostController) {
             Text(
                 text = "Login or password are incorrect!",
                 color = RSRed,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 8.dp)
             )
         }
+
+//        Row(
+//            verticalAlignment = Alignment.CenterVertically,
+//            modifier = Modifier
+//                .padding(horizontal = 16.dp, vertical = 8.dp)
+//        ) {
+//            Checkbox(
+//                checked = rememberMe,
+//                onCheckedChange = { rememberMe = it }
+//            )
+//            Text(
+//                text = "Remember Me",
+//                fontSize = 16.sp
+//            )
+//        }
+
 
         Spacer(modifier = Modifier.height(24.dp))
 
