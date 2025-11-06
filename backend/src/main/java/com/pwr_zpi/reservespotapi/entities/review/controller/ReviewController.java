@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -63,6 +64,7 @@ public class ReviewController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<ReviewDto> createReview(@Valid @RequestBody CreateReviewDto createDto) {
         ReviewDto createdReview = reviewService.createReview(createDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdReview);
@@ -77,6 +79,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
         boolean deleted = reviewService.deleteReview(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();

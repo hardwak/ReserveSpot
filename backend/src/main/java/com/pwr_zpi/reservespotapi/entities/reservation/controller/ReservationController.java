@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -63,12 +64,14 @@ public class ReservationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT')")
     public ResponseEntity<ReservationDto> createReservation(@Valid @RequestBody CreateReservationDto createDto) {
         ReservationDto createdReservation = reservationService.createReservation(createDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdReservation);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT')")
     public ResponseEntity<ReservationDto> updateReservation(@PathVariable Long id, 
                                                            @Valid @RequestBody UpdateReservationDto updateDto) {
         Optional<ReservationDto> updatedReservation = reservationService.updateReservation(id, updateDto);
@@ -77,6 +80,7 @@ public class ReservationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT')")
     public ResponseEntity<Void> deleteReservation(@PathVariable Long id) {
         boolean deleted = reservationService.deleteReservation(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
