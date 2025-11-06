@@ -40,7 +40,7 @@ fun Controller(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val hideTopBar = currentRoute in listOf("restaurants") // List of screens where top bar should be hidden
+    val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
     val hideBottomBar = currentRoute in listOf("login", ) // List of screens where NavBar should be hidden
 
     Scaffold(
@@ -94,7 +94,7 @@ fun Controller(navController: NavHostController) {
                             label = {
                                 Text(
                                     text = item.replaceFirstChar { it.uppercase() },
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     color = Color.White
                                 )
                             },
