@@ -5,9 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,6 +22,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -32,7 +36,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/api/auth/**").permitAll();
+                    // Public endpoints (Klient niezalogowany)
+                    auth.requestMatchers("/api/auth/**").permitAll(); // Login, Register, Reset password
+                    auth.requestMatchers("/api/restaurants").permitAll(); // Wyszukiwanie restauracji
+                    auth.requestMatchers("/api/restaurants/{id}").permitAll(); // Get restaurant by ID
+                    auth.requestMatchers("/api/restaurants/city/**").permitAll(); // Search by city
+                    auth.requestMatchers("/api/reviews").permitAll(); // Przeglądanie opinii
+                    auth.requestMatchers("/api/reviews/{id}").permitAll(); // Get review by ID
+                    auth.requestMatchers("/api/reviews/restaurant/**").permitAll(); // Get reviews by restaurant
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(session -> session
@@ -46,6 +57,7 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .securityMatcher(new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**")))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/login", "/css/**", "/js/**").permitAll();
