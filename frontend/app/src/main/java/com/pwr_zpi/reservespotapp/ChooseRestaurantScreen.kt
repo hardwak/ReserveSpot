@@ -2,6 +2,7 @@ package com.pwr_zpi.reservespotapp
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,18 +20,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 
 data class Restaurant(
@@ -47,6 +48,18 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     var geminiPrompt by remember { mutableStateOf(TextFieldValue("")) }
 
 
+    fun searchWithGemini(prompt: String) {
+
+
+        println("Gemini Search initiated with prompt: $prompt")
+
+// hiding field
+        isGeminiSearchVisible = false
+//      clearing field
+        geminiPrompt = TextFieldValue("")
+    }
+
+
     val restaurants = listOf(
         Restaurant("La Bella Pizza", "ul. Wrocławska 10"),
         Restaurant("Sushi Master", "ul. Długa 22"),
@@ -55,18 +68,17 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         Restaurant("Puzata Chata", "ul. Ukraińska 24")
     )
 
-
     val filteredRestaurants = restaurants.filter {
         it.name.contains(searchQuery.text, ignoreCase = true)
     }
 
     Scaffold(
 
+
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-//                .padding(padding)
                 .padding(horizontal = 16.dp)
 
 
@@ -102,7 +114,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFD73D4A)
+                    containerColor = RSRed
                 )
             )
             {
@@ -115,21 +127,42 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 Text(if (isGeminiSearchVisible) "Hide AI prompt" else "Search with Gemini AI")
             }
             if (isGeminiSearchVisible) {
-                OutlinedTextField(
-                    value = geminiPrompt,
-                    onValueChange = { geminiPrompt = it },
-                    label = { Text("Describe what you are looking for (e.g., 'Good ramen in Wrocław')") },
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
+                    // alignment of elements
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = geminiPrompt,
+                        onValueChange = { geminiPrompt = it },
+                        label = { Text("Describe what you are looking for...") },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
 
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF2196F3),
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedLabelColor = Color.DarkGray,
-                        unfocusedLabelColor = Color.DarkGray
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF2196F3),
+                            unfocusedBorderColor = Color.LightGray,
+                            focusedLabelColor = Color.DarkGray,
+                            unfocusedLabelColor = Color.DarkGray
+                        )
                     )
-                )
+
+                    Button(
+                        onClick = {
+                            searchWithGemini(geminiPrompt.text)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RSRed
+                        ),
+
+                        modifier = Modifier.height(56.dp)
+                    ) {
+                        Text("Send")
+                    }
+                }
             }
 
 
@@ -155,4 +188,5 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         }
     }
 }
+
 
