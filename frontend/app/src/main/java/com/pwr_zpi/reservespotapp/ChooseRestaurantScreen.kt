@@ -83,12 +83,12 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 colors = OutlinedTextFieldDefaults.colors(
 //                   same red color as in our app logo
 //                    searchbar outline color parameters
-                    focusedBorderColor = Color(0xFFD73D4A),
-                    unfocusedBorderColor = Color.Gray,
+                    focusedBorderColor = Color.LightGray,
+                    unfocusedBorderColor = Color.LightGray,
 
 //                    label color parameters
-                    focusedLabelColor = Color.Black,
-                    unfocusedLabelColor = Color.Black
+                    focusedLabelColor = Color.Gray,
+                    unfocusedLabelColor = Color.Gray
 
 
                 )
