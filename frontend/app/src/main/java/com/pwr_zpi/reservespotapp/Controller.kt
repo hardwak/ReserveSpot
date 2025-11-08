@@ -41,11 +41,12 @@ fun Controller(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
-    val hideBottomBar = currentRoute in listOf("login", ) // List of screens where NavBar should be hidden
+    val hideBottomBar =
+        currentRoute in listOf("login",) // List of screens where NavBar should be hidden
 
     Scaffold(
         topBar = {
-            if(!hideTopBar) {
+            if (!hideTopBar) {
                 TopAppBar(
                     title = {
                         Row(
@@ -70,7 +71,7 @@ fun Controller(navController: NavHostController) {
             }
         },
         bottomBar = {
-            if(!hideBottomBar) {
+            if (!hideBottomBar) {
                 NavigationBar(
                     containerColor = RSRed
                 ) {
@@ -126,10 +127,15 @@ fun Controller(navController: NavHostController) {
         ) {
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
+            composable("restaurantDetails/{restaurantName}") { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+                RestaurantDetailsScreen(navController, name)
+            }
 //            composable("login") { LoginScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens
         }
+
     }
 }

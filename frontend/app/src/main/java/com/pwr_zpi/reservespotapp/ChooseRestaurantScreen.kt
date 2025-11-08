@@ -180,7 +180,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                             .padding(vertical = 8.dp, horizontal = 4.dp) //outside padding
 
                             .clickable {
-                                // TODO more info about restaurant screen
+                                navController.navigate("restaurantDetails/${restaurant.name}")
                             }
                     )
                 }
