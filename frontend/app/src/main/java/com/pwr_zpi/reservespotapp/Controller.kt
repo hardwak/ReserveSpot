@@ -41,12 +41,11 @@ fun Controller(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
-    val hideBottomBar =
-        currentRoute in listOf("login",) // List of screens where NavBar should be hidden
+    val hideBottomBar = currentRoute in listOf("login", ) // List of screens where NavBar should be hidden
 
     Scaffold(
         topBar = {
-            if (!hideTopBar) {
+            if(!hideTopBar) {
                 TopAppBar(
                     title = {
                         Row(
@@ -136,6 +135,5 @@ fun Controller(navController: NavHostController) {
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens
         }
-
     }
 }
