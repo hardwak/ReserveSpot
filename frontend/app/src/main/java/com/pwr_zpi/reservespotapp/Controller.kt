@@ -121,7 +121,7 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("home") { MainMenuScreen(navController) }
@@ -130,7 +130,7 @@ fun Controller(navController: NavHostController) {
                 val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
                 RestaurantDetailsScreen(navController, name)
             }
-//            composable("login") { LoginScreen(navController) }
+            composable("login") { LoginScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens

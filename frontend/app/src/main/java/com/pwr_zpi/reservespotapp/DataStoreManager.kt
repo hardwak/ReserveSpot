@@ -36,16 +36,18 @@ class DataStoreManager(private val context: Context) {
     val rememberMe: Flow<Boolean> = context.dataStore.data
         .map { prefs -> prefs[REMEMBER_ME_KEY] ?: false }
 
-    suspend fun clearTokenIfNotRemembered() {
-        val remember = context.dataStore.data.map { it[REMEMBER_ME_KEY] ?: false }.first()
-        if (!remember) {
-            context.dataStore.edit { prefs ->
-                prefs.remove(BACKEND_TOKEN_KEY)
-            }
+
+    // Suspend function to read token once
+    suspend fun getBackendToken(): String? {
+        return context.dataStore.data.map { prefs -> prefs[BACKEND_TOKEN_KEY] }.first()
+    }
+
+    // Clear token
+    suspend fun clearBackendToken() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(BACKEND_TOKEN_KEY)
         }
     }
 
-    suspend fun clearAll() {
-        context.dataStore.edit { it.clear() }
-    }
+
 }

@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -101,6 +102,15 @@ fun LoginScreen(navController: NavHostController) {
             }
         } catch (e: ApiException) {
             Log.e("GoogleSSO", "Sign-in failed: ${e}")
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val valid = checkBackendToken(dataStoreManager, RetrofitClient.authApi)
+        if (valid) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
         }
     }
 
@@ -195,8 +205,10 @@ fun LoginScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                val signInIntent = googleSignInClient.signInIntent
-                signInLauncher.launch(signInIntent)
+                googleSignInClient.signOut().addOnCompleteListener {
+                    val signInIntent = googleSignInClient.signInIntent
+                    signInLauncher.launch(signInIntent)
+                }
             },
             colors = ButtonDefaults.buttonColors(containerColor = Color.White),
             modifier = Modifier
@@ -240,5 +252,26 @@ fun LoginScreen(navController: NavHostController) {
             )
         }
 
+    }
+}
+
+
+suspend fun checkBackendToken(
+    dataStoreManager: DataStoreManager,
+    authApi: AuthApi
+): Boolean {
+    val token = dataStoreManager.getBackendToken() ?: return false
+
+    return try {
+        val response = authApi.validateToken("Bearer $token")
+        if (response.isSuccessful) {
+            true
+        } else {
+            dataStoreManager.clearBackendToken()
+            false
+        }
+    } catch (e: Exception) {
+        dataStoreManager.clearBackendToken()
+        false
     }
 }

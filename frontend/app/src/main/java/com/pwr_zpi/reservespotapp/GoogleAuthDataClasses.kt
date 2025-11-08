@@ -4,6 +4,8 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 data class GoogleTokenRequest(
@@ -21,6 +23,9 @@ data class ErrorResponse(
 interface AuthApi {
     @POST("/api/auth/google")
     suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
+
+    @GET("/api/test/hello")
+    suspend fun validateToken(@Header("Authorization") token: String): Response<Unit>
 }
 
 object RetrofitClient {
