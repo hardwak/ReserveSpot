@@ -12,6 +12,11 @@ data class GoogleTokenRequest(
     val googleToken: String
 )
 
+data class LoginRequest(
+    val email: String,
+    val password: String
+)
+
 data class AuthResponse(
     val token: String
 )
@@ -23,6 +28,9 @@ data class ErrorResponse(
 interface AuthApi {
     @POST("/api/auth/google")
     suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
+
+    @POST("/api/auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
     @GET("/api/test/hello")
     suspend fun validateToken(@Header("Authorization") token: String): Response<Unit>

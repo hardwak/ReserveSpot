@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.core.IOException
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -37,7 +37,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -105,14 +108,14 @@ fun LoginScreen(navController: NavHostController) {
         }
     }
 
-    LaunchedEffect(Unit) {
-        val valid = checkBackendToken(dataStoreManager, RetrofitClient.authApi)
-        if (valid) {
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
-            }
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        val valid = checkBackendToken(dataStoreManager, RetrofitClient.authApi)
+//        if (valid) {
+//            navController.navigate("home") {
+//                popUpTo("login") { inclusive = true }
+//            }
+//        }
+//    }
 
 
     var email by remember { mutableStateOf("") }
@@ -188,8 +191,7 @@ fun LoginScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                loginDataIncorrect = true
-            /* TODO handle login logic here */
+                loginDataIncorrect = sendLoginRequest(email, password, navController, dataStoreManager)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -238,7 +240,7 @@ fun LoginScreen(navController: NavHostController) {
 
         Button(
             onClick = {
-                /* TODO handle login logic here */
+                navController.navigate("register")
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -275,3 +277,55 @@ suspend fun checkBackendToken(
         false
     }
 }
+
+
+fun sendLoginRequest(
+    email: String,
+    password: String,
+    navController: NavHostController,
+    dataStoreManager: DataStoreManager
+): Boolean
+{
+    var success = true
+    val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    coroutineScope.launch {
+        try {
+            val response = RetrofitClient.authApi.login(LoginRequest(email, password))
+
+            if (response.isSuccessful && response.body() != null) {
+                val backendToken = response.body()!!.token
+
+                // Save token in DataStore
+                dataStoreManager.saveBackendToken(backendToken)
+
+                // Navigate to home
+                CoroutineScope(Dispatchers.Main).launch {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+
+                Log.d("Login", "Login successful, token: $backendToken")
+            } else {
+                // Handle errors returned by the server
+                val errorBody = response.errorBody()?.string()
+                Log.e("Login", "Login failed: $errorBody")
+                // TODO: Show error message to user
+                success = false
+            }
+
+        } catch (e: IOException) {
+            Log.e("Login", "Network error: ${e.message}")
+            // TODO: Show network error to user
+        } catch (e: HttpException) {
+            Log.e("Login", "HTTP error: ${e.message()}")
+            // TODO: Show HTTP error to user
+        } catch (e: Exception) {
+            Log.e("Login", "Unexpected error: ${e.message}")
+            // TODO: Show unexpected error to user
+        }
+    }
+    return success
+}
+

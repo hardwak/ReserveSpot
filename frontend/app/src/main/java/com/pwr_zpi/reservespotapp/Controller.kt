@@ -33,6 +33,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import com.pwr_zpi.reservespotapp.ui.theme.RegisterScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,6 +132,7 @@ fun Controller(navController: NavHostController) {
                 RestaurantDetailsScreen(navController, name)
             }
             composable("login") { LoginScreen(navController) }
+            composable("register") { RegisterScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens
