@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun InfoCard(
-    height: Int,
-    width: Int,
+//    deleted fixed height and width because modifier should control that
+    modifier: Modifier = Modifier,
     // image: ? = null, TODO pass an image to the method
     restaurantName: String,
     rating: Float,
@@ -38,17 +38,18 @@ fun InfoCard(
 
     ) {
     Box(
-        modifier = Modifier
-            .width(width.dp)
-            .height(height.dp)
-            .padding(top = 16.dp)
+        modifier = modifier
             .border(
                 width = 2.dp,
                 color = Color.Gray,
                 shape = RoundedCornerShape(16.dp)
             )
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.Red)
+            .background(Color.White)
+            .border(width = 1.dp,
+                color = Color.LightGray,
+                shape = RoundedCornerShape(16.dp))
+
     ) {
         // Background image
         Image(

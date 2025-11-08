@@ -70,7 +70,7 @@ fun Controller(navController: NavHostController) {
             }
         },
         bottomBar = {
-            if(!hideBottomBar) {
+            if (!hideBottomBar) {
                 NavigationBar(
                     containerColor = RSRed
                 ) {
@@ -94,7 +94,7 @@ fun Controller(navController: NavHostController) {
                             label = {
                                 Text(
                                     text = item.replaceFirstChar { it.uppercase() },
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     color = Color.White
                                 )
                             },
@@ -121,12 +121,16 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("login") { LoginScreen(navController) }
             composable("home") { MainMenuScreen(navController) }
-//            composable("restaurants") { RestaurantsScreen(navController) }
+            composable("restaurants") { ChooseRestaurantScreen(navController) }
+            composable("restaurantDetails/{restaurantName}") { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+                RestaurantDetailsScreen(navController, name)
+            }
+//            composable("login") { LoginScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens

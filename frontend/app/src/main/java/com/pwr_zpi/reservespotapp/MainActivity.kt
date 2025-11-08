@@ -13,51 +13,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             Controller(navController)
-
-//            NavHost(
-//                navController = navController,
-//                startDestination = "MainMenu"
-//            ) {
-//                composable("MainMenu") { MainMenuScreen(navController) }
-//                composable(
-//                    "screentest2/{input}",
-//                    arguments = listOf(navArgument("input") {type = NavType.StringType})
-//                ) {
-//                    backStackEntry ->
-//                    val userInput = backStackEntry.arguments?.getString("input")
-//                    ScreenTest2(navController, userInput)
-//                }
-//            }
         }
     }
 }
 
-
-
-
-// Remind the structure
-
-//ReserveSpotAppTheme {
-//    Scaffold( modifier = Modifier.fillMaxSize() ) { innerPadding ->
-//        Greeting(
-//            name = "Android",
-//            modifier = Modifier.padding(innerPadding)
-//        )
-//    }
-//}
-//
-//@Composable
-//fun Greeting(name: String, modifier: Modifier = Modifier) {
-//    Text(
-//        text = "Hello $name!",
-//        modifier = modifier
-//    )
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    ReserveSpotAppTheme {
-//        Greeting("Android")
-//    }
-//}

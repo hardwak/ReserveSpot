@@ -3,6 +3,8 @@ package com.pwr_zpi.reservespotapp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -27,20 +29,34 @@ fun MainMenuScreen(navController: NavHostController) {
                 .padding(top = 16.dp)
         )
 
-        InfoCard(300, width = 400, restaurantName = "Restauracja 1", rating = 4.72f, views = 523)
+        InfoCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .align(Alignment.CenterHorizontally),
+                restaurantName = "Restauracja 1", rating = 4.72f, views = 523)
 
-        Row {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth() // row fills full width
+                .padding(horizontal = 16.dp) // padding for section
+        ) {
+
             InfoCard(
-                300,
-                width = 190,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(300.dp), // fixed width
                 restaurantName = "Restauracja 2",
                 rating = 4.54f,
                 views = 258
             )
             Spacer(modifier = Modifier.padding(4.dp))
+
             InfoCard(
-                300,
-                width = 190,
+                modifier = Modifier
+                    .weight(1f) // dividing space in row
+                    .height(300.dp), // fixed width
                 restaurantName = "Restauracja 3",
                 rating = 4.97f,
                 views = 1032
