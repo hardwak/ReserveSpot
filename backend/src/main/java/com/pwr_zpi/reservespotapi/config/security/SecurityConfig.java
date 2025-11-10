@@ -4,10 +4,9 @@ import com.pwr_zpi.reservespotapi.config.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -25,81 +24,49 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    @Order(1)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/api/**")
-                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**")
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/auth/**").permitAll();
-                    auth.anyRequest().authenticated();
-                })
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
-
-    //TODO add html pages to resolve ERR_TOO_MANY_REDIRECTS
-    @Bean
-    @Order(2)
-    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/login", "/css/**", "/js/**").permitAll();
                     auth.requestMatchers("/swagger-ui/**").hasRole("ADMIN");
                     auth.requestMatchers("/v3/api-docs/**").hasRole("ADMIN");
+                    auth.requestMatchers("/dashboard").hasRole("ADMIN");
+                    auth.requestMatchers("/admin-panel/**").hasRole("ADMIN");
                     auth.anyRequest().authenticated();
                 })
+
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            String requestUri = request.getRequestURI();
+                            if (requestUri.startsWith("/api/")) {
+                                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            } else {
+                                response.sendRedirect("/login");
+                            }
+                        })
+                )
+
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("http://localhost:8080/swagger-ui/index.html", true)
+                        .defaultSuccessUrl("http://localhost:8080/dashboard", true)
                         .permitAll())
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")
                         .permitAll())
+
                 .build();
     }
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        return http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//                .authorizeHttpRequests(auth -> {
-//                    // Public endpoints
-//                    auth.requestMatchers("/api/auth/**").permitAll();
-////                    auth.requestMatchers("/api/service-points").permitAll();
-////                    auth.requestMatchers("/api/service-points/{id}").permitAll();
-////                    auth.requestMatchers("/api/service-points/city/{city}").permitAll();
-////                    auth.requestMatchers("/api/service-points/active").permitAll();
-//
-//                    // Protected endpoints
-////                    auth.requestMatchers("/api/service-points/firm/**").hasAnyRole("FIRM", "ADMIN");
-////                    auth.requestMatchers("/api/service-points").hasAnyRole("FIRM", "ADMIN");
-////                    auth.requestMatchers("/api/service-points/{id}").hasAnyRole("FIRM", "ADMIN");
-//
-//                    // Other endpoints
-//                    auth.requestMatchers("/", "/login").permitAll();
-//                    auth.anyRequest().authenticated();
-//                })
-//                .oauth2Login(oauth2 -> oauth2
-//                        .userInfoEndpoint(userInfo -> userInfo
-//                                .userService(customOAuth2UserService))
-//                        .defaultSuccessUrl("http://localhost:8080/swagger-ui/index.html", true))
-//                .formLogin(form -> form
-//                        .defaultSuccessUrl("http://localhost:8080/swagger-ui/index.html", true)
-//                        .permitAll())
-//                .sessionManagement(session -> session
-//                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-//                        .maximumSessions(1)
-//                        .expiredUrl("/login?expired"))
-//                .build();
-//    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
