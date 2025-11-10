@@ -118,7 +118,7 @@ public class AuthController {
     @GetMapping("/current")
     public ResponseEntity<?> currentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(new AuthResponse("Hello, " + auth.getName() + "! Your roles are: " + auth.getAuthorities()));
+        return ResponseEntity.ok(new AuthResponse(auth.getAuthorities().toString()));
     }
 
     private User registerNewGoogleUser(String email, String name, String googleUserId) {

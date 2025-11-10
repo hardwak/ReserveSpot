@@ -33,6 +33,13 @@ public class DataFillerConfig {
                             .role(Role.ADMIN)
                             .build()
             );
+            userRepository.save(
+                    User.builder()
+                            .email("user")
+                            .passwordHash(passwordEncoder.encode("user"))
+                            .role(Role.CLIENT)
+                            .build()
+            );
         };
     }
 }
