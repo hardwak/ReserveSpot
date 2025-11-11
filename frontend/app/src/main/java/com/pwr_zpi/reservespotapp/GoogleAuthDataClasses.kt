@@ -25,6 +25,18 @@ data class ErrorResponse(
     val message: String
 )
 
+data class ClientRegisterRequest(
+    val name: String,
+    val email: String,
+    val password: String,
+    val role: String = "CLIENT"
+)
+
+data class RegisterResponse(
+    val message: String
+)
+
+
 interface AuthApi {
     @POST("/api/auth/google")
     suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
@@ -32,8 +44,12 @@ interface AuthApi {
     @POST("/api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
-    @GET("/api/test/hello")
+    @GET("/api/auth/current")
     suspend fun validateToken(@Header("Authorization") token: String): Response<Unit>
+
+    @POST("/api/auth/register")
+    suspend fun register(@Body request: ClientRegisterRequest): Response<RegisterResponse>
+
 }
 
 object RetrofitClient {
