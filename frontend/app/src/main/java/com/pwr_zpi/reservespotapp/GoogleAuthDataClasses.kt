@@ -32,6 +32,13 @@ data class ClientRegisterRequest(
     val role: String = "CLIENT"
 )
 
+data class RestaurantRegisterRequest(
+    val name: String,
+    val email: String,
+    val password: String,
+    val role: String = "RESTAURANT"
+)
+
 data class RegisterResponse(
     val message: String
 )
@@ -49,6 +56,9 @@ interface AuthApi {
 
     @POST("/api/auth/register")
     suspend fun register(@Body request: ClientRegisterRequest): Response<RegisterResponse>
+
+    @POST("/api/auth/register")
+    suspend fun restaurantRegister(@Body request: RestaurantRegisterRequest): Response<RegisterResponse>
 
 }
 
