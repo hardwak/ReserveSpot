@@ -1,17 +1,27 @@
 package com.pwr_zpi.reservespotapi.entities.reservation.service;
 
+import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationRepository;
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationStatus;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.CreateReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.ReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.UpdateReservationDto;
-import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
-import com.pwr_zpi.reservespotapi.entities.reservation.ReservationRepository;
 import com.pwr_zpi.reservespotapi.entities.reservation.mapper.ReservationMapper;
+import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTable;
+import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTableRepository;
+import com.pwr_zpi.reservespotapi.entities.users.User;
+import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -21,6 +31,8 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final ReservationMapper reservationMapper;
+    private final UserRepository userRepository;
+    private final RestaurantTableRepository restaurantTableRepository;
 
     public List<ReservationDto> getAllReservations() {
         return reservationRepository.findAll()
@@ -48,7 +60,7 @@ public class ReservationService {
                 .toList();
     }
 
-    public List<ReservationDto> getReservationsByStatus(String status) {
+    public List<ReservationDto> getReservationsByStatus(ReservationStatus status) {
         return reservationRepository.findByStatus(status)
                 .stream()
                 .map(reservationMapper::toDto)
@@ -62,8 +74,19 @@ public class ReservationService {
                 .toList();
     }
 
-    public ReservationDto createReservation(CreateReservationDto createDto) {
-        Reservation reservation = reservationMapper.toEntity(createDto);
+    public ReservationDto createReservation(CreateReservationDto createDto, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        RestaurantTable table = restaurantTableRepository.findById(createDto.getTableId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Table not found"));
+
+        validateReservationTime(createDto.getReservationDatetime());
+        if (createDto.getDurationMinutes() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duration is required");
+        }
+
+        Reservation reservation = reservationMapper.toEntity(createDto, user, table, ReservationStatus.CONFIRMED);
         Reservation savedReservation = reservationRepository.save(reservation);
         return reservationMapper.toDto(savedReservation);
     }
@@ -77,12 +100,90 @@ public class ReservationService {
                 });
     }
 
-    public boolean deleteReservation(Long id) {
-        if (reservationRepository.existsById(id)) {
-            reservationRepository.deleteById(id);
-            return true;
+    public List<ReservationDto> getUpcomingReservationsForUser(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository
+                .findByUserIdAndReservationDatetimeGreaterThanEqualAndStatusNotOrderByReservationDatetimeAsc(
+                        userId,
+                        now,
+                        ReservationStatus.CANCELLED
+                )
+                .stream()
+                .map(reservationMapper::toDto)
+                .toList();
+    }
+
+    public List<ReservationDto> getPastReservationsForUser(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+        List<ReservationDto> history = reservationRepository
+                .findByUserIdAndReservationDatetimeLessThanOrderByReservationDatetimeDesc(userId, now)
+                .stream()
+                .map(reservationMapper::toDto)
+                .toList();
+        List<ReservationDto> cancelled = reservationRepository
+                .findByUserIdAndStatusOrderByReservationDatetimeDesc(userId, ReservationStatus.CANCELLED)
+                .stream()
+                .map(reservationMapper::toDto)
+                .toList();
+
+        Map<Long, ReservationDto> merged = new LinkedHashMap<>();
+        history.forEach(dto -> merged.put(dto.getId(), dto));
+        cancelled.forEach(dto -> merged.putIfAbsent(dto.getId(), dto));
+
+        return new ArrayList<>(merged.values());
+    }
+
+    public List<ReservationDto> getUpcomingReservationsForOwner(Long ownerId) {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository
+                .findByTableRestaurantOwnerIdAndReservationDatetimeGreaterThanEqualAndStatusNotOrderByReservationDatetimeAsc(
+                        ownerId,
+                        now,
+                        ReservationStatus.CANCELLED
+                )
+                .stream()
+                .map(reservationMapper::toDto)
+                .toList();
+    }
+
+    public ReservationDto cancelReservationAsUser(Long reservationId, Long userId) {
+        Reservation reservation = reservationRepository.findByIdAndUserId(reservationId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            return reservationMapper.toDto(reservation);
         }
-        return false;
+
+        if (reservation.getReservationDatetime().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel past reservations");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        return reservationMapper.toDto(reservationRepository.save(reservation));
+    }
+
+    public ReservationDto cancelReservationAsOwner(Long reservationId, Long ownerId) {
+        Reservation reservation = reservationRepository.findByIdAndTableRestaurantOwnerId(reservationId, ownerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            return reservationMapper.toDto(reservation);
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        return reservationMapper.toDto(reservationRepository.save(reservation));
+    }
+
+    public boolean deleteReservation(Long id) {
+        return reservationRepository.findById(id)
+                .map(reservation -> {
+                    if (reservation.getStatus() != ReservationStatus.CANCELLED) {
+                        reservation.setStatus(ReservationStatus.CANCELLED);
+                        reservationRepository.save(reservation);
+                    }
+                    return true;
+                })
+                .orElse(false);
     }
 
     public boolean existsById(Long id) {
@@ -91,5 +192,15 @@ public class ReservationService {
 
     public long count() {
         return reservationRepository.count();
+    }
+
+    private void validateReservationTime(LocalDateTime reservationDatetime) {
+        if (reservationDatetime == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation datetime is required");
+        }
+
+        if (!reservationDatetime.isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation datetime must be in the future");
+        }
     }
 }

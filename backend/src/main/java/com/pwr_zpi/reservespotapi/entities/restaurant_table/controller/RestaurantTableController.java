@@ -1,4 +1,4 @@
-package com.pwr_zpi.reservespotapi.entities.restaurant_table;
+package com.pwr_zpi.reservespotapi.entities.restaurant_table.controller;
 
 import com.pwr_zpi.reservespotapi.entities.restaurant_table.dto.CreateRestaurantTableDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant_table.dto.RestaurantTableDto;

@@ -2,16 +2,19 @@ package com.pwr_zpi.reservespotapi.entities.users.controller;
 
 import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.users.dto.CreateUserDto;
+import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateProfileDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateUserDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UserDto;
+import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
 import com.pwr_zpi.reservespotapi.entities.users.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +25,7 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -63,7 +67,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, 
                                             @Valid @RequestBody UpdateUserDto updateDto) {
         try {
@@ -98,6 +102,15 @@ public class UserController {
     public ResponseEntity<Boolean> emailExists(@PathVariable String email) {
         boolean exists = userService.existsByEmail(email);
         return ResponseEntity.ok(exists);
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
+    public ResponseEntity<UserDto> updateProfile(HttpServletRequest request,
+                                                 @Valid @RequestBody UpdateProfileDto updateDto) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        UserDto updatedUser = userService.updateProfile(userId, updateDto);
+        return ResponseEntity.ok(updatedUser);
     }
 }
 

@@ -5,21 +5,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 public class CreateReviewDto {
-    @NotNull(message = "User ID is required")
-    private Long userId;
-    
     @NotNull(message = "Restaurant ID is required")
     private Long restaurantId;
+
+    private Long reservationId;
     
+    @Pattern(
+            regexp = "^$|^\\+?[0-9\\s-]{7,15}$",
+            message = "Phone number must contain 7-15 digits and may start with '+'"
+    )
     private String phoneNumber;
     
     @NotNull(message = "Rating is required")
