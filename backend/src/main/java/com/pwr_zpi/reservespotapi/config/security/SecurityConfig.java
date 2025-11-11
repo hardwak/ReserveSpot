@@ -39,6 +39,7 @@ public class SecurityConfig {
                     // Public endpoints (Klient niezalogowany)
                     auth.requestMatchers("/api/auth/**").permitAll(); // Login, Register, Reset password
                     auth.requestMatchers("/api/restaurants").permitAll(); // Wyszukiwanie restauracji
+                    auth.requestMatchers("/api/restaurants/search/**").permitAll();
                     auth.requestMatchers("/api/restaurants/{id}").permitAll(); // Get restaurant by ID
                     auth.requestMatchers("/api/restaurants/city/**").permitAll(); // Search by city
                     auth.requestMatchers("/api/reviews").permitAll(); // Przeglądanie opinii

@@ -3,12 +3,15 @@ package com.pwr_zpi.reservespotapi.entities.users.service;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import com.pwr_zpi.reservespotapi.entities.users.dto.CreateUserDto;
+import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateProfileDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateUserDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UserDto;
 import com.pwr_zpi.reservespotapi.entities.users.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -91,6 +94,30 @@ public class UserService {
 
     public long count() {
         return userRepository.count();
+    }
+
+    public UserDto updateProfile(Long userId, UpdateProfileDto updateDto) {
+        return userRepository.findById(userId)
+                .map(user -> {
+                    String trimmedName = updateDto.getName().trim();
+                    if (trimmedName.isEmpty()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name must not be blank");
+                    }
+
+                    String normalizedEmail = updateDto.getEmail().trim().toLowerCase();
+                    if (!normalizedEmail.equalsIgnoreCase(user.getEmail())
+                            && userRepository.findByEmail(normalizedEmail).isPresent()) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already taken");
+                    }
+
+                    user.setName(trimmedName);
+                    user.setEmail(normalizedEmail);
+                    user.setPhoneNumber(updateDto.getPhoneNumber());
+
+                    User savedUser = userRepository.save(user);
+                    return userMapper.toDto(savedUser);
+                })
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 }
 

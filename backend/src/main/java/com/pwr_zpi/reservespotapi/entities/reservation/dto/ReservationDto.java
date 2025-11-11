@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapi.entities.reservation.dto;
 
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,5 +18,5 @@ public class ReservationDto {
     private Long tableId;
     private LocalDateTime reservationDatetime;
     private Integer durationMinutes;
-    private String status;
+    private ReservationStatus status;
 }

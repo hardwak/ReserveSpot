@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapi.entities.reservation.dto;
 
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,5 +22,5 @@ public class UpdateReservationDto {
     @Min(value = 15, message = "Duration must be at least 15 minutes")
     private Integer durationMinutes;
     
-    private String status;
+    private ReservationStatus status;
 }
