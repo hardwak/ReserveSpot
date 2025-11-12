@@ -16,6 +16,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -118,7 +119,7 @@ public class AuthController {
     @GetMapping("/current")
     public ResponseEntity<?> currentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(new AuthResponse(auth.getAuthorities().toString()));
+        return ResponseEntity.ok(new RoleResponse(auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()));
     }
 
     private User registerNewGoogleUser(String email, String name, String googleUserId) {

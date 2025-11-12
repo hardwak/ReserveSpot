@@ -7,8 +7,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class WebPageController {
 
     @GetMapping("/dashboard")
-    public String index() {
-        return "index";
+    public String dashboard() {
+        return "dashboard";
+    }
+
+    @GetMapping("/admin")
+    public String adminDashboard() {
+        return "admin/dashboard";
     }
 
     @GetMapping("/login")

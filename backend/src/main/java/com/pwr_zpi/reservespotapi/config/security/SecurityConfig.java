@@ -39,7 +39,7 @@ public class SecurityConfig {
                     auth.requestMatchers("/swagger-ui/**").hasRole("ADMIN");
                     auth.requestMatchers("/v3/api-docs/**").hasRole("ADMIN");
                     auth.requestMatchers("/dashboard").hasRole("ADMIN");
-                    auth.requestMatchers("/admin-panel/**").hasRole("ADMIN");
+                    auth.requestMatchers("/admin/**").hasRole("ADMIN");
                     auth.anyRequest().authenticated();
                 })
 
@@ -58,7 +58,7 @@ public class SecurityConfig {
 
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("http://localhost:8080/dashboard", true)
+                        .defaultSuccessUrl("/dashboard", true)
                         .permitAll())
 
                 .logout(logout -> logout
