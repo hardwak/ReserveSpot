@@ -1,16 +1,19 @@
-package com.pwr_zpi.reservespotapi.entities.review;
+package com.pwr_zpi.reservespotapi.entities.review.controller;
 
 import com.pwr_zpi.reservespotapi.entities.review.dto.CreateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.dto.ReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.dto.UpdateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.service.ReviewService;
+import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +25,7 @@ import java.util.Optional;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping
     public ResponseEntity<List<ReviewDto>> getAllReviews() {
@@ -36,15 +40,16 @@ public class ReviewController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReviewDto>> getReviewsByUser(@PathVariable Long userId) {
-        List<ReviewDto> reviews = reviewService.getReviewsByUserId(userId);
-        return ResponseEntity.ok(reviews);
-    }
-
     @GetMapping("/restaurant/{restaurantId}")
     public ResponseEntity<List<ReviewDto>> getReviewsByRestaurant(@PathVariable Long restaurantId) {
         List<ReviewDto> reviews = reviewService.getReviewsByRestaurantId(restaurantId);
+        return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ReviewDto>> getReviewsByUser(@PathVariable Long userId) {
+        List<ReviewDto> reviews = reviewService.getReviewsByUserId(userId);
         return ResponseEntity.ok(reviews);
     }
 
@@ -63,8 +68,11 @@ public class ReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<ReviewDto> createReview(@Valid @RequestBody CreateReviewDto createDto) {
-        ReviewDto createdReview = reviewService.createReview(createDto);
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<ReviewDto> createReview(HttpServletRequest request,
+                                                  @Valid @RequestBody CreateReviewDto createDto) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        ReviewDto createdReview = reviewService.createReview(createDto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdReview);
     }
 
@@ -77,9 +85,11 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
-        boolean deleted = reviewService.deleteReview(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<Void> deleteReview(HttpServletRequest request, @PathVariable Long id) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        reviewService.deleteReview(id, userId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/count")
@@ -92,5 +102,13 @@ public class ReviewController {
     public ResponseEntity<Boolean> reviewExists(@PathVariable Long id) {
         boolean exists = reviewService.existsById(id);
         return ResponseEntity.ok(exists);
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<List<ReviewDto>> getMyReviews(HttpServletRequest request) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        List<ReviewDto> reviews = reviewService.getReviewsByUserId(userId);
+        return ResponseEntity.ok(reviews);
     }
 }

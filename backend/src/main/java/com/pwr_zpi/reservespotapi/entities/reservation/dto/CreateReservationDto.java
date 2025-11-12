@@ -16,9 +16,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @SuperBuilder
 public class CreateReservationDto {
-    @NotNull(message = "User ID is required")
-    private Long userId;
-    
     @NotNull(message = "Table ID is required")
     private Long tableId;
     
@@ -28,6 +25,4 @@ public class CreateReservationDto {
     
     @Min(value = 15, message = "Duration must be at least 15 minutes")
     private Integer durationMinutes;
-    
-    private String status;
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,6 +19,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -35,6 +37,15 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/auth/**").permitAll();
+
+                    auth.requestMatchers("/api/restaurants").permitAll(); // Wyszukiwanie restauracji
+                    auth.requestMatchers("/api/restaurants/search/**").permitAll();
+                    auth.requestMatchers("/api/restaurants/{id}").permitAll(); // Get restaurant by ID
+                    auth.requestMatchers("/api/restaurants/city/**").permitAll(); // Search by city
+                    auth.requestMatchers("/api/reviews").permitAll(); // Przeglądanie opinii
+                    auth.requestMatchers("/api/reviews/{id}").permitAll(); // Get review by ID
+                    auth.requestMatchers("/api/reviews/restaurant/**").permitAll(); // Get reviews by restaurant
+
                     auth.requestMatchers("/", "/login", "/css/**", "/js/**").permitAll();
                     auth.requestMatchers("/swagger-ui/**").hasRole("ADMIN");
                     auth.requestMatchers("/v3/api-docs/**").hasRole("ADMIN");
@@ -64,7 +75,6 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")
                         .permitAll())
-
                 .build();
     }
 

@@ -7,11 +7,14 @@ import com.pwr_zpi.reservespotapi.entities.users.AuthProvider;
 import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
+import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
 import com.pwr_zpi.reservespotapi.service.GoogleTokenVerifierService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,6 +38,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final GoogleTokenVerifierService googleTokenVerifier;
+    private final CurrentUserService currentUserService;
 
 
     @PostMapping("/login")
@@ -131,5 +135,32 @@ public class AuthController {
                 .role(Role.CLIENT)
                 .build();
         return userRepository.save(user);
+    }
+
+    @PostMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> changePassword(HttpServletRequest request,
+                                            @Valid @RequestBody ChangePasswordRequest changeRequest) {
+        User user = currentUserService.requireCurrentUser(request);
+
+        if (user.getProvider() == AuthProvider.GOOGLE) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Password change is not available for Google accounts"));
+        }
+
+        if (!passwordEncoder.matches(changeRequest.currentPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Current password is incorrect"));
+        }
+
+        if (passwordEncoder.matches(changeRequest.newPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("New password must be different from the current password"));
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(changeRequest.newPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.noContent().build();
     }
 }

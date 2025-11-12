@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -12,4 +13,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByRestaurantId(Long restaurantId);
     List<Review> findByRating(Integer rating);
     List<Review> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+    boolean existsByUserIdAndRestaurantId(Long userId, Long restaurantId);
+    Optional<Review> findByIdAndUserId(Long id, Long userId);
 }

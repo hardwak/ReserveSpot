@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,5 +33,7 @@ public class Reservation {
 
     private Integer durationMinutes;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReservationStatus status;
 }

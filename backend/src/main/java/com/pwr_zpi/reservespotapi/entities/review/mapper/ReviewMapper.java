@@ -1,13 +1,14 @@
 package com.pwr_zpi.reservespotapi.entities.review.mapper;
 
+import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.review.dto.CreateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.dto.ReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.dto.UpdateReviewDto;
-import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Component
@@ -32,32 +33,20 @@ public class ReviewMapper {
                 .build();
     }
 
-    public Review toEntity(CreateReviewDto dto) {
+    public Review toEntity(CreateReviewDto dto, User user, Restaurant restaurant) {
         if (dto == null) {
             return null;
         }
 
         Review review = Review.builder()
+                .user(user)
+                .restaurant(restaurant)
                 .phoneNumber(dto.getPhoneNumber())
                 .rating(dto.getRating())
                 .comment(dto.getComment())
                 .pic(dto.getPic())
-                .createdAt(java.time.LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
-
-        // Set user if provided
-        if (dto.getUserId() != null) {
-            User user = new User();
-            user.setId(dto.getUserId());
-            review.setUser(user);
-        }
-
-        // Set restaurant if provided
-        if (dto.getRestaurantId() != null) {
-            Restaurant restaurant = new Restaurant();
-            restaurant.setId(dto.getRestaurantId());
-            review.setRestaurant(restaurant);
-        }
 
         return review;
     }

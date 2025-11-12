@@ -1,9 +1,10 @@
 package com.pwr_zpi.reservespotapi.entities.reservation.mapper;
 
+import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationStatus;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.CreateReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.ReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.UpdateReservationDto;
-import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
 import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTable;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import org.springframework.stereotype.Component;
@@ -26,30 +27,18 @@ public class ReservationMapper {
                 .build();
     }
 
-    public Reservation toEntity(CreateReservationDto dto) {
+    public Reservation toEntity(CreateReservationDto dto, User user, RestaurantTable table, ReservationStatus status) {
         if (dto == null) {
             return null;
         }
 
         Reservation reservation = Reservation.builder()
+                .user(user)
+                .table(table)
                 .reservationDatetime(dto.getReservationDatetime())
                 .durationMinutes(dto.getDurationMinutes())
-                .status(dto.getStatus())
+                .status(status)
                 .build();
-
-        // Set user if provided
-        if (dto.getUserId() != null) {
-            User user = new User();
-            user.setId(dto.getUserId());
-            reservation.setUser(user);
-        }
-
-        // Set table if provided
-        if (dto.getTableId() != null) {
-            RestaurantTable table = new RestaurantTable();
-            table.setId(dto.getTableId());
-            reservation.setTable(table);
-        }
 
         return reservation;
     }
