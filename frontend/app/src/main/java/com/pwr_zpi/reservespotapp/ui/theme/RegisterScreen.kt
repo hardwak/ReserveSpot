@@ -198,7 +198,7 @@ fun RegisterScreen(navController: NavHostController) {
 //        }
 
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {
@@ -269,11 +269,35 @@ fun RegisterScreen(navController: NavHostController) {
         }
 
         Text(
+            text = "Want to register a restaurant?",
+            fontSize = 16.sp,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 16.dp)
+        )
+
+        Button(
+            onClick = {
+                navController.navigate("restaurant_register")
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(BUTTON_HEIGHT)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = "Sign up as a restaurant",
+                color = Color.White
+            )
+        }
+
+        Text(
             text = "Already have an account?",
             fontSize = 16.sp,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = 32.dp)
+                .padding(top = 8.dp)
         )
 
         Button(

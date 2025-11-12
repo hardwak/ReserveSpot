@@ -133,6 +133,7 @@ fun Controller(navController: NavHostController) {
             }
             composable("login") { LoginScreen(navController) }
             composable("register") { RegisterScreen(navController) }
+            composable("restaurant_register") {RestaurantRegisterScreen(navController)}
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens
