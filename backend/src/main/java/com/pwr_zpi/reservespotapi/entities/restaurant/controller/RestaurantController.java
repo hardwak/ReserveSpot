@@ -1,17 +1,18 @@
-package com.pwr_zpi.reservespotapi.entities.restaurant;
+package com.pwr_zpi.reservespotapi.entities.restaurant.controller;
 
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.CreateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
+import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantSearchDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,5 +81,17 @@ public class RestaurantController {
     public ResponseEntity<Boolean> restaurantExists(@PathVariable Long id) {
         boolean exists = restaurantService.existsById(id);
         return ResponseEntity.ok(exists);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<List<RestaurantDto>> searchRestaurants(@RequestBody RestaurantSearchDto searchDto) {
+        List<RestaurantDto> restaurants = restaurantService.searchRestaurants(searchDto);
+        return ResponseEntity.ok(restaurants);
+    }
+
+    @PostMapping("/search/ai")
+    public ResponseEntity<List<RestaurantDto>> searchRestaurantsWithAi(@RequestBody RestaurantSearchDto searchDto) {
+        List<RestaurantDto> restaurants = restaurantService.searchRestaurantsWithAi(searchDto);
+        return ResponseEntity.ok(restaurants);
     }
 }

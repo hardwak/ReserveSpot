@@ -1,4 +1,4 @@
-package com.pwr_zpi.reservespotapi.entities.restaurant_statistic;
+package com.pwr_zpi.reservespotapi.entities.restaurant_statistic.controller;
 
 import com.pwr_zpi.reservespotapi.entities.restaurant_statistic.dto.CreateRestaurantStatisticDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant_statistic.dto.RestaurantStatisticDto;
