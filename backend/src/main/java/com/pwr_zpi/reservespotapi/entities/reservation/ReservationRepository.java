@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapi.entities.reservation;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +14,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByTableId(Long tableId);
     List<Reservation> findByStatus(String status);
     List<Reservation> findByReservationDatetimeBetween(LocalDateTime startDate, LocalDateTime endDate);
+    Page<Reservation> findByUserEmailContaining(String query, Pageable pageable);
 }
