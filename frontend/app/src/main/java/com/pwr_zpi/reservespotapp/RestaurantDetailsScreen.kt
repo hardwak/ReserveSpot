@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,7 +55,7 @@ data class RestaurantDetails(
     val name: String,
     val address: String,
     val description: String = "Description placeholder: Italian cuisine, open 12:00-22:00",
-//    need to change to real placeholder
+//    need to change to real imgUrl
     val imageUrl: Int = R.drawable.food_placeholder
 )
 
@@ -83,25 +84,25 @@ fun RestaurantDetailsScreen(
 
     Scaffold(
 //           Book now button
-            bottomBar = {
-                Button(
-                    onClick = { /* TODO: Przekierowanie do ekranu rezerwacji */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RSRed)
-                ) {
-                    Text(
-                        "BOOK NOW",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
+        bottomBar = {
+            Button(
+                onClick = { /* TODO: Przekierowanie do ekranu rezerwacji */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            ) {
+                Text(
+                    "BOOK NOW",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
-            ) { paddingValues ->
-        Column(
+        }
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -140,73 +141,109 @@ fun RestaurantDetailsScreen(
             }
 
             // Info panel
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 220.dp)
             ) {
-                // Big restaurant name
-                Text(
-                    text = details.name,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-                // Address/info
-                Text(
-                    text = details.address,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-                Text(
-                    text = details.description,
-                    color = Color.DarkGray,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                // TODO: Add button "See more..."
-            }
 
-            // Bookmarks photos and reviews
-            TabRow(
-                selectedTabIndex = selectedTabIndex,
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = Color.Transparent
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = { Text(title, fontWeight = if(selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal)
-                },
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                    ) {
 
-                selectedContentColor = RSRed,
-                 unselectedContentColor = Color.Gray
-                    )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.Start
+//                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                // Big restaurant name
+                                text = details.name,
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                            // Address/info
+                            Text(
+                                text = details.address,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                            Text(
+                                text = details.description,
+                                color = Color.DarkGray,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+
+
+                        // Bookmarks photos and reviews
+                        TabRow(
+                            selectedTabIndex = selectedTabIndex,
+                            modifier = Modifier.fillMaxWidth(),
+                            containerColor = Color.White
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTabIndex == index,
+                                    onClick = { selectedTabIndex = index },
+                                    text = {
+                                        Text(
+                                            title,
+                                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+
+                                    selectedContentColor = RSRed,
+                                    unselectedContentColor = Color.Gray
+                                )
+                            }
+
+                        }
+                    }
                 }
+// Elements in chosen card
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 500.dp)
+                            .background(Color.White)
+                    ) {
+                        when (selectedTabIndex) {
+                            0 -> PhotosTabContent()
+                            1 -> ReviewsTabContent()
+                        }
 
-            }
 
-            // Bookmarks fill
-            when (selectedTabIndex) {
-                0 -> PhotosTabContent()
-                1 -> ReviewsTabContent()
+                    }
+                }
             }
         }
     }
 }
 
 
-
-
-
 @Composable
 fun PhotosTabContent() {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 8.dp)
     ) {
-        items(5) {
-
+        repeat(5) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 PhotoPlaceholder(Modifier.weight(1f))
@@ -214,8 +251,10 @@ fun PhotosTabContent() {
                 PhotoPlaceholder(Modifier.weight(1f))
             }
         }
+
     }
 }
+
 
 @Composable
 fun PhotoPlaceholder(modifier: Modifier = Modifier) {
@@ -232,11 +271,13 @@ fun PhotoPlaceholder(modifier: Modifier = Modifier) {
 
 @Composable
 fun ReviewsTabContent() {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 8.dp)
     ) {
-        items(10) { index ->
+        repeat(10) { index ->
             ReviewItem(index + 1)
         }
     }
@@ -254,7 +295,7 @@ fun ReviewItem(id: Int) {
             Text("User #$id", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Simulation of reviews rating
-                Text( " $randomValues.0/5.0", color = Color.Gray)
+                Text(" $randomValues.0/5.0", color = Color.Gray)
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Default.Star,
@@ -264,7 +305,10 @@ fun ReviewItem(id: Int) {
                 )
             }
             Spacer(Modifier.height(8.dp))
-            Text("To jest przykładowa recenzja. Obsługa była miła, jedzenie smaczne. [Recenzja $id]", color = Color.DarkGray)
+            Text(
+                "To jest przykładowa recenzja. Obsługa była miła, jedzenie smaczne. [Recenzja $id]",
+                color = Color.DarkGray
+            )
         }
     }
 }
