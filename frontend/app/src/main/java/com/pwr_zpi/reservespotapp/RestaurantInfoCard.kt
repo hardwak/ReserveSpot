@@ -6,10 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -21,17 +19,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+
+
+data class RestaurantCardInfo(
+    val restaurantName: String,
+    val imageURL: String,
+    val rating: Float,
+    val views: Int
+)
 
 @Composable
 fun InfoCard(
-//    deleted fixed height and width because modifier should control that
     modifier: Modifier = Modifier,
-    // image: ? = null, TODO pass an image to the method
+    imageURL: String = "",
     restaurantName: String,
     rating: Float,
     views: Int
@@ -52,12 +60,26 @@ fun InfoCard(
 
     ) {
         // Background image
-        Image(
-            painter = painterResource(id = R.drawable.food_placeholder),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.matchParentSize()
-        )
+        if (imageURL.isBlank()) {
+            Image(
+                painter = painterResource(id = R.drawable.food_placeholder),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageURL)
+                    .crossfade(true) // smooth fade-in effect
+                    .build(),
+                placeholder = painterResource(R.drawable.loading_placeholder),
+                error = painterResource(R.drawable.food_placeholder),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+        }
 
         Text(
             text = restaurantName,

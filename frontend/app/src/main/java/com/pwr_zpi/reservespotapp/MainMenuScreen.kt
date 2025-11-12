@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,7 +21,13 @@ import androidx.navigation.NavHostController
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(navController: NavHostController) {
-    Column {
+
+    val recommendedList = fetchRecommendations()
+
+    Column (
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(
             text = "You might enjoy",
             fontSize = 24.sp,
@@ -29,38 +37,97 @@ fun MainMenuScreen(navController: NavHostController) {
                 .padding(top = 16.dp)
         )
 
-        InfoCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .align(Alignment.CenterHorizontally),
-                restaurantName = "Restauracja 1", rating = 4.72f, views = 523)
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth() // row fills full width
-                .padding(horizontal = 16.dp) // padding for section
-        ) {
-
+        var recNum = 0
+        while (recommendedList.size - recNum >= 3) {
             InfoCard(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(300.dp), // fixed width
-                restaurantName = "Restauracja 2",
-                rating = 4.54f,
-                views = 258
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.CenterHorizontally),
+                restaurantName = recommendedList[recNum].restaurantName,
+                imageURL = recommendedList[recNum].imageURL,
+                rating = recommendedList[recNum].rating,
+                views = recommendedList[recNum].views
             )
-            Spacer(modifier = Modifier.padding(4.dp))
+            recNum += 1
 
-            InfoCard(
+            Row(
                 modifier = Modifier
-                    .weight(1f) // dividing space in row
-                    .height(300.dp), // fixed width
-                restaurantName = "Restauracja 3",
-                rating = 4.97f,
-                views = 1032
-            )
+                    .fillMaxWidth() // row fills full width
+                    .padding(horizontal = 16.dp) // padding for section
+            ) {
+
+                InfoCard(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(300.dp), // fixed width
+                    restaurantName = recommendedList[recNum].restaurantName,
+                    imageURL = recommendedList[recNum].imageURL,
+                    rating = recommendedList[recNum].rating,
+                    views = recommendedList[recNum].views
+                )
+                recNum += 1
+
+                Spacer(modifier = Modifier.padding(4.dp))
+
+                InfoCard(
+                    modifier = Modifier
+                        .weight(1f) // dividing space in row
+                        .height(300.dp), // fixed width
+                    restaurantName = recommendedList[recNum].restaurantName,
+                    imageURL = recommendedList[recNum].imageURL,
+                    rating = recommendedList[recNum].rating,
+                    views = recommendedList[recNum].views
+                )
+                recNum += 1
+            }
         }
+
+        while (recommendedList.size - recNum > 0) {
+            InfoCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.CenterHorizontally),
+                restaurantName = recommendedList[recNum].restaurantName,
+                imageURL = recommendedList[recNum].imageURL,
+                rating = recommendedList[recNum].rating,
+                views = recommendedList[recNum].views
+            )
+            recNum += 1
+        }
+
     }
+}
+
+fun fetchRecommendations(): List<RestaurantCardInfo> {
+    // TODO fetch from backend. This is a placeholder
+    return listOf(
+        RestaurantCardInfo(
+            restaurantName = "Pasta Palace",
+            imageURL = "https://example.com/pasta.jpg",
+            rating = 4.71f,
+            views = 2300
+        ),
+        RestaurantCardInfo(
+            restaurantName = "Sushi World",
+            imageURL = "https://example.com/sushi.jpg",
+            rating = 4.58f,
+            views = 1800
+        ),
+        RestaurantCardInfo(
+            restaurantName = "Burger Hub",
+            imageURL = "https://example.com/burger.jpg",
+            rating = 4.2f,
+            views = 900
+        ),
+        RestaurantCardInfo(
+            restaurantName = "Kebab Spot",
+            imageURL = "https://example.com/kebab.jpg",
+            rating = 4.1f,
+            views = 560
+        )
+    )
 }
