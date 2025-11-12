@@ -1,6 +1,7 @@
 package com.pwr_zpi.reservespotapi.entities.reservation.controller;
 
 import com.pwr_zpi.reservespotapi.entities.reservation.ReservationStatus;
+import com.pwr_zpi.reservespotapi.entities.reservation.dto.AvailableReservationSlotDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.CreateReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.ReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.dto.UpdateReservationDto;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +62,16 @@ public class ReservationController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         List<ReservationDto> reservations = reservationService.getReservationsByDateRange(startDate, endDate);
         return ResponseEntity.ok(reservations);
+    }
+
+    @GetMapping("/availability")
+    public ResponseEntity<List<AvailableReservationSlotDto>> getAvailability(
+            @RequestParam Long restaurantId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(defaultValue = "60") Integer durationMinutes) {
+        List<AvailableReservationSlotDto> slots =
+                reservationService.getAvailability(restaurantId, date, durationMinutes);
+        return ResponseEntity.ok(slots);
     }
 
     @PostMapping

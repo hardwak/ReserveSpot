@@ -63,4 +63,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("before") LocalDateTime before,
             @Param("excludedStatus") ReservationStatus excludedStatus
     );
+
+    List<Reservation> findByTableIdAndReservationDatetimeBetween(Long tableId, LocalDateTime start, LocalDateTime end);
 }

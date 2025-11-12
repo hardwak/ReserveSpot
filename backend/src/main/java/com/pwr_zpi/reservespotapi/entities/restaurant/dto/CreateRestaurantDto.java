@@ -1,12 +1,13 @@
 package com.pwr_zpi.reservespotapi.entities.restaurant.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -22,7 +23,7 @@ public class CreateRestaurantDto {
     private String address;
     private String city;
     private String description;
-    private String openingHours;
+    private Map<String, String> openingHours;
     private Double latitude;
     private Double longitude;
     private String pic;
