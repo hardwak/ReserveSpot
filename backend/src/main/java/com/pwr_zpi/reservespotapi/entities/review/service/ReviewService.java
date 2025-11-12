@@ -9,6 +9,7 @@ import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
 import com.pwr_zpi.reservespotapi.entities.review.dto.CreateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.dto.ReviewDto;
+import com.pwr_zpi.reservespotapi.entities.review.dto.ReviewEligibilityResponse;
 import com.pwr_zpi.reservespotapi.entities.review.dto.UpdateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.mapper.ReviewMapper;
 import com.pwr_zpi.reservespotapi.entities.users.User;
@@ -75,30 +76,23 @@ public class ReviewService {
     }
 
     public ReviewDto createReview(CreateReviewDto createDto, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        ReviewEligibilityResult eligibility = evaluateEligibility(userId, createDto.getRestaurantId(), createDto.getReservationId());
 
-        Reservation reservation = null;
-        if (createDto.getReservationId() != null) {
-            reservation = reservationRepository.findById(createDto.getReservationId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
-
-            if (!reservation.getUser().getId().equals(userId)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Reservation does not belong to current user");
-            }
+        if (!eligibility.canReview()) {
+            throw new ResponseStatusException(eligibility.failureStatus(), eligibility.failureMessage());
         }
 
-        Restaurant restaurant = resolveRestaurant(createDto, reservation);
-
-        if (reviewRepository.existsByUserIdAndRestaurantId(userId, restaurant.getId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Review already exists for this restaurant");
-        }
-
-        validateReservationEligibility(createDto, reservation, userId, restaurant.getId());
-
-        Review review = reviewMapper.toEntity(createDto, user, restaurant);
+        Review review = reviewMapper.toEntity(createDto, eligibility.user(), eligibility.restaurant());
         Review savedReview = reviewRepository.save(review);
         return reviewMapper.toDto(savedReview);
+    }
+
+    public ReviewEligibilityResponse canCreateReview(Long userId, Long restaurantId, Long reservationId) {
+        ReviewEligibilityResult eligibility = evaluateEligibility(userId, restaurantId, reservationId);
+        if (eligibility.canReview()) {
+            return new ReviewEligibilityResponse(true, "Eligible to create review");
+        }
+        return new ReviewEligibilityResponse(false, eligibility.failureMessage());
     }
 
     public Optional<ReviewDto> updateReview(Long id, UpdateReviewDto updateDto) {
@@ -124,48 +118,78 @@ public class ReviewService {
         return reviewRepository.count();
     }
 
-    private Restaurant resolveRestaurant(CreateReviewDto createDto, Reservation reservationFromRequest) {
-        if (reservationFromRequest != null) {
-            Restaurant restaurant = reservationFromRequest.getTable().getRestaurant();
+    private ReviewEligibilityResult evaluateEligibility(Long userId, Long restaurantId, Long reservationId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-            if (createDto.getRestaurantId() != null
-                    && !restaurant.getId().equals(createDto.getRestaurantId())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation does not match restaurant");
-            }
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
 
-            return restaurant;
+        if (reviewRepository.existsByUserIdAndRestaurantId(userId, restaurantId)) {
+            return ReviewEligibilityResult.failure(user, restaurant, null, HttpStatus.CONFLICT,
+                    "Review already exists for this restaurant");
         }
 
-        return restaurantRepository.findById(createDto.getRestaurantId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        Reservation reservation = null;
+        if (reservationId != null) {
+            reservation = reservationRepository.findById(reservationId)
+                    .orElse(null);
+
+            if (reservation == null) {
+                return ReviewEligibilityResult.failure(user, restaurant, null, HttpStatus.NOT_FOUND, "Reservation not found");
+            }
+
+            if (!reservation.getUser().getId().equals(userId)) {
+                return ReviewEligibilityResult.failure(user, restaurant, reservation, HttpStatus.FORBIDDEN,
+                        "Reservation does not belong to current user");
+            }
+
+            if (!reservation.getTable().getRestaurant().getId().equals(restaurantId)) {
+                return ReviewEligibilityResult.failure(user, restaurant, reservation, HttpStatus.BAD_REQUEST,
+                        "Reservation does not match restaurant");
+            }
+
+            if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+                return ReviewEligibilityResult.failure(user, restaurant, reservation, HttpStatus.BAD_REQUEST,
+                        "Cannot review a cancelled reservation");
+            }
+
+            if (!reservation.getReservationDatetime().isBefore(LocalDateTime.now())) {
+                return ReviewEligibilityResult.failure(user, restaurant, reservation, HttpStatus.BAD_REQUEST,
+                        "Reservation is not completed yet");
+            }
+        } else {
+            boolean hasPastReservation = reservationRepository.hasPastReservationForRestaurant(
+                    userId,
+                    restaurantId,
+                    LocalDateTime.now(),
+                    ReservationStatus.CANCELLED
+            );
+
+            if (!hasPastReservation) {
+                return ReviewEligibilityResult.failure(user, restaurant, null, HttpStatus.FORBIDDEN,
+                        "User has no completed reservations for this restaurant");
+            }
+        }
+
+        return ReviewEligibilityResult.success(user, restaurant, reservation);
     }
 
-    private void validateReservationEligibility(CreateReviewDto createDto,
-                                                Reservation reservation,
-                                                Long userId,
-                                                Long restaurantId) {
-        if (reservation != null) {
-            if (reservation.getStatus() == ReservationStatus.CANCELLED) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot review a cancelled reservation");
-            }
-            if (!reservation.getTable().getRestaurant().getId().equals(restaurantId)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation does not match restaurant");
-            }
-            if (!reservation.getReservationDatetime().isBefore(LocalDateTime.now())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation is not completed yet");
-            }
-            return;
+    private record ReviewEligibilityResult(
+            User user,
+            Restaurant restaurant,
+            Reservation reservation,
+            boolean canReview,
+            HttpStatus failureStatus,
+            String failureMessage
+    ) {
+        static ReviewEligibilityResult success(User user, Restaurant restaurant, Reservation reservation) {
+            return new ReviewEligibilityResult(user, restaurant, reservation, true, null, null);
         }
 
-        boolean hasPastReservation = reservationRepository.hasPastReservationForRestaurant(
-                userId,
-                restaurantId,
-                LocalDateTime.now(),
-                ReservationStatus.CANCELLED
-        );
-
-        if (!hasPastReservation) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User has no completed reservations for this restaurant");
+        static ReviewEligibilityResult failure(User user, Restaurant restaurant, Reservation reservation,
+                                               HttpStatus status, String message) {
+            return new ReviewEligibilityResult(user, restaurant, reservation, false, status, message);
         }
     }
 }
