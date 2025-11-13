@@ -1,5 +1,8 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.SelectableDates
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,6 +56,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ReservationScreen(navController: NavHostController, restaurantName: String) {
     // Reservation form stages
+//  TODO  need to change selected time to data from backend
+    var selectedTime by remember { mutableStateOf("12:00") }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var selectedGuests by remember { mutableStateOf(2) }
@@ -61,6 +67,19 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
     val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     val durationOptions = listOf("1 hour", "1.5 hours", "2 hours")
     val typeOptions = listOf("Basic reservation", "Business meeting")
+
+//    generating time slots
+    val timeOptions = remember {
+        val times = mutableListOf<String>()
+        var hour = 12
+        while (hour <= 21) {
+            times.add(String.format("%02d:00", hour))
+            times.add(String.format("%02d:30", hour))
+            hour++
+        }
+        times.add("22:00")
+        times
+    }
 
 
 
@@ -131,10 +150,10 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
 
                 // Hour section
                 FormSectionTitle("Hour")
-                Text(
-                    "No free timeslots this day",
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = Color.Red
+                HorizontalSelector(
+                    options = timeOptions,
+                    selectedValue = selectedTime,
+                    onSelect = { selectedTime = it }
                 )
 
                 // Guests number section
@@ -164,7 +183,18 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
 
 
             Button(
-                onClick = { /* TODO: Add go to summary screen */ },
+                onClick = { val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+
+                    // Creating route with parameters
+                    val route = "reservationSummary/${restaurantName}?" +
+                            "date=$dateString&" +
+                            "time=$selectedTime&" +
+                            "guests=$selectedGuests&" +
+                            "duration=$selectedDuration&" +
+                            "type=$selectedType"
+
+                    navController.navigate(route)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -218,6 +248,7 @@ fun FormSectionTitle(title: String) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateSelector(
     selectedDate: LocalDate,
@@ -229,6 +260,11 @@ fun DateSelector(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+
+        TextButton(onClick = { onDateChange(selectedDate.minusDays(1)) }) {
+            Text("← Previous", color = RSRed)
+        }
+
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
@@ -254,7 +290,7 @@ fun DateSelector(
         }
 
         TextButton(onClick = { onDateChange(selectedDate.plusDays(1)) }) {
-            Text("Next →")
+            Text("Next →", color = RSRed)
         }
     }
 }
@@ -262,13 +298,14 @@ fun DateSelector(
 
 @Composable
 fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (String) -> Unit) {
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .heightIn(min = 48.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        options.forEach { option ->
+        items(options) { option ->
             val isSelected = option == selectedValue
             Text(
                 option,
@@ -288,19 +325,41 @@ fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationDatePicker(
     initialDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val initialTimeMillis =
-        initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val initialTimeMillis = initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    val todayMillis = remember {
+        LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
+//   added remember so object would not be created each time
+    val selectableDates = remember {
+        object : SelectableDates {
+
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                // Allow dates >= today's date
+                return utcTimeMillis >= todayMillis
+            }
+
+            // years need to be >= current year
+            override fun isSelectableYear(year: Int): Boolean {
+                return year >= LocalDate.now().year
+            }
+        }
+    }
 
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialTimeMillis
+        initialSelectedDateMillis = initialTimeMillis,
+        selectableDates = selectableDates
     )
+
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -312,7 +371,7 @@ fun ReservationDatePicker(
                             .atZone(ZoneId.systemDefault())
                             .toLocalDate()
                         onDateSelected(selectedLocalDate)
-                    } ?: onDismiss()
+                    }
                 }
             ) {
                 Text("OK", color = RSRed)
