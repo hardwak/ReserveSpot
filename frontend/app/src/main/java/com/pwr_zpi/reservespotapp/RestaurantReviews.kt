@@ -47,10 +47,28 @@ data class Review(
 const val CURRENT_USER_ID = 999
 
 val dummyReviews = listOf(
-    Review(1, "Wojciech Humeniuk", 4.5f, "Jedzenie i dodatkowo czas oczekiwania na zamówienie skrócił się znacznie. Polecam!", isCurrentUser = false),
-    Review(2, "Karolina Drabent", 5.0f, "Rewelacja! Świetne nowe miejsce na mapie Wrocławia. Znakomite jedzenie, warte każdej ceny.", isCurrentUser = false),
+    Review(
+        1,
+        "Wojciech Humeniuk",
+        4.5f,
+        "Jedzenie i dodatkowo czas oczekiwania na zamówienie skrócił się znacznie. Polecam!",
+        isCurrentUser = false
+    ),
+    Review(
+        2,
+        "Karolina Drabent",
+        5.0f,
+        "Rewelacja! Świetne nowe miejsce na mapie Wrocławia. Znakomite jedzenie, warte każdej ceny.",
+        isCurrentUser = false
+    ),
     Review(3, "Andrzej Sparzak", 4.0f, "Dobra.", isCurrentUser = false),
-    Review(CURRENT_USER_ID, "Ja (Current User)", 5.0f, "Bardzo dobre jedzenie, super wystrój i miła obsługa. Polecam spróbować ich pizzę!", isCurrentUser = true)
+    Review(
+        CURRENT_USER_ID,
+        "Ja (Current User)",
+        5.0f,
+        "Bardzo dobre jedzenie, super wystrój i miła obsługa. Polecam spróbować ich pizzę!",
+        isCurrentUser = true
+    )
 )
 
 
@@ -65,7 +83,11 @@ fun GeminiSummaryCard(summary: String) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // placeholder for Gemini icon
-                Icon(Icons.Default.Star, contentDescription = "AI Summary", tint = Color(0xFF00796B))
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = "AI Summary",
+                    tint = Color(0xFF00796B)
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "AI Review Summary (Gemini)",
@@ -88,7 +110,8 @@ fun ReviewsTabContent(
     onToggleForm: (Boolean) -> Unit
 ) {
     val currentUserReview = reviews.firstOrNull { it.isCurrentUser }
-    val geminiSummary = "Na podstawie ${reviews.size} opinii, sztuczna inteligencja stwierdza, że restauracja ma bardzo dobrą obsługę i smaczne dania główne, szczególnie kuchni włoskiej. Klienci polecają pizzę i makarony, ale niektórzy zwracają uwagę na długi czas oczekiwania w godzinach szczytu. Ogólna ocena to 4.7/5.0."
+    val geminiSummary =
+        "Na podstawie ${reviews.size} opinii, sztuczna inteligencja stwierdza, że restauracja ma bardzo dobrą obsługę i smaczne dania główne, szczególnie kuchni włoskiej. Klienci polecają pizzę i makarony, ale niektórzy zwracają uwagę na długi czas oczekiwania w godzinach szczytu. Ogólna ocena to 4.7/5.0."
 
     Column(
         modifier = Modifier
@@ -103,15 +126,6 @@ fun ReviewsTabContent(
             onClick = {
                 onToggleForm(!isFormVisible)
 
-                val newReviewText = if (currentUserReview == null) "Moja nowa recenzja! Pięć gwiazdek!" else "Moja edytowana recenzja, zmieniam tekst."
-                val newReview = Review(
-                    id = CURRENT_USER_ID,
-                    author = "Ja (Current User)",
-                    rating = 5.0f,
-                    text = newReviewText,
-                    isCurrentUser = true
-                )
-                onAddOrEditReview(newReview)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,7 +155,9 @@ fun ReviewsTabContent(
 
 
         // review list
-        Column(modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp)) {
+        Column(modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp)) {
 //           First is our review (sorting)
             val sortedReviews = reviews.sortedByDescending { it.isCurrentUser }
 
@@ -151,7 +167,7 @@ fun ReviewsTabContent(
 
                     onDelete = { if (review.isCurrentUser) onDeleteReview() },
 
-                )
+                    )
             }
         }
     }
@@ -192,7 +208,7 @@ fun ReviewItem(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // showing rating
-                Text( " ${review.rating}/5.0", color = Color.Gray)
+                Text(" ${review.rating}/5.0", color = Color.Gray)
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Default.Star,
@@ -249,7 +265,9 @@ fun ReviewForm(
                 value = reviewText,
                 onValueChange = { reviewText = it },
                 label = { Text("Your review...") },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 100.dp)
             )
             Spacer(Modifier.height(8.dp))
 
@@ -257,7 +275,9 @@ fun ReviewForm(
             Text("Ocena: ${rating.toInt()} / 5", color = Color.Gray)
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
                 horizontalArrangement = Arrangement.End
             ) {
 
