@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,21 +43,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationScreen(navController: NavHostController, restaurantName: String) {
     // Reservation form stages
+    var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var selectedGuests by remember { mutableStateOf(2) }
-    var selectedDuration by remember { mutableStateOf("1 godzina") }
-    var selectedType by remember { mutableStateOf("Normalna rezerwacja") }
+    var selectedDuration by remember { mutableStateOf("1 hour") }
+    var selectedType by remember { mutableStateOf("Basic reservation") }
 
-    val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7)
-    val durationOptions = listOf("1 godzina", "1.5 godziny", "2 godziny")
-    val typeOptions = listOf("Normalna rezerwacja", "Spotkanie biznesowe")
+    val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    val durationOptions = listOf("1 hour", "1.5 hours", "2 hours")
+    val typeOptions = listOf("Basic reservation", "Business meeting")
 
 
 
@@ -78,11 +85,13 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
         ) {
             // Details and summary
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                ReservationTab("Szczegóły", true)
-                ReservationTab("Podsumowanie", false)
+                ReservationTab("Details", true)
+                ReservationTab("Summary", false)
             }
 
             // Header table reservation
@@ -90,7 +99,7 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                    .border(1.dp, RSRed, RoundedCornerShape(8.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -101,29 +110,35 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                     modifier = Modifier.padding(end = 8.dp)
                 )
                 Text(
-                    "Rezerwacja stolika",
+                    "Table reservation",
                     fontWeight = FontWeight.Bold,
                     color = RSRed
                 )
             }
 
-            // Zawartość formularza (przewijalna)
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
+
+            Column(modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp)) {
 
                 // Data section
                 FormSectionTitle("Data")
-                DateSelector(selectedDate, onDateChange = { selectedDate = it })
+                DateSelector(
+                    selectedDate = selectedDate,
+                    onDateChange = { selectedDate = it },
+                    onOpenCalendar = { showDatePicker = true }
+                )
 
                 // Hour section
-                FormSectionTitle("Godzina")
+                FormSectionTitle("Hour")
                 Text(
-                    "Brak dostępnych godzin w tym dniu",
+                    "No free timeslots this day",
                     modifier = Modifier.padding(vertical = 8.dp),
                     color = Color.Red
                 )
 
                 // Guests number section
-                FormSectionTitle("Ilość gości")
+                FormSectionTitle("Guests number")
                 HorizontalSelector(
                     options = guestsOptions.map { it.toString() },
                     selectedValue = selectedGuests.toString(),
@@ -131,7 +146,7 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                 )
 
                 // Reservation duration section
-                FormSectionTitle("Czas trwania")
+                FormSectionTitle("Duration")
                 HorizontalSelector(
                     options = durationOptions,
                     selectedValue = selectedDuration,
@@ -139,7 +154,7 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                 )
 
                 // Type of meeting
-                FormSectionTitle("Typ spotkania")
+                FormSectionTitle("Meeting type")
                 HorizontalSelector(
                     options = typeOptions,
                     selectedValue = selectedType,
@@ -149,16 +164,26 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
 
 
             Button(
-                onClick = { /* TODO: Przejście do podsumowania */ },
+                onClick = { /* TODO: Add go to summary screen */ },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Text("Dalej", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                Text("Next", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
             }
         }
+    }
+    if (showDatePicker) {
+        ReservationDatePicker(
+            initialDate = selectedDate,
+            onDateSelected = {
+                selectedDate = it
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false }
+        )
     }
 }
 
@@ -194,34 +219,46 @@ fun FormSectionTitle(title: String) {
 }
 
 @Composable
-fun DateSelector(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit) {
+fun DateSelector(
+    selectedDate: LocalDate,
+    onDateChange: (LocalDate) -> Unit,
+    onOpenCalendar: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextButton(onClick = { onDateChange(selectedDate.minusDays(1)) }) {
-            Text("← Poprzedni")
-        }
-
-        Button(
-            onClick = { /* TODO: Otwarcie kalendarza */ },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { onOpenCalendar() }
+                .border(1.dp, RSRed, RoundedCornerShape(8.dp))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                Icons.Default.CalendarToday,
+                contentDescription = null,
+                tint = RSRed,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
             Text(
-                selectedDate.format(DateTimeFormatter.ofPattern("MMM dd")),
-                color = Color.Black
+                if (selectedDate == LocalDate.now()) "Today" else selectedDate.format(
+                    DateTimeFormatter.ofPattern("dd MMM")
+                ),
+                fontWeight = FontWeight.Bold,
+                color = RSRed
             )
         }
 
-        Button(
-            onClick = { onDateChange(selectedDate.plusDays(1)) },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-        ) {
-            Text("Następny →", color = Color.Black)
+        TextButton(onClick = { onDateChange(selectedDate.plusDays(1)) }) {
+            Text("Next →")
         }
     }
 }
+
 
 @Composable
 fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (String) -> Unit) {
@@ -238,11 +275,55 @@ fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onSelect(option) }
-                    .background(if (isSelected) Color.Black else Color.Transparent)
-                    .border(1.dp, if (isSelected) Color.Black else Color.LightGray, RoundedCornerShape(8.dp))
+                    .background(if (isSelected) RSRed else Color.Transparent)
+                    .border(
+                        1.dp,
+                        if (isSelected) RSRed else Color.LightGray,
+                        RoundedCornerShape(8.dp)
+                    )
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 color = if (isSelected) Color.White else Color.Black
             )
         }
+    }
+}
+
+@Composable
+fun ReservationDatePicker(
+    initialDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val initialTimeMillis =
+        initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialTimeMillis
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedLocalDate = Instant.ofEpochMilli(millis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                        onDateSelected(selectedLocalDate)
+                    } ?: onDismiss()
+                }
+            ) {
+                Text("OK", color = RSRed)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Gray)
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
     }
 }
