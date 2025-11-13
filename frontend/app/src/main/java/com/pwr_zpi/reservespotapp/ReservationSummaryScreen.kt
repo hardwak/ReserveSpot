@@ -26,7 +26,8 @@ fun ReservationSummaryScreen(
     time: String,
     guests: String,
     duration: String,
-    type: String
+    type: String,
+    location: String
 
 ) {
 
@@ -82,6 +83,7 @@ fun ReservationSummaryScreen(
                 SummaryDetail("Guests number:", guests)
                 SummaryDetail("Duration:", duration)
                 SummaryDetail("Meeting type:", type)
+                SummaryDetail("Table location", location)
 
                 Spacer(modifier = Modifier.height(40.dp))
 

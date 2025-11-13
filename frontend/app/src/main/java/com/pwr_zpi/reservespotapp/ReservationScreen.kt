@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.SelectableDates
@@ -63,10 +65,12 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
     var selectedGuests by remember { mutableStateOf(2) }
     var selectedDuration by remember { mutableStateOf("1 hour") }
     var selectedType by remember { mutableStateOf("Basic reservation") }
+    var selectedLocation by remember { mutableStateOf("Any") }
 
     val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     val durationOptions = listOf("1 hour", "1.5 hours", "2 hours")
     val typeOptions = listOf("Basic reservation", "Business meeting")
+    val locationOptions = listOf("Any", "By the window")
 
 //    generating time slots
     val timeOptions = remember {
@@ -80,6 +84,8 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
         times.add("22:00")
         times
     }
+
+    val scrollState = rememberScrollState()
 
 
 
@@ -136,9 +142,12 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
             }
 
 
-            Column(modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState)
+            ) {
 
                 // Data section
                 FormSectionTitle("Data")
@@ -179,11 +188,19 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                     selectedValue = selectedType,
                     onSelect = { selectedType = it }
                 )
+
+                FormSectionTitle("Table location")
+                HorizontalSelector(
+                    options = locationOptions,
+                    selectedValue = selectedLocation,
+                    onSelect = { selectedLocation = it }
+                )
             }
 
 
             Button(
-                onClick = { val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                onClick = {
+                    val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
                     // Creating route with parameters
                     val route = "reservationSummary/${restaurantName}?" +
@@ -191,7 +208,8 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                             "time=$selectedTime&" +
                             "guests=$selectedGuests&" +
                             "duration=$selectedDuration&" +
-                            "type=$selectedType"
+                            "type=$selectedType&" +
+                            "location=$selectedLocation"
 
                     navController.navigate(route)
                 },
@@ -262,7 +280,7 @@ fun DateSelector(
     ) {
 
         TextButton(onClick = { onDateChange(selectedDate.minusDays(1)) }) {
-            Text("← Previous", color = RSRed)
+            Text("<- Previous", color = RSRed)
         }
 
         Row(
@@ -290,7 +308,7 @@ fun DateSelector(
         }
 
         TextButton(onClick = { onDateChange(selectedDate.plusDays(1)) }) {
-            Text("Next →", color = RSRed)
+            Text("Next ->", color = RSRed)
         }
     }
 }
@@ -332,7 +350,8 @@ fun ReservationDatePicker(
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val initialTimeMillis = initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val initialTimeMillis =
+        initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
     val todayMillis = remember {
         LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()

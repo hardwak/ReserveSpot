@@ -140,25 +140,27 @@ fun Controller(navController: NavHostController) {
                 ReservationScreen(navController, name)
             }
             composable(
-                route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}",
+                route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
                 arguments = listOf(
                     navArgument("restaurantName") { type = NavType.StringType },
                     navArgument("date") { type = NavType.StringType; defaultValue = "" },
                     navArgument("time") { type = NavType.StringType; defaultValue = "" },
                     navArgument("guests") { type = NavType.StringType; defaultValue = "" },
                     navArgument("duration") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("type") { type = NavType.StringType; defaultValue = "" }
+                    navArgument("type") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("location") { type = NavType.StringType; defaultValue = "Any" }
                 )
             ) { backStackEntry ->
                 val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown"
                 ReservationSummaryScreen(
                     navController = navController,
                     restaurantName = name,
-                    date = backStackEntry.arguments?.getString("date") ?: "Brak daty",
-                    time = backStackEntry.arguments?.getString("time") ?: "Brak godziny",
+                    date = backStackEntry.arguments?.getString("date") ?: "No data",
+                    time = backStackEntry.arguments?.getString("time") ?: "No hours",
                     guests = backStackEntry.arguments?.getString("guests") ?: "0",
-                    duration = backStackEntry.arguments?.getString("duration") ?: "Brak",
-                    type = backStackEntry.arguments?.getString("type") ?: "Brak"
+                    duration = backStackEntry.arguments?.getString("duration") ?: "No duration",
+                    type = backStackEntry.arguments?.getString("type") ?: "No type of reservation",
+                    location = backStackEntry.arguments?.getString("location") ?: "Any"
                 )
             }
         }
