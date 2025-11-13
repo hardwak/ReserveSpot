@@ -51,7 +51,6 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlin.random.Random
 
 
-
 data class RestaurantDetails(
     val name: String,
     val address: String,
@@ -61,13 +60,8 @@ data class RestaurantDetails(
 )
 
 
-
-
-//dummy reviews
-
-
 // added lazy so Random would be initialized only once
-val randomValues by lazy {Random.nextInt(4, 5)}
+val randomValues by lazy { Random.nextInt(4, 5) }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,7 +109,7 @@ fun RestaurantDetailsScreen(
 //           Book now button
         bottomBar = {
             Button(
-                onClick = { /* TODO: Przekierowanie do ekranu rezerwacji */ },
+                onClick = { navController.navigate("reservation/${details.name}") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)
@@ -182,14 +176,14 @@ fun RestaurantDetailsScreen(
                     .border(2.dp, RSRed, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-               Image(
-                   painter = painterResource(id = R.drawable.pizza_restaurant_logo_small),
-                   contentDescription = "Restaurant Logo",
-                   contentScale = ContentScale.Crop,
-                   modifier = Modifier
-                       .fillMaxSize()
-                       .clip(CircleShape)
-               )
+                Image(
+                    painter = painterResource(id = R.drawable.pizza_restaurant_logo_small),
+                    contentDescription = "Restaurant Logo",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                )
             }
 
             // Info panel
@@ -240,35 +234,31 @@ fun RestaurantDetailsScreen(
                         }
                     }
                 }
-                    stickyHeader {
-                        TabRow(
-                            selectedTabIndex = selectedTabIndex,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White),
-                            containerColor = Color.Transparent
-                        ) {
-                            tabs.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = selectedTabIndex == index,
-                                    onClick = { selectedTabIndex = index },
-                                    text = {
-                                        Text(
-                                            title,
-                                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    selectedContentColor = RSRed,
-                                    unselectedContentColor = Color.Gray
-                                )
-                            }
-
+                stickyHeader {
+                    TabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White),
+                        containerColor = Color.Transparent
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = {
+                                    Text(
+                                        title,
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                selectedContentColor = RSRed,
+                                unselectedContentColor = Color.Gray
+                            )
                         }
+
                     }
-
-
-
-
+                }
 
 
 // Elements in chosen card
@@ -295,12 +285,6 @@ fun RestaurantDetailsScreen(
         }
     }
 }
-
-
-
-
-
-
 
 
 @Composable

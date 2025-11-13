@@ -118,7 +118,7 @@ fun ReviewsTabContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = RSRed)
         ) {
-            Text(if (currentUserReview == null) "Dodaj swoją opinię" else "Edytuj swoją opinię")
+            Text(if (currentUserReview == null) "Add a review" else "Edit review")
         }
 
         if (isFormVisible) {
@@ -150,7 +150,7 @@ fun ReviewsTabContent(
                     review = review,
 
                     onDelete = { if (review.isCurrentUser) onDeleteReview() },
-//                    id = 999
+
                 )
             }
         }
@@ -183,7 +183,7 @@ fun ReviewItem(
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Usuń opinię",
+                            contentDescription = "Delete review",
                             tint = RSRed
                         )
                     }
@@ -224,7 +224,7 @@ fun ReviewForm(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = if (currentReview == null) "Dodaj nową opinię" else "Edytuj opinię",
+                text = if (currentReview == null) "Add new review" else "Edit review",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -235,9 +235,9 @@ fun ReviewForm(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Twoja Ocena: ", color = Color.Gray)
+                Text("Your rating: ", color = Color.Gray)
                 Spacer(Modifier.width(8.dp))
-                // Nowy komponent do wyboru gwiazdek
+
                 RatingBar(
                     currentRating = rating,
                     onRatingChange = { rating = it }
@@ -248,14 +248,13 @@ fun ReviewForm(
             TextField(
                 value = reviewText,
                 onValueChange = { reviewText = it },
-                label = { Text("Twoja opinia...") },
+                label = { Text("Your review...") },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
             )
             Spacer(Modifier.height(8.dp))
 
 
             Text("Ocena: ${rating.toInt()} / 5", color = Color.Gray)
-            // TODO: Zastąpić suwakiem lub wyborem gwiazdek
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -263,7 +262,7 @@ fun ReviewForm(
             ) {
 
                 TextButton(onClick = onCancel) {
-                    Text("Anuluj", color = Color.Gray)
+                    Text("Cancel", color = Color.Gray)
                 }
                 Spacer(Modifier.width(8.dp))
 
@@ -272,7 +271,7 @@ fun ReviewForm(
                     enabled = reviewText.isNotBlank(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) {
-                    Text("Zapisz")
+                    Text("Save")
                 }
             }
         }
@@ -296,7 +295,7 @@ fun RatingBar(
 
                 Icon(
                     imageVector = Icons.Default.Star,
-                    contentDescription = "Ocena $starIndex",
+                    contentDescription = "Rating $starIndex",
                     tint = if (starIndex <= currentRating.toInt()) Color(0xFFFFC107) else Color.LightGray,
                     modifier = Modifier.size(24.dp)
                 )

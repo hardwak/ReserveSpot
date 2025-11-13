@@ -130,10 +130,15 @@ fun Controller(navController: NavHostController) {
                 val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
                 RestaurantDetailsScreen(navController, name)
             }
+            composable("reservation/{restaurantName}") { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+                ReservationScreen(navController, name)
+            }
+        }
 //            composable("login") { LoginScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
 //            composable("account") { AccountScreen(navController) } // TODO Screens
         }
     }
-}
+
