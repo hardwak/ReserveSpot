@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +42,8 @@ fun ReservationSummaryScreen(
     } catch (e: Exception) {
         date
     }
+
+    var showConfirmationDialog by remember { mutableStateOf(false) }
 
 
     Scaffold(
@@ -99,16 +106,49 @@ fun ReservationSummaryScreen(
 
             // Confirm reservation button
             Button(
-                onClick = { /* TODO: Saving reservation to DB */ },
+                // TODO add saving reservation to DB
+                onClick = { showConfirmationDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Text("CONFIRM RESERVATION", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                Text(
+                    "CONFIRM RESERVATION",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
             }
         }
+    }
+
+    if (showConfirmationDialog) {
+
+
+        val navigateBackToDetails: () -> Unit = {
+            showConfirmationDialog = false
+            navController.popBackStack("restaurantDetails/$restaurantName", inclusive = false)
+        }
+
+        AlertDialog(
+            onDismissRequest = navigateBackToDetails,
+
+            title = {
+                Text("Reservation confirmed!", color = Color.Black)
+            },
+            text = {
+                Text("Your table reservation in $restaurantName has been placed.", color = Color.Black)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = navigateBackToDetails
+                ) {
+                    Text("OK", color = Color.Black)
+                }
+            }
+        )
     }
 }
 
