@@ -1,5 +1,11 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,6 +55,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.IconButtonColors
 
 
 data class Restaurant(
@@ -124,27 +131,45 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
         ) {
             // Search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Search restaurants") },
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 0.dp, bottom = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-//                   same red color as in our app logo
-//                    searchbar outline color parameters
-                    focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
-//                    label color parameters
-                    focusedLabelColor = Color.Gray,
-                    unfocusedLabelColor = Color.Gray
-
-
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search restaurants") },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.LightGray,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedLabelColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray
+                    )
                 )
-            )
+
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+
+                IconButton(
+                    onClick = { showFilterSheet = true },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.LightGray,
+                        contentColor = Color.Black
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterAlt,
+                        contentDescription = "Filters"
+                    )
+                }
+
+            }
 
             Button(
                 onClick = {
@@ -156,8 +181,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = RSRed
                 )
-            )
-            {
+            ) {
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
                     contentDescription = "AI Search",
@@ -167,21 +191,12 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 Text(if (isGeminiSearchVisible) "Hide AI prompt" else "Search with Gemini AI")
             }
 
-//            filter button
-            OutlinedButton(
-                onClick = { showFilterSheet = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
 
 //                uncomment for color change
 //                colors = ButtonDefaults.buttonColors(
 //                    containerColor = Color.Green
 //                )
-            ) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filters")
-                Text(" Filters (City, Cuisine, Rating)")
-            }
+
 
             if (isGeminiSearchVisible) {
                 Row(
