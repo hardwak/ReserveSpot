@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.compose.foundation.Image
@@ -129,10 +130,13 @@ fun Controller(navController: NavHostController) {
         ) {
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
-            composable("restaurantDetails/{restaurantName}") { backStackEntry ->
+            composable("restaurantDetails/{restaurantName}/{rating}") { backStackEntry ->
                 val name =
                     backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
-                RestaurantDetailsScreen(navController, name)
+                val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
+
+                RestaurantDetailsScreen(navController, name, rating)
+
             }
             composable("reservation/{restaurantName}") { backStackEntry ->
                 val name =

@@ -1,5 +1,14 @@
 package com.pwr_zpi.reservespotapp
 
+
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.foundation.Image
@@ -23,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.BottomSheetDefaults.DragHandle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -72,7 +82,8 @@ val randomValues by lazy { Random.nextInt(4, 5) }
 fun RestaurantDetailsScreen(
     navController: NavHostController,
 //    getting restaurants name
-    restaurantName: String
+    restaurantName: String,
+    rating : Float
 ) {
     // temp data to show
     val details = remember {
@@ -86,6 +97,11 @@ fun RestaurantDetailsScreen(
 
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Photos", "Reviews")
+
+//    states for visiting statistics
+    var showOccupancySheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
 //    reviews code
     var reviews by remember { mutableStateOf(dummyReviews) }
@@ -215,16 +231,40 @@ fun RestaurantDetailsScreen(
                             horizontalAlignment = Alignment.Start
 
                         ) {
-                            Text(
-                                // Big restaurant name
-                                text = details.name,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
+
+                            Row(
                                 modifier = Modifier
                                     .padding(top = 8.dp)
-                                    .align(Alignment.CenterHorizontally)
-                            )
-                            // Address/info
+                                    .align(Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+
+
+                                Text(
+                                    text = details.name,
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold
+
+                                )
+
+                                Spacer(Modifier.width(8.dp))
+
+
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = "Rating",
+                                    tint = Color(0xFFFFC107), // Złoty
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = String.format("%.1f", rating),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                            }
+
+
                             Text(
                                 text = details.address,
                                 color = Color.Gray,
@@ -236,6 +276,16 @@ fun RestaurantDetailsScreen(
                                 color = Color.DarkGray,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
+
+                            TextButton(
+                                onClick = { showOccupancySheet = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                            ) {
+                                Text("See popular times", color = RSRed, fontWeight = FontWeight.Bold)
+                            }
+
                         }
                     }
                 }
@@ -296,52 +346,55 @@ fun RestaurantDetailsScreen(
             }
         }
     }
-}
-
-
-@Composable
-fun ReviewsTabContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(top = 8.dp, bottom = 8.dp)
-    ) {
-        repeat(10) { index ->
-            ReviewItem(index + 1)
-        }
-    }
-}
-
-@Composable
-fun ReviewItem(id: Int) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("User #$id", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Simulation of reviews rating
-                Text(" $randomValues.0/5.0", color = Color.Gray)
-                Spacer(Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = "Rating",
-                    tint = Color(0xFFFFC107),
-                    modifier = Modifier.size(20.dp)
+    if (showOccupancySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showOccupancySheet = false },
+            sheetState = sheetState,
+            dragHandle = {
+                DragHandle(
+                    color = RSRed
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "To jest przykładowa recenzja. Obsługa była miła, jedzenie smaczne. [Recenzja $id]",
-                color = Color.DarkGray
-            )
+        ) {
+            // Panels filling
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    "Popular Times (Statistics)",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Placeholder should change it to diagram or list/table if we have time
+                Text("Monday: 18:00 - 20:00 (Very Busy)")
+                Text("Tuesday: 19:00 - 21:00 (Busy)")
+                Text("Wednesday: Usually not busy")
+                Text("Thursday: 18:00 - 20:00 (Busy)")
+                Text("Friday: 17:00 - 22:00 (Very Busy)")
+                Text("Saturday: 12:00 - 22:00 (Very Busy)")
+                Text("Sunday: 12:00 - 16:00 (Busy)")
+
+                Spacer(Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) showOccupancySheet = false
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Close")
+                }
+            }
         }
     }
 }
+
 
 
 

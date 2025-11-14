@@ -106,7 +106,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f),
         Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan",3.8f),
         Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f),
-        Restaurant("Pierogarnia Stary Młyn", "ul. Rynek 5", "Wrocław", "Polish", 4.6f)
+        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f)
     )
 
     val filteredRestaurants = restaurants.filter { restaurant ->
@@ -253,7 +253,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                             .padding(vertical = 8.dp, horizontal = 4.dp) //outside padding
 
                             .clickable {
-                                navController.navigate("restaurantDetails/${restaurant.name}")
+                                navController.navigate("restaurantDetails/${restaurant.name}/${restaurant.rating}")
                             }
                     )
                 }
