@@ -113,7 +113,7 @@ fun LoginScreen(navController: NavHostController) {
     val BUTTON_HEIGHT = 70.dp
 
 
-    Column (
+    Column(
 
     ) {
         Text(
@@ -179,7 +179,7 @@ fun LoginScreen(navController: NavHostController) {
         Button(
             onClick = {
                 loginDataIncorrect = true
-            /* TODO handle login logic here */
+                /* TODO handle login logic here */
             },
             modifier = Modifier
                 .fillMaxWidth()

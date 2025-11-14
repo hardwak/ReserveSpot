@@ -1,11 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -21,18 +17,32 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,21 +51,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.IconButtonColors
 
 
 data class Restaurant(
@@ -101,10 +97,10 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
 
     val restaurants = listOf(
-        Restaurant("La Bella Pizza", "ul. Wrocławska 10","Wrocław", "Italian", 4.5f),
+        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f),
         Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f),
         Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f),
-        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan",3.8f),
+        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f),
         Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f),
         Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f)
     )
@@ -112,7 +108,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     val filteredRestaurants = restaurants.filter { restaurant ->
         val matchesSearch = restaurant.name.contains(searchQuery.text, ignoreCase = true)
         val matchesCity = restaurant.city == selectedCity
-        val matchesCuisine = selectedCuisines.isEmpty() || selectedCuisines.contains(restaurant.cuisine)
+        val matchesCuisine =
+            selectedCuisines.isEmpty() || selectedCuisines.contains(restaurant.cuisine)
         val matchesRating = restaurant.rating in selectedRatingRange
 
         matchesSearch && matchesCity && matchesCuisine && matchesRating
@@ -161,7 +158,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     colors = IconButtonDefaults.iconButtonColors(
                         containerColor = Color.LightGray,
                         contentColor = Color.Black
-                        )
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Default.FilterAlt,
@@ -236,8 +233,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     }
                 }
             }
-
-
 
 
             // Restaurant list
@@ -382,7 +377,12 @@ fun FilterBottomSheetContent(
 
         // Rating filter
         Text(
-            "Rating: od ${String.format("%.1f", selectedRatingRange.start)} do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
+            "Rating: od ${
+                String.format(
+                    "%.1f",
+                    selectedRatingRange.start
+                )
+            } do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
             style = MaterialTheme.typography.titleMedium
         )
         RangeSlider(
@@ -390,8 +390,10 @@ fun FilterBottomSheetContent(
             onValueChange = onRatingChange, // passing new value
             valueRange = 1.0f..5.0f,
             steps = 8, // filter steps (5-1) / 0.5 = 8
-            colors = SliderDefaults.colors(thumbColor = RSRed,
-                activeTrackColor = RSRed)
+            colors = SliderDefaults.colors(
+                thumbColor = RSRed,
+                activeTrackColor = RSRed
+            )
         )
 
         Spacer(Modifier.height(24.dp))

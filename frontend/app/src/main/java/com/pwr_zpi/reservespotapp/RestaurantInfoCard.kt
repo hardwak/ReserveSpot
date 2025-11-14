@@ -34,7 +34,7 @@ fun InfoCard(
     rating: Float,
     views: Int
 
-    ) {
+) {
     Box(
         modifier = modifier
             .border(
@@ -44,9 +44,11 @@ fun InfoCard(
             )
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .border(width = 1.dp,
+            .border(
+                width = 1.dp,
                 color = Color.LightGray,
-                shape = RoundedCornerShape(16.dp))
+                shape = RoundedCornerShape(16.dp)
+            )
 
     ) {
         // Background image
@@ -69,13 +71,13 @@ fun InfoCard(
                 .padding(16.dp)
         )
 
-        Row (
+        Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(16.dp),
-        ){
+        ) {
 
             Text(
                 text = rating.toString(),

@@ -83,7 +83,9 @@ fun ReservationSummaryScreen(
         ) {
             // Details and summary
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ReservationTab("Details", false)
@@ -156,7 +158,10 @@ fun ReservationSummaryScreen(
                 Text("Reservation confirmed!", color = Color.Black)
             },
             text = {
-                Text("Your table reservation in $restaurantName has been placed.", color = Color.Black)
+                Text(
+                    "Your table reservation in $restaurantName has been placed.",
+                    color = Color.Black
+                )
             },
             confirmButton = {
                 TextButton(

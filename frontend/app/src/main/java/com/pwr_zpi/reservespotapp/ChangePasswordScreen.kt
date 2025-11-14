@@ -1,27 +1,42 @@
 package com.pwr_zpi.reservespotapp
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.ui.text.input.VisualTransformation
 
 
 private const val DUMMY_OLD_PASSWORD = "OldPass123"
@@ -68,7 +83,9 @@ fun ChangePasswordScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 singleLine = true,
-                visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(mask = passwordMask),
+                visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(
+                    mask = passwordMask
+                ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
 
                 trailingIcon = {
@@ -92,7 +109,9 @@ fun ChangePasswordScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
                 singleLine = true,
-                visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(mask = passwordMask),
+                visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(
+                    mask = passwordMask
+                ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
 
                 trailingIcon = {
@@ -121,7 +140,8 @@ fun ChangePasswordScreen(navController: NavHostController) {
                     if (oldPassword == DUMMY_OLD_PASSWORD) {
                         // TODO: Save 'newPassword' in SharedPreferences (only for testing) or on backend (final version)
                         errorMessage = ""
-                        Toast.makeText(context, "Password has been changed!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Password has been changed!", Toast.LENGTH_SHORT)
+                            .show()
                         navController.popBackStack()
                     } else {
                         errorMessage = "Error reseting password"

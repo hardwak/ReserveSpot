@@ -45,7 +45,7 @@ fun Controller(navController: NavHostController) {
 
     val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
     val hideBottomBar =
-        currentRoute in listOf("login",) // List of screens where NavBar should be hidden
+        currentRoute in listOf("login") // List of screens where NavBar should be hidden
 
     Scaffold(
         topBar = {
@@ -149,6 +149,7 @@ fun Controller(navController: NavHostController) {
             composable("editDetails") { EditDetailsScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
             composable("changePassword") { ChangePasswordScreen(navController) }
+            composable("editRestaurant") { EditRestaurantScreen(navController) }
 
             composable(
                 route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
@@ -181,8 +182,7 @@ fun Controller(navController: NavHostController) {
 //            composable("favourites") { FavouritesScreen(navController) }
 
 
-
-        }
+    }
 }
 
 

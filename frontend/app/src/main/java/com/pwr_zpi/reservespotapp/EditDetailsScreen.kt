@@ -23,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +42,7 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 //file name for storing data on device
 private const val USER_PREFS_NAME = "user_details_prefs"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditDetailsScreen(navController: NavHostController) {
@@ -55,7 +54,11 @@ fun EditDetailsScreen(navController: NavHostController) {
 
     var name by remember { mutableStateOf(prefs.getString("name", "Jan") ?: "Jan") }
     var surname by remember { mutableStateOf(prefs.getString("surname", "Kowalski") ?: "Kowalski") }
-    var email by remember { mutableStateOf(prefs.getString("email", "jan.kowalski@example.com") ?: "jan.kowalski@example.com") }
+    var email by remember {
+        mutableStateOf(
+            prefs.getString("email", "jan.kowalski@example.com") ?: "jan.kowalski@example.com"
+        )
+    }
     var phone by remember { mutableStateOf(prefs.getString("phone", "123456789") ?: "123456789") }
 
     var isEmailError by remember { mutableStateOf(false) }
@@ -127,7 +130,9 @@ fun EditDetailsScreen(navController: NavHostController) {
                     "Enter correct email address.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp)
                 )
             }
 
@@ -146,7 +151,9 @@ fun EditDetailsScreen(navController: NavHostController) {
                     "Number must have at least 9 numbers.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp)
                 )
             }
 
@@ -171,7 +178,8 @@ fun EditDetailsScreen(navController: NavHostController) {
                         }
                         Toast.makeText(context, "Data saved!", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Please enter correct data", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Please enter correct data", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 },
                 modifier = Modifier
@@ -186,23 +194,4 @@ fun EditDetailsScreen(navController: NavHostController) {
 }
 
 
-@Composable
-fun EditDetailTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    icon: ImageVector,
-    isError: Boolean = false
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = { Icon(icon, contentDescription = null) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        singleLine = true,
-        isError = isError
-    )
-}
+// EditDetailsTextField function is in CommonUI file

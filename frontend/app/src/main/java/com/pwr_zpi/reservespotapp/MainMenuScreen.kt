@@ -35,7 +35,8 @@ fun MainMenuScreen(navController: NavHostController) {
                 .height(300.dp)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .align(Alignment.CenterHorizontally),
-                restaurantName = "Restauracja 1", rating = 4.72f, views = 523)
+            restaurantName = "Restauracja 1", rating = 4.72f, views = 523
+        )
 
         Row(
             modifier = Modifier

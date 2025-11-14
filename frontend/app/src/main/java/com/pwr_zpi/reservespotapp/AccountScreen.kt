@@ -1,19 +1,27 @@
 package com.pwr_zpi.reservespotapp
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +76,14 @@ fun AccountScreen(navController: NavHostController) {
         )
 
         AccountOptionRow(
+            icon = Icons.Default.AccountCircle,
+            text = "Edit restaurant data",
+            onClick = {
+                navController.navigate("editRestaurant")
+            }
+        )
+
+        AccountOptionRow(
             icon = Icons.Default.Settings,
             text = "Settings",
             onClick = { navController.navigate("settings") }
@@ -82,31 +98,14 @@ fun AccountScreen(navController: NavHostController) {
             colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
             border = BorderStroke(1.dp, RSRed)
         ) {
-            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+            Icon(
+                Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 8.dp)
+            )
             Text("Log out", fontWeight = FontWeight.Bold)
         }
     }
 }
 
 
-@Composable
-fun AccountOptionRow(icon: ImageVector, text: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = RSRed)
-        Spacer(Modifier.width(16.dp))
-        Text(text, fontSize = 18.sp, modifier = Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-            contentDescription = null,
-            tint = Color.Gray,
-            modifier = Modifier.size(16.dp)
-        )
-    }
-    HorizontalDivider()
-}

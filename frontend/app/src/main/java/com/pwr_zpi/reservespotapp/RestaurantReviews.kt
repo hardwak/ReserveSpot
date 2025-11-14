@@ -155,9 +155,11 @@ fun ReviewsTabContent(
 
 
         // review list
-        Column(modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .padding(top = 8.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp)
+        ) {
 //           First is our review (sorting)
             val sortedReviews = reviews.sortedByDescending { it.isCurrentUser }
 
