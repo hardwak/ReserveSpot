@@ -57,7 +57,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationScreen(navController: NavHostController, restaurantName: String) {
-    // Reservation form stages
+    // Reservation form states
 //  TODO  need to change selected time to data from backend
     var selectedTime by remember { mutableStateOf("12:00") }
     var showDatePicker by remember { mutableStateOf(false) }
