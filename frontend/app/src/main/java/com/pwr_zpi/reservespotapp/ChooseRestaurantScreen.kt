@@ -170,10 +170,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             LazyColumn {
                 items(filteredRestaurants) { restaurant ->
                     InfoCard(
-                        restaurantName = restaurant.name,
-                        rating = 4.6f,
-                        views = 350,
-
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(250.dp)
@@ -181,8 +177,14 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
                             .clickable {
                                 navController.navigate("restaurantDetails/${restaurant.name}")
-                            }
+                            },
+                        info = RestaurantCardInfo(
+                            restaurantName = restaurant.name,
+                            rating = 4.6f,
+                            views = 350,
+                        )
                     )
+
                 }
             }
         }

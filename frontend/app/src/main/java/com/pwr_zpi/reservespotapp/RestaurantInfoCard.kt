@@ -31,7 +31,7 @@ import coil.request.ImageRequest
 
 data class RestaurantCardInfo(
     val restaurantName: String,
-    val imageURL: String,
+    val imageURL: String? = null,
     val rating: Float,
     val views: Int
 )
@@ -39,12 +39,14 @@ data class RestaurantCardInfo(
 @Composable
 fun InfoCard(
     modifier: Modifier = Modifier,
-    imageURL: String = "",
-    restaurantName: String,
-    rating: Float,
-    views: Int
+    info: RestaurantCardInfo
 
     ) {
+    val imageURL = info.imageURL ?: ""
+    val restaurantName = info.restaurantName
+    val rating = info.rating
+    val views = info.views
+
     Box(
         modifier = modifier
             .border(

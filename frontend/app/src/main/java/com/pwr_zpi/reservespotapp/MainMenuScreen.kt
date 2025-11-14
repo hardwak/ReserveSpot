@@ -45,10 +45,7 @@ fun MainMenuScreen(navController: NavHostController) {
                     .height(300.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .align(Alignment.CenterHorizontally),
-                restaurantName = recommendedList[recNum].restaurantName,
-                imageURL = recommendedList[recNum].imageURL,
-                rating = recommendedList[recNum].rating,
-                views = recommendedList[recNum].views
+                recommendedList[recNum]
             )
             recNum += 1
 
@@ -62,10 +59,7 @@ fun MainMenuScreen(navController: NavHostController) {
                     modifier = Modifier
                         .weight(1f)
                         .height(300.dp), // fixed width
-                    restaurantName = recommendedList[recNum].restaurantName,
-                    imageURL = recommendedList[recNum].imageURL,
-                    rating = recommendedList[recNum].rating,
-                    views = recommendedList[recNum].views
+                    recommendedList[recNum]
                 )
                 recNum += 1
 
@@ -75,10 +69,7 @@ fun MainMenuScreen(navController: NavHostController) {
                     modifier = Modifier
                         .weight(1f) // dividing space in row
                         .height(300.dp), // fixed width
-                    restaurantName = recommendedList[recNum].restaurantName,
-                    imageURL = recommendedList[recNum].imageURL,
-                    rating = recommendedList[recNum].rating,
-                    views = recommendedList[recNum].views
+                    recommendedList[recNum]
                 )
                 recNum += 1
             }
@@ -91,10 +82,7 @@ fun MainMenuScreen(navController: NavHostController) {
                     .height(300.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .align(Alignment.CenterHorizontally),
-                restaurantName = recommendedList[recNum].restaurantName,
-                imageURL = recommendedList[recNum].imageURL,
-                rating = recommendedList[recNum].rating,
-                views = recommendedList[recNum].views
+                recommendedList[recNum]
             )
             recNum += 1
         }
