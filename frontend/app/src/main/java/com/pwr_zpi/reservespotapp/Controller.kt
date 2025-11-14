@@ -127,6 +127,7 @@ fun Controller(navController: NavHostController) {
             navController = navController,
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
+//            Routes below
         ) {
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
@@ -143,6 +144,12 @@ fun Controller(navController: NavHostController) {
                     backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
                 ReservationScreen(navController, name)
             }
+
+            composable("account") { AccountScreen(navController) }
+            composable("editDetails") { EditDetailsScreen(navController) }
+            composable("settings") { SettingsScreen(navController) }
+            composable("changePassword") { ChangePasswordScreen(navController) }
+
             composable(
                 route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
                 arguments = listOf(
@@ -168,12 +175,14 @@ fun Controller(navController: NavHostController) {
                 )
             }
         }
+
 //            composable("login") { LoginScreen(navController) }
 //            composable("reservations") { ReservationsScreen(navController) }
 //            composable("favourites") { FavouritesScreen(navController) }
-//            composable("account") { AccountScreen(navController) } // TODO Screens
+
 
 
         }
 }
+
 
