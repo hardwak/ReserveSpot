@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -161,36 +164,38 @@ fun RestaurantDetailsScreen(
                     )
                 }
 
+                //            placeholder for restaurants logo
+                Box(
+                    modifier = Modifier
+//                    positions on the bottom and center of Box with photo
+                        .align(Alignment.BottomCenter)
+//                    offest 40 dp so it would not go to white panel
+                        .offset(y = (40).dp)
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color.Gray)
+                        .border(2.dp, RSRed, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.pizza_restaurant_logo_small),
+                        contentDescription = "Restaurant Logo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                }
+
             }
 
-//            placeholder for restaurants logo
-            Box(
-                modifier = Modifier
-//                    positions on the bottom and center of Box with photo
-                    .align(Alignment.BottomCenter)
-//                    offest 40 dp so it would not go to white panel
-                    .offset(y = (-80).dp)
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray)
-                    .border(2.dp, RSRed, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.pizza_restaurant_logo_small),
-                    contentDescription = "Restaurant Logo",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                )
-            }
+
 
             // Info panel
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 260.dp)
+                    .padding(top = 295.dp)
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             ) {
 // restaurants info modifiers
@@ -201,7 +206,7 @@ fun RestaurantDetailsScreen(
                             .background(Color.White)
                     ) {
 //                        Spacer to make sure that info starts below logo
-                        Spacer(modifier = Modifier.height(0.dp))
+                        Spacer(modifier = Modifier.height(48.dp))
 
                         Column(
                             modifier = Modifier
@@ -240,7 +245,14 @@ fun RestaurantDetailsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(Color.White),
-                        containerColor = Color.Transparent
+                        containerColor = Color.Transparent,
+
+                        indicator = { tabPositions ->
+                            TabRowDefaults.Indicator(
+                                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                                color = RSRed // setting color as red
+                            )
+                        }
                     ) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
