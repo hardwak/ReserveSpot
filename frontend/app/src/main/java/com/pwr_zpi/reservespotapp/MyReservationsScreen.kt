@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,7 +23,8 @@ fun ReservationsScreen(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clickable(onClick = {navController.navigate("restaurantDetails/${reservation.restaurantName}/${reservation.restaurantRating}")}),
                 info = reservation
             )
         }
@@ -36,13 +38,15 @@ fun fetchReservations(): List<ReservationInfo> {
             restaurantName = "Burger Hub",
             dateTime = LocalDateTime.of(2025, 12, 5, 15, 30),
             numOfPeople = 6,
-            durationH = 2.5f
+            durationH = 2.5f,
+            restaurantRating = 4.3f
         ),
         ReservationInfo(
             restaurantName = "Sushi World",
             dateTime = LocalDateTime.of(2025, 12, 12, 19, 0),
             numOfPeople = 2,
-            durationH = 1.0f
+            durationH = 1.0f,
+            restaurantRating = 4.2f
         )
     )
 }

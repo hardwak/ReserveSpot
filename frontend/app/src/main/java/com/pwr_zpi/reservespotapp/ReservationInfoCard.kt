@@ -35,7 +35,8 @@ data class ReservationInfo (
     val restaurantName: String,
     val dateTime: LocalDateTime,
     val numOfPeople: Int,
-    val durationH: Float
+    val durationH: Float,
+    val restaurantRating: Float
 )
 
 @Composable

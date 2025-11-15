@@ -1,4 +1,4 @@
-package com.pwr_zpi.reservespotapp.ui.theme
+package com.pwr_zpi.reservespotapp
 
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,11 +36,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.pwr_zpi.reservespotapp.ClientRegisterRequest
-import com.pwr_zpi.reservespotapp.R
-import com.pwr_zpi.reservespotapp.RetrofitClient
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
-import com.pwr_zpi.reservespotapp.handleGoogleSignInResult
+import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -319,10 +318,10 @@ fun RegisterScreen(navController: NavHostController) {
     }
 
     if (showErrorDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showErrorDialog = false },
             confirmButton = {
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = { showErrorDialog = false }
                 ) {
                     Text("OK")

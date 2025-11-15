@@ -211,7 +211,7 @@ fun RestaurantRegisterScreen(navController: NavHostController) {
                     else -> {
                         noData = false
                         incorrectlyRepeatedPassword = false
-                        sendRegisterRequest(
+                        sendRestaurantRegisterRequest(
                             name = name,
                             email = email,
                             password = password,
@@ -333,7 +333,7 @@ fun RestaurantRegisterScreen(navController: NavHostController) {
 }
 
 
-fun sendRegisterRequest(
+fun sendRestaurantRegisterRequest(
     name: String,
     email: String,
     password: String,
