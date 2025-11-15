@@ -1,5 +1,8 @@
 package com.pwr_zpi.reservespotapp
 
+
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -33,7 +36,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import com.pwr_zpi.reservespotapp.ui.theme.RegisterScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +44,12 @@ fun Controller(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
-    val hideBottomBar = currentRoute in listOf("login", ) // List of screens where NavBar should be hidden
+    val hideBottomBar =
+        currentRoute in listOf("login") // List of screens where NavBar should be hidden
 
     Scaffold(
         topBar = {
-            if(!hideTopBar) {
+            if (!hideTopBar) {
                 TopAppBar(
                     title = {
                         Row(
@@ -122,21 +125,64 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "reservations",
+            startDestination = "home",
             modifier = Modifier.padding(innerPadding)
+//            Routes below
         ) {
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
-            composable("restaurantDetails/{restaurantName}") { backStackEntry ->
-                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
-                RestaurantDetailsScreen(navController, name)
+            composable("restaurantDetails/{restaurantName}/{rating}") { backStackEntry ->
+                val name =
+                    backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+                val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
+
+                RestaurantDetailsScreen(navController, name, rating)
+
             }
-            composable("login") { LoginScreen(navController) }
-            composable("register") { RegisterScreen(navController) }
-            composable("restaurant_register") {RestaurantRegisterScreen(navController)}
-            composable("reservations") { ReservationsScreen(navController) }
-            composable("favourites") { FavouritesScreen(navController) }
-//            composable("account") { AccountScreen(navController) } // TODO Screens
+            composable("reservation/{restaurantName}") { backStackEntry ->
+                val name =
+                    backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+                ReservationScreen(navController, name)
+            }
+
+            composable("account") { AccountScreen(navController) }
+            composable("editDetails") { EditDetailsScreen(navController) }
+            composable("settings") { SettingsScreen(navController) }
+            composable("changePassword") { ChangePasswordScreen(navController) }
+            composable("editRestaurant") { EditRestaurantScreen(navController) }
+
+            composable(
+                route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
+                arguments = listOf(
+                    navArgument("restaurantName") { type = NavType.StringType },
+                    navArgument("date") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("time") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("guests") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("duration") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("type") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("location") { type = NavType.StringType; defaultValue = "Any" }
+                )
+            ) { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown"
+                ReservationSummaryScreen(
+                    navController = navController,
+                    restaurantName = name,
+                    date = backStackEntry.arguments?.getString("date") ?: "No data",
+                    time = backStackEntry.arguments?.getString("time") ?: "No hours",
+                    guests = backStackEntry.arguments?.getString("guests") ?: "0",
+                    duration = backStackEntry.arguments?.getString("duration") ?: "No duration",
+                    type = backStackEntry.arguments?.getString("type") ?: "No type of reservation",
+                    location = backStackEntry.arguments?.getString("location") ?: "Any"
+                )
+            }
         }
+
+//            composable("login") { LoginScreen(navController) }
+//            composable("reservations") { ReservationsScreen(navController) }
+//            composable("favourites") { FavouritesScreen(navController) }
+
+
     }
 }
+
+
