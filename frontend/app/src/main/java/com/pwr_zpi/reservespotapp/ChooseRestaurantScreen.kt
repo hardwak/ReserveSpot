@@ -238,7 +238,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             // Restaurant list
             LazyColumn {
                 items(filteredRestaurants) { restaurant ->
-                    InfoCard(
+                    RestaurantInfoCard(
 
                         modifier = Modifier
                             .fillMaxWidth()
@@ -247,7 +247,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                             .clickable {
                                 navController.navigate("restaurantDetails/${restaurant.name}/${restaurant.rating}")
                             } ,
-                        info = RestaurantCardInfo(
+                        info = RestaurantDto(
                             restaurantName = restaurant.name,
                             rating = restaurant.rating,
                             views = 450 // TODO fetch from database

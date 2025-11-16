@@ -31,7 +31,7 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-data class ReservationInfo (
+data class ReservationDto (
     val restaurantName: String,
     val dateTime: LocalDateTime,
     val numOfPeople: Int,
@@ -40,9 +40,9 @@ data class ReservationInfo (
 )
 
 @Composable
-fun ResInfoCard(
+fun ReservationInfoCard(
     modifier: Modifier,
-    info: ReservationInfo
+    info: ReservationDto
 ) {
     val restaurantName = info.restaurantName
     val datetime = info.dateTime

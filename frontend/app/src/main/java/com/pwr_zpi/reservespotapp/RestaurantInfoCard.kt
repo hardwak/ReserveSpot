@@ -29,7 +29,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 
-data class RestaurantCardInfo(
+data class RestaurantDto(
     val restaurantName: String,
     val imageURL: String? = null,
     val rating: Float,
@@ -37,9 +37,9 @@ data class RestaurantCardInfo(
 )
 
 @Composable
-fun InfoCard(
+fun RestaurantInfoCard(
     modifier: Modifier = Modifier,
-    info: RestaurantCardInfo
+    info: RestaurantDto
 
     ) {
     val imageURL = info.imageURL ?: ""

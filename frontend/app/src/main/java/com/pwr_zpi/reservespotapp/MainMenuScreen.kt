@@ -39,7 +39,7 @@ fun MainMenuScreen(navController: NavHostController) {
 
         var recNum = 0
         while (recommendedList.size - recNum >= 3) {
-            InfoCard(
+            RestaurantInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
@@ -55,7 +55,7 @@ fun MainMenuScreen(navController: NavHostController) {
                     .padding(horizontal = 16.dp) // padding for section
             ) {
 
-                InfoCard(
+                RestaurantInfoCard(
                     modifier = Modifier
                         .weight(1f)
                         .height(300.dp), // fixed width
@@ -65,7 +65,7 @@ fun MainMenuScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.padding(4.dp))
 
-                InfoCard(
+                RestaurantInfoCard(
                     modifier = Modifier
                         .weight(1f) // dividing space in row
                         .height(300.dp), // fixed width
@@ -76,7 +76,7 @@ fun MainMenuScreen(navController: NavHostController) {
         }
 
         while (recommendedList.size - recNum > 0) {
-            InfoCard(
+            RestaurantInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
@@ -90,28 +90,28 @@ fun MainMenuScreen(navController: NavHostController) {
     }
 }
 
-fun fetchRecommendations(): List<RestaurantCardInfo> {
+fun fetchRecommendations(): List<RestaurantDto> {
     // TODO fetch from backend. This is a placeholder
     return listOf(
-        RestaurantCardInfo(
+        RestaurantDto(
             restaurantName = "Pasta Palace",
             imageURL = "https://example.com/pasta.jpg",
             rating = 4.71f,
             views = 2300
         ),
-        RestaurantCardInfo(
+        RestaurantDto(
             restaurantName = "Sushi World",
             imageURL = "https://example.com/sushi.jpg",
             rating = 4.58f,
             views = 1800
         ),
-        RestaurantCardInfo(
+        RestaurantDto(
             restaurantName = "Burger Hub",
             imageURL = "https://example.com/burger.jpg",
             rating = 4.2f,
             views = 900
         ),
-        RestaurantCardInfo(
+        RestaurantDto(
             restaurantName = "Kebab Spot",
             imageURL = "https://example.com/kebab.jpg",
             rating = 4.1f,
