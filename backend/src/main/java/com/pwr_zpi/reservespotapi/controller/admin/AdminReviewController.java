@@ -33,7 +33,7 @@ public class AdminReviewController {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listReviews(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -121,7 +121,7 @@ public class AdminReviewController {
         try {
             reviewService.createReview(createDto, userId);
             redirectAttributes.addFlashAttribute("success", "Review created successfully");
-            return "redirect:/admin/reviews";
+            return "redirect:/admin/reviews/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("users", userRepository.findAll());
@@ -138,7 +138,7 @@ public class AdminReviewController {
                 model.addAttribute("review", reviewDto);
                 return "admin/reviews/view";
             })
-            .orElse("redirect:/admin/reviews");
+            .orElse("redirect:/admin/reviews/list");
     }
 
     @GetMapping("/{id}/edit")
@@ -155,7 +155,7 @@ public class AdminReviewController {
                 model.addAttribute("reviewId", id);
                 return "admin/reviews/edit";
             })
-            .orElse("redirect:/admin/reviews");
+            .orElse("redirect:/admin/reviews/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -175,7 +175,7 @@ public class AdminReviewController {
                     reviewDto -> redirectAttributes.addFlashAttribute("success", "Review updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Review not found")
                 );
-            return "redirect:/admin/reviews/" + id;
+            return "redirect:/admin/reviews/list/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("reviewId", id);
@@ -191,7 +191,7 @@ public class AdminReviewController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Review not found or could not be deleted");
         }
-        return "redirect:/admin/reviews";
+        return "redirect:/admin/reviews/list";
     }
 }
 

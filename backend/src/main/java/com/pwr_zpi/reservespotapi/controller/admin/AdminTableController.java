@@ -31,7 +31,7 @@ public class AdminTableController {
     private final RestaurantTableMapper tableMapper;
     private final RestaurantRepository restaurantRepository;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listTables(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -108,7 +108,7 @@ public class AdminTableController {
         try {
             tableService.createTable(createDto);
             redirectAttributes.addFlashAttribute("success", "Table created successfully");
-            return "redirect:/admin/tables";
+            return "redirect:/admin/tables/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("restaurants", restaurantRepository.findAll());
@@ -124,7 +124,7 @@ public class AdminTableController {
                 model.addAttribute("table", tableDto);
                 return "admin/tables/view";
             })
-            .orElse("redirect:/admin/tables");
+            .orElse("redirect:/admin/tables/list");
     }
 
     @GetMapping("/{id}/edit")
@@ -141,7 +141,7 @@ public class AdminTableController {
                 model.addAttribute("restaurants", restaurantRepository.findAll());
                 return "admin/tables/edit";
             })
-            .orElse("redirect:/admin/tables");
+            .orElse("redirect:/admin/tables/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -162,7 +162,7 @@ public class AdminTableController {
                     tableDto -> redirectAttributes.addFlashAttribute("success", "Table updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Table not found")
                 );
-            return "redirect:/admin/tables/" + id;
+            return "redirect:/admin/tables/list/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("tableId", id);
@@ -179,7 +179,7 @@ public class AdminTableController {
         } else {
             redirectAttributes.addFlashAttribute("error", "Table not found");
         }
-        return "redirect:/admin/tables";
+        return "redirect:/admin/tables/list";
     }
 }
 

@@ -29,7 +29,7 @@ public class AdminPictureController {
     private final PictureRepository pictureRepository;
     private final PictureMapper pictureMapper;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listPictures(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -97,7 +97,7 @@ public class AdminPictureController {
         try {
             pictureService.createPicture(createDto);
             redirectAttributes.addFlashAttribute("success", "Picture created successfully");
-            return "redirect:/admin/pictures";
+            return "redirect:/admin/pictures/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             return "admin/pictures/create";
@@ -112,7 +112,7 @@ public class AdminPictureController {
                 model.addAttribute("picture", pictureDto);
                 return "admin/pictures/view";
             })
-            .orElse("redirect:/admin/pictures");
+            .orElse("redirect:/admin/pictures/list");
     }
 
     @GetMapping("/{id}/edit")
@@ -127,7 +127,7 @@ public class AdminPictureController {
                 model.addAttribute("pictureId", id);
                 return "admin/pictures/edit";
             })
-            .orElse("redirect:/admin/pictures");
+            .orElse("redirect:/admin/pictures/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -147,7 +147,7 @@ public class AdminPictureController {
                     pictureDto -> redirectAttributes.addFlashAttribute("success", "Picture updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Picture not found")
                 );
-            return "redirect:/admin/pictures/" + id;
+            return "redirect:/admin/pictures/list/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("pictureId", id);
@@ -163,7 +163,7 @@ public class AdminPictureController {
         } else {
             redirectAttributes.addFlashAttribute("error", "Picture not found");
         }
-        return "redirect:/admin/pictures";
+        return "redirect:/admin/pictures/list";
     }
 }
 

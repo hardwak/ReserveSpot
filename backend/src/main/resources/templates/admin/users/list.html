@@ -41,7 +41,7 @@
         </div>
 
         <div class="filters">
-            <form method="get" th:action="@{/admin/users}">
+            <form method="get" th:action="@{/admin/users/list}">
                 <div class="filter-group">
                     <label>Search</label>
                     <input type="text" name="search" th:value="${search}" placeholder="Name, email, phone...">
@@ -67,7 +67,7 @@
                 </div>
                 <div class="filter-group">
                     <button type="submit" class="btn btn-primary">Filter</button>
-                    <a th:href="@{/admin/users}" class="btn btn-secondary">Reset</a>
+                    <a th:href="@{/admin/users/list}" class="btn btn-secondary">Reset</a>
                 </div>
             </form>
         </div>
@@ -118,15 +118,15 @@
 
         <div class="pagination" th:if="${totalPages > 1}">
             <a th:if="${currentPage > 0}" 
-               th:href="@{/admin/users(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, roleFilter=${roleFilter})}">Previous</a>
+               th:href="@{/admin/users/list(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, roleFilter=${roleFilter})}">Previous</a>
             <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
                 <a th:if="${page != currentPage}"
-                   th:href="@{/admin/users(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, roleFilter=${roleFilter})}"
+                   th:href="@{/admin/users/list(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, roleFilter=${roleFilter})}"
                    th:text="${page + 1}"></a>
                 <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
             </span>
             <a th:if="${currentPage < totalPages - 1}"
-               th:href="@{/admin/users(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, roleFilter=${roleFilter})}">Next</a>
+               th:href="@{/admin/users/list(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, roleFilter=${roleFilter})}">Next</a>
         </div>
 
         <div style="margin-top: 1rem; color: #666;">

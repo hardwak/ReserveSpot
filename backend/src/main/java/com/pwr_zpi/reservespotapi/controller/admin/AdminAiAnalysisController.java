@@ -31,7 +31,7 @@ public class AdminAiAnalysisController {
     private final AiAnalysisMapper analysisMapper;
     private final RestaurantRepository restaurantRepository;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listAnalyses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -100,7 +100,7 @@ public class AdminAiAnalysisController {
         try {
             analysisService.createAnalysis(createDto);
             redirectAttributes.addFlashAttribute("success", "AI Analysis created successfully");
-            return "redirect:/admin/ai-analysis";
+            return "redirect:/admin/ai-analysis/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("restaurants", restaurantRepository.findAll());

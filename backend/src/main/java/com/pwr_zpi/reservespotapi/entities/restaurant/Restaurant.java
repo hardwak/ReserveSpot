@@ -66,7 +66,7 @@ public class Restaurant {
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RestaurantStatistic> statistics;
 
-    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(cascade = { CascadeType.MERGE })
     @JoinTable(
             name = "restaurant_tags",
             joinColumns = @JoinColumn(name = "restaurant_id"),
@@ -74,7 +74,7 @@ public class Restaurant {
     )
     private Set<Tag> tags;
 
-    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(cascade = { CascadeType.MERGE })
     @JoinTable(
             name = "restaurant_pictures",
             joinColumns = @JoinColumn(name = "restaurant_id"),

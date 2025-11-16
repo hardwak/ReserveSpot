@@ -32,7 +32,7 @@ public class AdminStatisticController {
     private final RestaurantStatisticMapper statisticMapper;
     private final RestaurantRepository restaurantRepository;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listStatistics(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -109,7 +109,7 @@ public class AdminStatisticController {
         try {
             statisticService.createStatistic(createDto);
             redirectAttributes.addFlashAttribute("success", "Statistic created successfully");
-            return "redirect:/admin/statistics";
+            return "redirect:/admin/statistics/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("restaurants", restaurantRepository.findAll());
@@ -125,7 +125,7 @@ public class AdminStatisticController {
                 model.addAttribute("statistic", statisticDto);
                 return "admin/statistics/view";
             })
-            .orElse("redirect:/admin/statistics");
+            .orElse("redirect:/admin/statistics/list");
     }
 
     @GetMapping("/{id}/edit")
@@ -142,7 +142,7 @@ public class AdminStatisticController {
                 model.addAttribute("restaurants", restaurantRepository.findAll());
                 return "admin/statistics/edit";
             })
-            .orElse("redirect:/admin/statistics");
+            .orElse("redirect:/admin/statistics/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -163,7 +163,7 @@ public class AdminStatisticController {
                     statisticDto -> redirectAttributes.addFlashAttribute("success", "Statistic updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Statistic not found")
                 );
-            return "redirect:/admin/statistics/" + id;
+            return "redirect:/admin/statistics/list/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("statisticId", id);
@@ -180,7 +180,7 @@ public class AdminStatisticController {
         } else {
             redirectAttributes.addFlashAttribute("error", "Statistic not found");
         }
-        return "redirect:/admin/statistics";
+        return "redirect:/admin/statistics/list";
     }
 }
 

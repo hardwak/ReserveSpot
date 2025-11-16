@@ -14,6 +14,7 @@ import com.pwr_zpi.reservespotapi.entities.review.dto.UpdateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.mapper.ReviewMapper;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
+import com.pwr_zpi.reservespotapi.entities.ai_analysis.service.AiAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final ReservationRepository reservationRepository;
+    private final AiAnalysisService aiAnalysisService;
 
     public List<ReviewDto> getAllReviews() {
         return reviewRepository.findAll()
@@ -84,6 +86,15 @@ public class ReviewService {
 
         Review review = reviewMapper.toEntity(createDto, eligibility.user(), eligibility.restaurant());
         Review savedReview = reviewRepository.save(review);
+        
+        // Trigger AI analysis regeneration for the restaurant
+        try {
+            aiAnalysisService.generateAnalysisForRestaurant(createDto.getRestaurantId());
+        } catch (Exception e) {
+            // Log error but don't fail the review creation
+            System.err.println("Failed to regenerate AI analysis after review creation: " + e.getMessage());
+        }
+        
         return reviewMapper.toDto(savedReview);
     }
 
@@ -98,8 +109,18 @@ public class ReviewService {
     public Optional<ReviewDto> updateReview(Long id, UpdateReviewDto updateDto) {
         return reviewRepository.findById(id)
                 .map(review -> {
+                    Long restaurantId = review.getRestaurant().getId();
                     reviewMapper.updateEntity(updateDto, review);
                     Review savedReview = reviewRepository.save(review);
+                    
+                    // Trigger AI analysis regeneration for the restaurant
+                    try {
+                        aiAnalysisService.generateAnalysisForRestaurant(restaurantId);
+                    } catch (Exception e) {
+                        // Log error but don't fail the review update
+                        System.err.println("Failed to regenerate AI analysis after review update: " + e.getMessage());
+                    }
+                    
                     return reviewMapper.toDto(savedReview);
                 });
     }

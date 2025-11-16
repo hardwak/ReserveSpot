@@ -34,7 +34,7 @@ public class AdminReservationController {
     private final UserRepository userRepository;
     private final RestaurantTableRepository tableRepository;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listReservations(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -121,7 +121,7 @@ public class AdminReservationController {
         try {
             reservationService.createReservation(createDto, userId);
             redirectAttributes.addFlashAttribute("success", "Reservation created successfully");
-            return "redirect:/admin/reservations";
+            return "redirect:/admin/reservations/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("users", userRepository.findAll());
@@ -138,7 +138,7 @@ public class AdminReservationController {
                 model.addAttribute("reservation", reservationDto);
                 return "admin/reservations/view";
             })
-            .orElse("redirect:/admin/reservations");
+            .orElse("redirect:/admin/reservations/list");
     }
 
     @GetMapping("/{id}/edit")
@@ -155,7 +155,7 @@ public class AdminReservationController {
                 model.addAttribute("statuses", ReservationStatus.values());
                 return "admin/reservations/edit";
             })
-            .orElse("redirect:/admin/reservations");
+            .orElse("redirect:/admin/reservations/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -176,7 +176,7 @@ public class AdminReservationController {
                     reservationDto -> redirectAttributes.addFlashAttribute("success", "Reservation updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Reservation not found")
                 );
-            return "redirect:/admin/reservations/" + id;
+            return "redirect:/admin/reservations/list/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("reservationId", id);
@@ -193,7 +193,7 @@ public class AdminReservationController {
         } else {
             redirectAttributes.addFlashAttribute("error", "Reservation not found");
         }
-        return "redirect:/admin/reservations";
+        return "redirect:/admin/reservations/list";
     }
 }
 

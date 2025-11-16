@@ -17,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +34,8 @@ public class AdminRestaurantController {
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
 
-    @GetMapping
+    @GetMapping("/list")
+    @Transactional(readOnly = true)
     public String listRestaurants(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -74,7 +76,9 @@ public class AdminRestaurantController {
         
         int start = page * size;
         int end = Math.min(start + size, allRestaurants.size());
-        List<Restaurant> pageRestaurants = allRestaurants.subList(Math.min(start, allRestaurants.size()), end);
+        // Ensure start is within bounds
+        start = Math.min(start, allRestaurants.size());
+        List<Restaurant> pageRestaurants = (start < end) ? allRestaurants.subList(start, end) : List.of();
         
         List<RestaurantDto> restaurantDtos = pageRestaurants.stream()
             .map(restaurantMapper::toDto)
@@ -127,7 +131,7 @@ public class AdminRestaurantController {
         try {
             restaurantService.createRestaurant(createDto);
             redirectAttributes.addFlashAttribute("success", "Restaurant created successfully");
-            return "redirect:/admin/restaurants";
+            return "redirect:/admin/restaurants/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("owners", userRepository.findAll().stream()
