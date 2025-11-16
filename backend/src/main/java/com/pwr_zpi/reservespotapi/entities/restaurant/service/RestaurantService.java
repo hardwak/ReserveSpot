@@ -7,6 +7,13 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantSearchDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.mapper.RestaurantMapper;
+import com.pwr_zpi.reservespotapi.entities.tag.Tag;
+import com.pwr_zpi.reservespotapi.entities.tag.TagRepository;
+import com.pwr_zpi.reservespotapi.service.AiQueryParserService;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Join;
+import java.util.HashSet;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +30,8 @@ public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantMapper restaurantMapper;
+    private final AiQueryParserService aiQueryParser;
+    private final TagRepository tagRepository;
 
     public List<RestaurantDto> getAllRestaurants() {
         return restaurantRepository.findAll()
@@ -92,8 +101,64 @@ public class RestaurantService {
     }
 
     public List<RestaurantDto> searchRestaurantsWithAi(RestaurantSearchDto searchDto) {
-        // Placeholder for AI-driven recommendations. For now we reuse the standard search.
-        return searchRestaurants(searchDto);
+
+        AiQueryParserService.AiParsedCriteria aiCriteria = aiQueryParser.parseQuery(searchDto.getQuery());
+
+        Set<Long> finalTagIds = new HashSet<>();
+        if (searchDto.getTagIds() != null) {
+            finalTagIds.addAll(searchDto.getTagIds());
+        }
+        if (aiCriteria.getImpliedTags() != null && !aiCriteria.getImpliedTags().isEmpty()) {
+            Set<Tag> foundTags = tagRepository.findByNameIn(aiCriteria.getImpliedTags());
+            foundTags.forEach(tag -> finalTagIds.add(tag.getId()));
+        }
+
+        double finalMinRating = 0.0;
+        if (searchDto.getMinRating() != null) {
+            finalMinRating = searchDto.getMinRating();
+        }
+        if (aiCriteria.getImpliedMinRating() != null) {
+            finalMinRating = Math.max(finalMinRating, aiCriteria.getImpliedMinRating());
+        }
+
+        String searchText = (aiCriteria.getImpliedQuery() != null) ? aiCriteria.getImpliedQuery() : searchDto.getQuery();
+
+        double finalMinRating1 = finalMinRating;
+        List<Restaurant> restaurants = restaurantRepository.findAll((root, query, cb) -> {
+            Predicate predicate = cb.conjunction();
+
+            if (searchDto.getCity() != null && !searchDto.getCity().isEmpty()) {
+                predicate = cb.and(predicate, cb.equal(root.get("city"), searchDto.getCity()));
+            }
+
+            if (finalMinRating1 > 0.0) {
+                predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.get("averageRating"), finalMinRating1));
+            }
+
+            if (searchDto.getMaxRating() != null) {
+                predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("averageRating"), searchDto.getMaxRating()));
+            }
+
+            if (searchText != null && !searchText.isEmpty()) {
+                predicate = cb.and(predicate, cb.or(
+                        cb.like(cb.lower(root.get("name")), "%" + searchText.toLowerCase() + "%"),
+                        cb.like(cb.lower(root.get("description")), "%" + searchText.toLowerCase() + "%")
+                ));
+            }
+
+            if (!finalTagIds.isEmpty()) {
+                Join<Restaurant, Tag> tagJoin = root.join("tags");
+                predicate = cb.and(predicate, tagJoin.get("id").in(finalTagIds));
+                query.groupBy(root.get("id"));
+                query.having(cb.equal(cb.count(root.get("id")), (long) finalTagIds.size()));
+            }
+
+            return predicate;
+        }, Pageable.unpaged()).getContent();
+
+        return restaurants.stream()
+                .map(restaurantMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     private boolean matchesQuery(Restaurant restaurant, String query) {
@@ -136,7 +201,7 @@ public class RestaurantService {
         }
 
         Set<Long> restaurantTagIds = restaurant.getTags().stream()
-                .map(tag -> tag.getId())
+                .map(Tag::getId)
                 .collect(Collectors.toSet());
 
         return restaurantTagIds.containsAll(tagIds);
