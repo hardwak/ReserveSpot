@@ -9,4 +9,5 @@ import java.util.List;
 public interface RestaurantTableRepository extends JpaRepository<RestaurantTable, Long> {
     List<RestaurantTable> findByRestaurantId(Long restaurantId);
     List<RestaurantTable> findByCapacity(Integer capacity);
+    List<RestaurantTable> findByIdOrRestaurantId(Long id, Long restaurantId);
 }

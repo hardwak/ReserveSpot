@@ -5,19 +5,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Map;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class UpdateRestaurantDto {
-    private String name;
-    private String address;
+public class RestaurantSearchDto {
+    private String query;
     private String city;
-    private String description;
-    private Map<String, String> openingHours;
-    private Double latitude;
-    private Double longitude;
-    private String pic;
+    private List<Long> tagIds;
+    private Double minRating;
+    private Double maxRating;
 }
+
