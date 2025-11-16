@@ -1,4 +1,4 @@
-package com.pwr_zpi.reservespotapi.entities.tag;
+package com.pwr_zpi.reservespotapi.entities.tag.controller;
 
 import com.pwr_zpi.reservespotapi.entities.tag.dto.CreateTagDto;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.TagDto;

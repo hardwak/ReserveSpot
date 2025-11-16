@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create User - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}" class="active">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Create New User</h2>
+            <a th:href="@{/admin/users}" class="btn btn-secondary">Back to List</a>
+        </div>
+
+        <div class="form-container">
+            <form th:action="@{/admin/users/create}" th:object="${user}" method="post" data-validate>
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" th:field="*{name}" required>
+                    <div th:if="${#fields.hasErrors('name')}" class="error" th:errors="*{name}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" th:field="*{email}" required>
+                    <div th:if="${#fields.hasErrors('email')}" class="error" th:errors="*{email}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="passwordHash">Password</label>
+                    <input type="password" id="passwordHash" th:field="*{passwordHash}" placeholder="Leave empty for OAuth users">
+                    <div th:if="${#fields.hasErrors('passwordHash')}" class="error" th:errors="*{passwordHash}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number</label>
+                    <input type="text" id="phoneNumber" th:field="*{phoneNumber}" placeholder="+1234567890">
+                    <div th:if="${#fields.hasErrors('phoneNumber')}" class="error" th:errors="*{phoneNumber}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role *</label>
+                    <select id="role" th:field="*{role}" required>
+                        <option value="">Select Role</option>
+                        <option th:each="role : ${roles}" th:value="${role}" th:text="${role}"></option>
+                    </select>
+                    <div th:if="${#fields.hasErrors('role')}" class="error" th:errors="*{role}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="provider">Auth Provider</label>
+                    <select id="provider" th:field="*{provider}">
+                        <option value="">None</option>
+                        <option th:each="provider : ${providers}" th:value="${provider}" th:text="${provider}"></option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="oauthProviderId">OAuth Provider ID</label>
+                    <input type="text" id="oauthProviderId" th:field="*{oauthProviderId}">
+                </div>
+
+                <div class="form-group">
+                    <label for="pictureId">Picture ID</label>
+                    <input type="number" id="pictureId" th:field="*{pictureId}" min="0">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                    <a th:href="@{/admin/users}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+
