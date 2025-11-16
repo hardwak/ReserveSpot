@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,7 +16,7 @@ public class UpdateRestaurantDto {
     private String address;
     private String city;
     private String description;
-    private String openingHours;
+    private Map<String, String> openingHours;
     private Double latitude;
     private Double longitude;
     private String pic;

@@ -2,6 +2,7 @@ package com.pwr_zpi.reservespotapi.entities.review.controller;
 
 import com.pwr_zpi.reservespotapi.entities.review.dto.CreateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.dto.ReviewDto;
+import com.pwr_zpi.reservespotapi.entities.review.dto.ReviewEligibilityResponse;
 import com.pwr_zpi.reservespotapi.entities.review.dto.UpdateReviewDto;
 import com.pwr_zpi.reservespotapi.entities.review.service.ReviewService;
 import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
@@ -65,6 +66,17 @@ public class ReviewController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         List<ReviewDto> reviews = reviewService.getReviewsByDateRange(startDate, endDate);
         return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/can-create")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<ReviewEligibilityResponse> canCreateReview(
+            HttpServletRequest request,
+            @RequestParam Long restaurantId,
+            @RequestParam(required = false) Long reservationId) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        ReviewEligibilityResponse response = reviewService.canCreateReview(userId, restaurantId, reservationId);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
