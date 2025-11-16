@@ -1,18 +1,12 @@
 package com.pwr_zpi.reservespotapi.controller.admin;
 
-import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.users.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/admin")
@@ -34,149 +28,43 @@ public class AdminController {
     }
 
     @GetMapping("/restaurants")
-    public String restaurantsPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String cityFilter,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        model.addAttribute("cityFilter", cityFilter);
-        
-        return "admin/restaurants/list";
+    public String restaurantsPage() {
+        return "redirect:/admin/restaurants";
     }
 
     @GetMapping("/reservations")
-    public String reservationsPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/reservations/list";
+    public String reservationsPage() {
+        return "redirect:/admin/reservations";
     }
 
     @GetMapping("/reviews")
-    public String reviewsPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/reviews/list";
+    public String reviewsPage() {
+        return "redirect:/admin/reviews";
     }
 
     @GetMapping("/tags")
-    public String tagsPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/tags/list";
+    public String tagsPage() {
+        return "redirect:/admin/tags";
     }
 
     @GetMapping("/tables")
-    public String tablesPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/tables/list";
+    public String tablesPage() {
+        return "redirect:/admin/tables";
     }
 
     @GetMapping("/statistics")
-    public String statisticsPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/statistics/list";
+    public String statisticsPage() {
+        return "redirect:/admin/statistics";
     }
 
     @GetMapping("/pictures")
-    public String picturesPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/pictures/list";
+    public String picturesPage() {
+        return "redirect:/admin/pictures";
     }
 
     @GetMapping("/ai-analysis")
-    public String aiAnalysisPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String search,
-            Model model) {
-        
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("sortDir", sortDir);
-        model.addAttribute("search", search);
-        
-        return "admin/ai-analysis/list";
+    public String aiAnalysisPage() {
+        return "redirect:/admin/ai-analysis";
     }
 }
 

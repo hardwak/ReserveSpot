@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}" class="active">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div class="page-header">
+            <h2>Reviews</h2>
+            <a th:href="@{/admin/reviews/create}" class="btn btn-primary">Create New Review</a>
+        </div>
+
+        <div class="filters">
+            <form method="get" th:action="@{/admin/reviews}">
+                <div class="filter-group">
+                    <label>User ID</label>
+                    <input type="number" name="userId" th:value="${userId}" placeholder="Filter by user">
+                </div>
+                <div class="filter-group">
+                    <label>Restaurant ID</label>
+                    <input type="number" name="restaurantId" th:value="${restaurantId}" placeholder="Filter by restaurant">
+                </div>
+                <div class="filter-group">
+                    <label>Min Rating</label>
+                    <input type="number" name="minRating" th:value="${minRating}" min="1" max="5" placeholder="Min rating">
+                </div>
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a th:href="@{/admin/reviews}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="id">ID</th>
+                        <th>User</th>
+                        <th>Restaurant</th>
+                        <th class="sortable" data-sort="rating">Rating</th>
+                        <th>Comment</th>
+                        <th class="sortable" data-sort="createdAt">Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${reviews.isEmpty()}">
+                        <td colspan="7" style="text-align: center; padding: 2rem;">No reviews found</td>
+                    </tr>
+                    <tr th:each="review : ${reviews}">
+                        <td th:text="${review.id}"></td>
+                        <td>
+                            <a th:if="${review.userId != null}"
+                               th:href="@{/admin/users/{id}(id=${review.userId})}" 
+                               class="relation-link" 
+                               th:text="${review.userId}"></a>
+                            <span th:if="${review.userId == null}">-</span>
+                        </td>
+                        <td>
+                            <a th:if="${review.restaurantId != null}"
+                               th:href="@{/admin/restaurants/{id}(id=${review.restaurantId})}" 
+                               class="relation-link" 
+                               th:text="${review.restaurantId}"></a>
+                            <span th:if="${review.restaurantId == null}">-</span>
+                        </td>
+                        <td>
+                            <span th:if="${review.rating != null}" th:text="${review.rating}"></span>
+                            <span th:if="${review.rating == null}">-</span>
+                        </td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;" 
+                            th:text="${review.comment != null ? (#strings.abbreviate(review.comment, 50)) : '-'}"></td>
+                        <td th:text="${review.createdAt != null ? (#temporals.format(review.createdAt, 'yyyy-MM-dd')) : '-'}"></td>
+                        <td class="actions">
+                            <a th:href="@{/admin/reviews/{id}(id=${review.id})}" class="btn btn-sm btn-secondary">View</a>
+                            <a th:href="@{/admin/reviews/{id}/edit(id=${review.id})}" class="btn btn-sm btn-primary">Edit</a>
+                            <form th:action="@{/admin/reviews/{id}/delete(id=${review.id})}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}" 
+               th:href="@{/admin/reviews(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, userId=${userId}, restaurantId=${restaurantId}, minRating=${minRating})}">Previous</a>
+            <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:if="${page != currentPage}"
+                   th:href="@{/admin/reviews(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, userId=${userId}, restaurantId=${restaurantId}, minRating=${minRating})}"
+                   th:text="${page + 1}"></a>
+                <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
+            </span>
+            <a th:if="${currentPage < totalPages - 1}"
+               th:href="@{/admin/reviews(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, userId=${userId}, restaurantId=${restaurantId}, minRating=${minRating})}">Next</a>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+
