@@ -16,6 +16,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +31,8 @@ public class AdminUserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    @GetMapping
+    @GetMapping("/list")
+    @Transactional(readOnly = true)
     public String listUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -41,7 +43,14 @@ public class AdminUserController {
             Model model) {
         
         // For now, fetch all and filter in memory (can be optimized with JPA queries later)
+        // Initialize picture relationships to avoid lazy loading issues
         List<User> allUsers = userRepository.findAll();
+        // Force initialization of picture relationships
+        allUsers.forEach(user -> {
+            if (user.getPicture() != null) {
+                user.getPicture().getId(); // Force initialization
+            }
+        });
         
         // Apply filters
         if (search != null && !search.trim().isEmpty()) {
@@ -74,7 +83,9 @@ public class AdminUserController {
         // Paginate
         int start = page * size;
         int end = Math.min(start + size, allUsers.size());
-        List<User> pageUsers = allUsers.subList(Math.min(start, allUsers.size()), end);
+        // Ensure start is within bounds
+        start = Math.min(start, allUsers.size());
+        List<User> pageUsers = (start < end) ? allUsers.subList(start, end) : List.of();
         
         List<UserDto> userDtos = pageUsers.stream()
             .map(userMapper::toDto)
@@ -116,7 +127,7 @@ public class AdminUserController {
         try {
             userService.createUser(createDto);
             redirectAttributes.addFlashAttribute("success", "User created successfully");
-            return "redirect:/admin/users";
+            return "redirect:/admin/users/list";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("roles", Role.values());

@@ -41,7 +41,7 @@
         </div>
 
         <div class="filters">
-            <form method="get" th:action="@{/admin/restaurants}">
+            <form method="get" th:action="@{/admin/restaurants/list}">
                 <div class="filter-group">
                     <label>Search</label>
                     <input type="text" name="search" th:value="${search}" placeholder="Name, description, address...">
@@ -67,7 +67,7 @@
                 </div>
                 <div class="filter-group">
                     <button type="submit" class="btn btn-primary">Filter</button>
-                    <a th:href="@{/admin/restaurants}" class="btn btn-secondary">Reset</a>
+                    <a th:href="@{/admin/restaurants/list}" class="btn btn-secondary">Reset</a>
                 </div>
             </form>
         </div>
@@ -124,15 +124,15 @@
 
         <div class="pagination" th:if="${totalPages > 1}">
             <a th:if="${currentPage > 0}" 
-               th:href="@{/admin/restaurants(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}">Previous</a>
+               th:href="@{/admin/restaurants/list(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}">Previous</a>
             <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
                 <a th:if="${page != currentPage}"
-                   th:href="@{/admin/restaurants(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}"
+                   th:href="@{/admin/restaurants/list(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}"
                    th:text="${page + 1}"></a>
                 <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
             </span>
             <a th:if="${currentPage < totalPages - 1}"
-               th:href="@{/admin/restaurants(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}">Next</a>
+               th:href="@{/admin/restaurants/list(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}">Next</a>
         </div>
 
         <div style="margin-top: 1rem; color: #666;">

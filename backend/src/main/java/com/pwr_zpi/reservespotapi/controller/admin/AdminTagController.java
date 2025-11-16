@@ -29,7 +29,7 @@ public class AdminTagController {
     private final TagRepository tagRepository;
     private final TagMapper tagMapper;
 
-    @GetMapping
+    @GetMapping("/list")
     public String listTags(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -94,7 +94,7 @@ public class AdminTagController {
         try {
             tagService.createTag(createDto);
             redirectAttributes.addFlashAttribute("success", "Tag created successfully");
-            return "redirect:/admin/tags";
+            return "redirect:/admin/tags/list";
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             return "admin/tags/create";
@@ -109,7 +109,7 @@ public class AdminTagController {
                 model.addAttribute("tag", tagDto);
                 return "admin/tags/view";
             })
-            .orElse("redirect:/admin/tags");
+            .orElse("redirect:/admin/tags/list");
     }
 
     @GetMapping("/{id}/edit")
@@ -123,7 +123,7 @@ public class AdminTagController {
                 model.addAttribute("tagId", id);
                 return "admin/tags/edit";
             })
-            .orElse("redirect:/admin/tags");
+            .orElse("redirect:/admin/tags/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -143,7 +143,7 @@ public class AdminTagController {
                     tagDto -> redirectAttributes.addFlashAttribute("success", "Tag updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Tag not found")
                 );
-            return "redirect:/admin/tags/" + id;
+            return "redirect:/admin/tags/list/" + id;
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("tagId", id);
@@ -159,7 +159,7 @@ public class AdminTagController {
         } else {
             redirectAttributes.addFlashAttribute("error", "Tag not found");
         }
-        return "redirect:/admin/tags";
+        return "redirect:/admin/tags/list";
     }
 }
 

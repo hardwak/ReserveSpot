@@ -72,4 +72,27 @@ public class AiAnalysisController {
         boolean exists = analysisService.existsById(id);
         return ResponseEntity.ok(exists);
     }
+
+    @PostMapping("/generate/restaurant/{restaurantId}")
+    public ResponseEntity<AiAnalysisDto> generateAnalysisForRestaurant(@PathVariable Long restaurantId) {
+        try {
+            AiAnalysisDto analysis = analysisService.generateAnalysisForRestaurant(restaurantId);
+            return ResponseEntity.ok(analysis);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/generate/all")
+    public ResponseEntity<String> generateAnalysisForAllRestaurants() {
+        try {
+            analysisService.generateAnalysisForAllRestaurants();
+            return ResponseEntity.ok("AI analysis generated for all restaurants");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating analysis: " + e.getMessage());
+        }
+    }
 }

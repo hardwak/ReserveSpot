@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapi.config;
 
+import com.pwr_zpi.reservespotapi.entities.ai_analysis.service.AiAnalysisService;
+import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.tag.Tag;
 import com.pwr_zpi.reservespotapi.entities.tag.TagRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +21,8 @@ public class DataFillerConfig {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final AiAnalysisService aiAnalysisService;
 
     @Value("${ADMIN_USERNAME}")
     private String adminUsername;
@@ -62,6 +66,33 @@ public class DataFillerConfig {
             Tag tagPetFriendly = tagRepository.save(Tag.builder().name("Pet-Friendly").build());
             Tag tagCheapEats = tagRepository.save(Tag.builder().name("Cheap Eats").build());
             Tag tagBrunch = tagRepository.save(Tag.builder().name("Brunch").build());
+        };
+    }
+
+    @Bean
+    public CommandLineRunner aiAnalysisGenerator() {
+        return (args) -> {
+            // Generate AI analysis for all restaurants that don't have one yet
+            // This runs after the application starts
+            try {
+                System.out.println("🤖 Generating AI analysis for restaurants...");
+                restaurantRepository.findAll().forEach(restaurant -> {
+                    try {
+                        // Only generate if analysis doesn't exist
+                        if (aiAnalysisService.getAnalysisByRestaurantId(restaurant.getId()).isEmpty()) {
+                            aiAnalysisService.generateAnalysisForRestaurant(restaurant.getId());
+                            System.out.println("✅ Generated AI analysis for restaurant: " + restaurant.getName());
+                        } else {
+                            System.out.println("⏭️  AI analysis already exists for restaurant: " + restaurant.getName());
+                        }
+                    } catch (Exception e) {
+                        System.err.println("❌ Failed to generate AI analysis for restaurant " + restaurant.getId() + ": " + e.getMessage());
+                    }
+                });
+                System.out.println("✅ AI analysis generation completed!");
+            } catch (Exception e) {
+                System.err.println("❌ Error during AI analysis generation: " + e.getMessage());
+            }
         };
     }
 }

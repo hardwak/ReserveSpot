@@ -11,11 +11,6 @@ public class WebPageController {
         return "dashboard";
     }
 
-    @GetMapping("/admin")
-    public String adminDashboard() {
-        return "admin/dashboard";
-    }
-
     @GetMapping("/login")
     public String login() {
         return "login";

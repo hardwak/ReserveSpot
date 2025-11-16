@@ -6,10 +6,16 @@ import com.pwr_zpi.reservespotapi.entities.ai_analysis.dto.UpdateAiAnalysisDto;
 import com.pwr_zpi.reservespotapi.entities.ai_analysis.AiAnalysis;
 import com.pwr_zpi.reservespotapi.entities.ai_analysis.AiAnalysisRepository;
 import com.pwr_zpi.reservespotapi.entities.ai_analysis.mapper.AiAnalysisMapper;
+import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
+import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
+import com.pwr_zpi.reservespotapi.entities.restaurant_statistic.RestaurantStatisticRepository;
+import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
+import com.pwr_zpi.reservespotapi.service.RestaurantAiAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +26,10 @@ public class AiAnalysisService {
 
     private final AiAnalysisRepository analysisRepository;
     private final AiAnalysisMapper analysisMapper;
+    private final RestaurantRepository restaurantRepository;
+    private final ReviewRepository reviewRepository;
+    private final RestaurantStatisticRepository statisticRepository;
+    private final RestaurantAiAnalysisService restaurantAiAnalysisService;
 
     public List<AiAnalysisDto> getAllAnalyses() {
         return analysisRepository.findAll()
@@ -67,5 +77,61 @@ public class AiAnalysisService {
 
     public long count() {
         return analysisRepository.count();
+    }
+
+    /**
+     * Generate or update AI analysis for a restaurant based on its description, reviews, and statistics
+     */
+    public AiAnalysisDto generateAnalysisForRestaurant(Long restaurantId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new RuntimeException("Restaurant not found with id: " + restaurantId));
+
+        // Get all reviews for the restaurant
+        List<com.pwr_zpi.reservespotapi.entities.review.Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
+
+        // Get all statistics for the restaurant
+        List<com.pwr_zpi.reservespotapi.entities.restaurant_statistic.RestaurantStatistic> statistics = 
+                statisticRepository.findByRestaurantId(restaurantId);
+
+        // Generate AI analysis
+        RestaurantAiAnalysisService.AnalysisResult analysisResult = 
+                restaurantAiAnalysisService.analyzeRestaurant(restaurant, reviews, statistics);
+
+        // Check if analysis already exists
+        Optional<AiAnalysis> existingAnalysis = analysisRepository.findByRestaurantId(restaurantId);
+
+        if (existingAnalysis.isPresent()) {
+            // Update existing analysis
+            AiAnalysis analysis = existingAnalysis.get();
+            analysis.setSummaryText(analysisResult.getSummaryText());
+            analysis.setSentimentScore(analysisResult.getSentimentScore());
+            analysis.setLastUpdated(LocalDateTime.now());
+            AiAnalysis savedAnalysis = analysisRepository.save(analysis);
+            return analysisMapper.toDto(savedAnalysis);
+        } else {
+            // Create new analysis
+            AiAnalysis newAnalysis = AiAnalysis.builder()
+                    .restaurant(restaurant)
+                    .summaryText(analysisResult.getSummaryText())
+                    .sentimentScore(analysisResult.getSentimentScore())
+                    .lastUpdated(LocalDateTime.now())
+                    .build();
+            AiAnalysis savedAnalysis = analysisRepository.save(newAnalysis);
+            return analysisMapper.toDto(savedAnalysis);
+        }
+    }
+
+    /**
+     * Generate AI analysis for all restaurants
+     */
+    public void generateAnalysisForAllRestaurants() {
+        List<Restaurant> restaurants = restaurantRepository.findAll();
+        for (Restaurant restaurant : restaurants) {
+            try {
+                generateAnalysisForRestaurant(restaurant.getId());
+            } catch (Exception e) {
+                System.err.println("Failed to generate analysis for restaurant " + restaurant.getId() + ": " + e.getMessage());
+            }
+        }
     }
 }
