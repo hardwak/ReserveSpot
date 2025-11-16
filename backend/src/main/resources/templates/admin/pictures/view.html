@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Picture - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}" class="active">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Picture Details</h2>
+            <div style="display: flex; gap: 1rem;">
+                <a th:href="@{/admin/pictures/{id}/edit(id=${picture.id})}" class="btn btn-primary">Edit</a>
+                <form th:action="@{/admin/pictures/{id}/delete(id=${picture.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-delete">Delete</button>
+                </form>
+                <a th:href="@{/admin/pictures}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="view-container">
+            <div class="view-field">
+                <label>ID</label>
+                <div class="value" th:text="${picture.id}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>URL</label>
+                <div class="value">
+                    <a th:if="${picture.url != null}" th:href="${picture.url}" target="_blank" th:text="${picture.url}"></a>
+                    <span th:if="${picture.url == null}">-</span>
+                </div>
+            </div>
+
+            <div class="view-field">
+                <label>Description</label>
+                <div class="value" th:text="${picture.description ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Uploaded At</label>
+                <div class="value" th:text="${picture.uploadedAt != null ? (#temporals.format(picture.uploadedAt, 'yyyy-MM-dd HH:mm')) : '-'}"></div>
+            </div>
+
+            <div class="view-field" th:if="${picture.url != null}">
+                <label>Preview</label>
+                <div class="value">
+                    <img th:src="${picture.url}" alt="Picture preview" style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

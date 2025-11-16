@@ -158,7 +158,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize autocomplete for relation fields
 document.addEventListener('DOMContentLoaded', function() {
-    // Example: User autocomplete for restaurant owner
-    // initAutocomplete('ownerSearch', '/admin/api/users/search', 'name', 'id');
+    // User autocomplete for restaurant owner
+    if (document.getElementById('ownerSearch')) {
+        initAutocomplete('ownerSearch', '/admin/api/users/search', 'name', 'id');
+    }
+    
+    // Restaurant autocomplete (if needed)
+    if (document.getElementById('restaurantSearch')) {
+        initAutocomplete('restaurantSearch', '/admin/api/restaurants/search', 'name', 'id');
+    }
+    
+    // Tag autocomplete (if needed)
+    if (document.getElementById('tagSearch')) {
+        initAutocomplete('tagSearch', '/admin/api/tags/search', 'name', 'id');
+    }
+    
+    // Table autocomplete (if needed)
+    if (document.getElementById('tableSearch')) {
+        initAutocomplete('tableSearch', '/admin/api/tables/search', 'name', 'id');
+    }
 });
 

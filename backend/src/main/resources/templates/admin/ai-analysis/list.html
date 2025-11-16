@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analysis - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}" class="active">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div class="page-header">
+            <h2>AI Analysis</h2>
+            <a th:href="@{/admin/ai-analysis/create}" class="btn btn-primary">Create New Analysis</a>
+        </div>
+
+        <div class="filters">
+            <form method="get" th:action="@{/admin/ai-analysis}">
+                <div class="filter-group">
+                    <label>Restaurant ID</label>
+                    <input type="number" name="restaurantId" th:value="${restaurantId}" placeholder="Filter by restaurant">
+                </div>
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a th:href="@{/admin/ai-analysis}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="id">ID</th>
+                        <th>Restaurant</th>
+                        <th>Summary</th>
+                        <th class="sortable" data-sort="sentimentScore">Sentiment</th>
+                        <th class="sortable" data-sort="lastUpdated">Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${analyses.isEmpty()}">
+                        <td colspan="6" style="text-align: center; padding: 2rem;">No analyses found</td>
+                    </tr>
+                    <tr th:each="analysis : ${analyses}">
+                        <td th:text="${analysis.id}"></td>
+                        <td>
+                            <a th:if="${analysis.restaurantId != null}"
+                               th:href="@{/admin/restaurants/{id}(id=${analysis.restaurantId})}" 
+                               class="relation-link" 
+                               th:text="${analysis.restaurantId}"></a>
+                            <span th:if="${analysis.restaurantId == null}">-</span>
+                        </td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;" 
+                            th:text="${analysis.summaryText != null ? (#strings.abbreviate(analysis.summaryText, 100)) : '-'}"></td>
+                        <td>
+                            <span th:if="${analysis.sentimentScore != null}" 
+                                  th:text="${#numbers.formatDecimal(analysis.sentimentScore, 1, 2)}"></span>
+                            <span th:if="${analysis.sentimentScore == null}">-</span>
+                        </td>
+                        <td th:text="${analysis.lastUpdated != null ? (#temporals.format(analysis.lastUpdated, 'yyyy-MM-dd')) : '-'}"></td>
+                        <td class="actions">
+                            <a th:href="@{/admin/ai-analysis/{id}(id=${analysis.id})}" class="btn btn-sm btn-secondary">View</a>
+                            <a th:href="@{/admin/ai-analysis/{id}/edit(id=${analysis.id})}" class="btn btn-sm btn-primary">Edit</a>
+                            <form th:action="@{/admin/ai-analysis/{id}/delete(id=${analysis.id})}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}" 
+               th:href="@{/admin/ai-analysis(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, restaurantId=${restaurantId})}">Previous</a>
+            <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:if="${page != currentPage}"
+                   th:href="@{/admin/ai-analysis(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, restaurantId=${restaurantId})}"
+                   th:text="${page + 1}"></a>
+                <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
+            </span>
+            <a th:if="${currentPage < totalPages - 1}"
+               th:href="@{/admin/ai-analysis(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, restaurantId=${restaurantId})}">Next</a>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

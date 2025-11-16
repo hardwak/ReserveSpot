@@ -10,7 +10,6 @@ import com.pwr_zpi.reservespotapi.entities.users.mapper.UserMapper;
 import com.pwr_zpi.reservespotapi.entities.users.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -40,10 +39,6 @@ public class AdminUserController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Role roleFilter,
             Model model) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") 
-            ? Sort.by(sortBy).descending() 
-            : Sort.by(sortBy).ascending();
         
         // For now, fetch all and filter in memory (can be optimized with JPA queries later)
         List<User> allUsers = userRepository.findAll();

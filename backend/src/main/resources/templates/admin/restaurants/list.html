@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurants - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}" class="active">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div class="page-header">
+            <h2>Restaurants</h2>
+            <a th:href="@{/admin/restaurants/create}" class="btn btn-primary">Create New Restaurant</a>
+        </div>
+
+        <div class="filters">
+            <form method="get" th:action="@{/admin/restaurants}">
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" name="search" th:value="${search}" placeholder="Name, description, address...">
+                </div>
+                <div class="filter-group">
+                    <label>City</label>
+                    <select name="cityFilter">
+                        <option value="">All Cities</option>
+                        <option th:each="city : ${cities}" 
+                                th:value="${city}" 
+                                th:text="${city}"
+                                th:selected="${cityFilter == city}"></option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Page Size</label>
+                    <select name="size">
+                        <option th:each="size : ${10, 25, 50, 100}" 
+                                th:value="${size}" 
+                                th:text="${size}"
+                                th:selected="${pageSize == size}"></option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a th:href="@{/admin/restaurants}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="id">ID</th>
+                        <th class="sortable" data-sort="name">Name</th>
+                        <th class="sortable" data-sort="city">City</th>
+                        <th>Address</th>
+                        <th class="sortable" data-sort="averageRating">Rating</th>
+                        <th>Owner</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${restaurants.isEmpty()}">
+                        <td colspan="7" style="text-align: center; padding: 2rem;">No restaurants found</td>
+                    </tr>
+                    <tr th:each="restaurant : ${restaurants}">
+                        <td th:text="${restaurant.id}"></td>
+                        <td>
+                            <a th:href="@{/admin/restaurants/{id}(id=${restaurant.id})}" 
+                               class="relation-link" 
+                               th:text="${restaurant.name}"></a>
+                        </td>
+                        <td th:text="${restaurant.city ?: '-'}"></td>
+                        <td th:text="${restaurant.address ?: '-'}"></td>
+                        <td>
+                            <span th:if="${restaurant.averageRating != null}" 
+                                  th:text="${#numbers.formatDecimal(restaurant.averageRating, 1, 1)}"></span>
+                            <span th:if="${restaurant.averageRating == null}">-</span>
+                        </td>
+                        <td>
+                            <a th:if="${restaurant.ownerId != null}"
+                               th:href="@{/admin/users/{id}(id=${restaurant.ownerId})}" 
+                               class="relation-link" 
+                               th:text="${restaurant.ownerId}"></a>
+                            <span th:if="${restaurant.ownerId == null}">-</span>
+                        </td>
+                        <td class="actions">
+                            <a th:href="@{/admin/restaurants/{id}(id=${restaurant.id})}" class="btn btn-sm btn-secondary">View</a>
+                            <a th:href="@{/admin/restaurants/{id}/edit(id=${restaurant.id})}" class="btn btn-sm btn-primary">Edit</a>
+                            <form th:action="@{/admin/restaurants/{id}/delete(id=${restaurant.id})}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}" 
+               th:href="@{/admin/restaurants(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}">Previous</a>
+            <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:if="${page != currentPage}"
+                   th:href="@{/admin/restaurants(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}"
+                   th:text="${page + 1}"></a>
+                <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
+            </span>
+            <a th:if="${currentPage < totalPages - 1}"
+               th:href="@{/admin/restaurants(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cityFilter=${cityFilter})}">Next</a>
+        </div>
+
+        <div style="margin-top: 1rem; color: #666;">
+            Showing <span th:text="${totalItems}"></span> restaurants
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+
