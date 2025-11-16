@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -43,7 +44,7 @@ public class Restaurant {
 
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    private String openingHours;
+    private Map<String, String> openingHours;
 
     private Double averageRating;
 
