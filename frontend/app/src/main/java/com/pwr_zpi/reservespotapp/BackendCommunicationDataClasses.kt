@@ -67,15 +67,6 @@ data class ReservationDto(
     val rating: Float
 )
 
-data class RestaurantDto(
-    val restaurantName: String,
-    val imageURL: String? = null,
-    val rating: Float,
-    val views: Int
-)
-
-
-
 interface AuthApi {
     @POST("/api/auth/google")
     suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
@@ -94,9 +85,21 @@ interface AuthApi {
 
 }
 
+data class RestaurantDto(
+    val restaurantName: String,
+    val imageURL: String? = null,
+    val rating: Float,
+    val views: Int
+)
+
 interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
     suspend fun getMyUpcomingReservations(@Header("Authorization") token: String): Response<List<ReservationDto>>
+}
+
+interface RestaurantApi {
+    @GET("/api/") // TODO set favourites endpoint
+    suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 }
 
 
@@ -116,5 +119,9 @@ object RetrofitClient {
 
     val reservationApi: ReservationApi by lazy {
         retrofit.create(ReservationApi::class.java)
+    }
+
+    val restaurantApi: RestaurantApi by lazy {
+        retrofit.create(RestaurantApi::class.java)
     }
 }
