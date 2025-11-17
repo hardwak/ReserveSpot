@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,10 +45,13 @@ fun ReservationInfoCard(
     modifier: Modifier,
     info: ReservationDto
 ) {
+    val id = info.id
     val restaurantName = info.restaurantName
     val datetime = info.reservationDatetime
     val numOfPeople = info.numOfPeople
     val durationM = info.durationMinutes
+
+    val context = LocalContext.current
 
     Box(
         modifier = modifier
@@ -132,7 +137,7 @@ fun ReservationInfoCard(
 
         Button(
             onClick = {
-                // TODO cancel reservation
+                cancelReservation(id, context)
             },
             modifier = Modifier
                 .padding(8.dp)
@@ -151,4 +156,11 @@ fun ReservationInfoCard(
 
     }
 
+}
+
+fun cancelReservation(
+    id: Long,
+    context: Context
+) {
+    // TODO
 }
