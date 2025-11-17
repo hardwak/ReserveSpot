@@ -7,6 +7,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import java.time.LocalDateTime
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -42,6 +43,37 @@ data class RestaurantRegisterRequest(
 data class RegisterResponse(
     val message: String
 )
+
+data class MyUpcomingReservationsResponse(
+    val reservations: List<ReservationDto>
+)
+
+enum class ReservationStatus {
+    PENDING,
+    CONFIRMED,
+    COMPLETED,
+    CANCELLED
+}
+
+data class ReservationDto(
+    val id: Long,
+    val userId: Long,
+    val tableId: Long,
+    val reservationDatetime: LocalDateTime,
+    val durationMinutes: Int,
+    val status: ReservationStatus,
+    val restaurantName: String,
+    val numOfPeople: Int,
+    val rating: Float
+)
+
+data class RestaurantDto(
+    val restaurantName: String,
+    val imageURL: String? = null,
+    val rating: Float,
+    val views: Int
+)
+
 
 
 interface AuthApi {

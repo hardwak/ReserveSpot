@@ -28,16 +28,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-data class ReservationDto (
-    val restaurantName: String,
-    val dateTime: LocalDateTime,
-    val numOfPeople: Int,
-    val durationH: Float,
-    val restaurantRating: Float
-)
+//data class ReservationDto (
+//    val restaurantName: String,
+//    val dateTime: LocalDateTime,
+//    val numOfPeople: Int,
+//    val durationM: Float,
+//    val restaurantRating: Float
+//)
 
 @Composable
 fun ReservationInfoCard(
@@ -45,9 +44,9 @@ fun ReservationInfoCard(
     info: ReservationDto
 ) {
     val restaurantName = info.restaurantName
-    val datetime = info.dateTime
+    val datetime = info.reservationDatetime
     val numOfPeople = info.numOfPeople
-    val durationH = info.durationH
+    val durationM = info.durationMinutes
 
     Box(
         modifier = modifier
@@ -126,7 +125,7 @@ fun ReservationInfoCard(
                         .size(20.dp),
                     contentDescription = "duration"
                 )
-                Text(text = durationH.toString() + "h")
+                Text(text = durationM.toString() + "min")
             }
         }
 

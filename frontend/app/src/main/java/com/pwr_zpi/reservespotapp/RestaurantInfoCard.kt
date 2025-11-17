@@ -29,13 +29,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 
-data class RestaurantDto(
-    val restaurantName: String,
-    val imageURL: String? = null,
-    val rating: Float,
-    val views: Int
-)
-
 @Composable
 fun RestaurantInfoCard(
     modifier: Modifier = Modifier,
