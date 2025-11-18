@@ -17,6 +17,8 @@ import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import com.pwr_zpi.reservespotapi.entities.ai_analysis.service.AiAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -160,7 +162,10 @@ public class ReviewService {
                 return ReviewEligibilityResult.failure(user, restaurant, null, HttpStatus.NOT_FOUND, "Reservation not found");
             }
 
-            if (!reservation.getUser().getId().equals(userId)) {
+            if (
+                    !reservation.getUser().getId().equals(userId) &&
+                    !SecurityContextHolder.getContext().getAuthentication().getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))
+            ) {
                 return ReviewEligibilityResult.failure(user, restaurant, reservation, HttpStatus.FORBIDDEN,
                         "Reservation does not belong to current user");
             }

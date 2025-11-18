@@ -6,6 +6,7 @@ import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,8 +18,11 @@ public class CurrentUserService {
     private final UserRepository userRepository;
 
     public User requireCurrentUser(HttpServletRequest request) {
-        String token = extractToken(request);
-        String email = jwtService.extractUsername(token);
+//        String token = extractToken(request);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (email.equals("anonymousUser")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found for token"));
     }
