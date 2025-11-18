@@ -4,6 +4,8 @@ import com.pwr_zpi.reservespotapi.entities.picture.dto.CreatePictureDto;
 import com.pwr_zpi.reservespotapi.entities.picture.dto.PictureDto;
 import com.pwr_zpi.reservespotapi.entities.picture.dto.UpdatePictureDto;
 import com.pwr_zpi.reservespotapi.entities.picture.Picture;
+import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
+import com.pwr_zpi.reservespotapi.entities.review.Review;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
@@ -22,9 +24,9 @@ public class PictureMapper {
                 .uploadedAt(picture.getUploadedAt())
                 .description(picture.getDescription())
                 .restaurantIds(picture.getRestaurants() != null ? 
-                    picture.getRestaurants().stream().map(restaurant -> restaurant.getId()).collect(Collectors.toSet()) : null)
+                    picture.getRestaurants().stream().map(Restaurant::getId).collect(Collectors.toSet()) : null)
                 .reviewIds(picture.getReviews() != null ? 
-                    picture.getReviews().stream().map(review -> review.getId()).collect(Collectors.toSet()) : null)
+                    picture.getReviews().stream().map(Review::getId).collect(Collectors.toSet()) : null)
                 .build();
     }
 

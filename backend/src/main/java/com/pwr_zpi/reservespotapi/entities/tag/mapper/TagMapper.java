@@ -1,5 +1,7 @@
+
 package com.pwr_zpi.reservespotapi.entities.tag.mapper;
 
+import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.CreateTagDto;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.TagDto;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.UpdateTagDto;
@@ -20,7 +22,7 @@ public class TagMapper {
                 .id(tag.getId())
                 .name(tag.getName())
                 .restaurantIds(tag.getRestaurants() != null ? 
-                    tag.getRestaurants().stream().map(restaurant -> restaurant.getId()).collect(Collectors.toSet()) : null)
+                    tag.getRestaurants().stream().map(Restaurant::getId).collect(Collectors.toSet()) : null)
                 .build();
     }
 

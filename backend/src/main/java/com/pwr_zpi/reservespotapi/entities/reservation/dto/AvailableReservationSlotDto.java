@@ -16,5 +16,6 @@ public class AvailableReservationSlotDto {
     private Integer tableCapacity;
     private LocalDateTime start;
     private LocalDateTime end;
+    private String locationInRestaurant;
 }
 
