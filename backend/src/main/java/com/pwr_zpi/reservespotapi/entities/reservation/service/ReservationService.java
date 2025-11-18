@@ -346,6 +346,7 @@ public class ReservationService {
                     .tableCapacity(table.getCapacity())
                     .start(slotStart)
                     .end(slotStart.plusMinutes(durationMinutes))
+                    .locationInRestaurant(table.getLocationInRestaurant())
                     .build());
             slotStart = slotStart.plusMinutes(durationMinutes);
         }
