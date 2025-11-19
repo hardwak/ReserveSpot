@@ -56,20 +56,36 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReservationScreen(navController: NavHostController, restaurantName: String) {
+fun ReservationScreen(
+    navController: NavHostController, restaurantName: String, initialDate: String? = null,
+    initialTime: String? = null,
+    initialGuests: String? = null,
+    initialDuration: String? = null,
+    initialLocation: String? = null
+) {
+
+    val parsedDate = remember(initialDate) {
+        if (initialDate != null && initialDate.isNotEmpty()) {
+            try {
+                LocalDate.parse(initialDate, DateTimeFormatter.ISO_LOCAL_DATE)
+            } catch (e: Exception) {
+                LocalDate.now()
+            }
+        } else {
+            LocalDate.now()
+        }
+    }
     // Reservation form states
 //  TODO  need to change selected time to data from backend
-    var selectedTime by remember { mutableStateOf("12:00") }
+    var selectedTime by remember { mutableStateOf(initialTime ?: "12:00") }
     var showDatePicker by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedGuests by remember { mutableStateOf(2) }
-    var selectedDuration by remember { mutableStateOf("1 hour") }
-    var selectedType by remember { mutableStateOf("Basic reservation") }
-    var selectedLocation by remember { mutableStateOf("Any") }
+    var selectedDate by remember { mutableStateOf(parsedDate) }
+    var selectedGuests by remember { mutableStateOf(initialGuests?.toIntOrNull() ?: 2) }
+    var selectedDuration by remember { mutableStateOf(initialDuration ?: "1 hour") }
+    var selectedLocation by remember { mutableStateOf(initialLocation ?: "Any") }
 
     val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     val durationOptions = listOf("1 hour", "1.5 hours", "2 hours")
-    val typeOptions = listOf("Basic reservation", "Business meeting")
     val locationOptions = listOf("Any", "By the window")
 
 //    generating time slots
@@ -181,13 +197,6 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                     onSelect = { selectedDuration = it }
                 )
 
-                // Type of meeting
-                FormSectionTitle("Meeting type")
-                HorizontalSelector(
-                    options = typeOptions,
-                    selectedValue = selectedType,
-                    onSelect = { selectedType = it }
-                )
 
                 FormSectionTitle("Table location")
                 HorizontalSelector(
@@ -208,7 +217,6 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                             "time=$selectedTime&" +
                             "guests=$selectedGuests&" +
                             "duration=$selectedDuration&" +
-                            "type=$selectedType&" +
                             "location=$selectedLocation"
 
                     navController.navigate(route)

@@ -131,13 +131,10 @@ fun Controller(navController: NavHostController) {
         ) {
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
-            composable(
-                route = "restaurantDetails/{restaurantName}/{rating}",
-                arguments = listOf(
-                    navArgument("restaurantName") { type = NavType.StringType },
-                    navArgument("rating") { type = NavType.FloatType }
-                )
-            ) { backStackEntry ->
+            composable("restaurantDetails/{restaurantName}/{rating}", arguments = listOf(
+                navArgument("restaurantName") { type = NavType.StringType },
+                navArgument("rating") { type = NavType.FloatType }
+            )) { backStackEntry ->
                 val name =
                     backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
                 val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
@@ -145,11 +142,38 @@ fun Controller(navController: NavHostController) {
                 RestaurantDetailsScreen(navController, name, rating)
 
             }
+            composable(
 
-            composable("reservation/{restaurantName}") { backStackEntry ->
-                val name =
-                    backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
-                ReservationScreen(navController, name)
+                route = "reservation/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
+                arguments = listOf(
+                    navArgument("restaurantName") { type = NavType.StringType },
+
+                    navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("time") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("guests") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("duration") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                )
+            ) { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+
+                // getting parameters
+                val date = backStackEntry.arguments?.getString("date")
+                val time = backStackEntry.arguments?.getString("time")
+                val guests = backStackEntry.arguments?.getString("guests")
+                val duration = backStackEntry.arguments?.getString("duration")
+                val location = backStackEntry.arguments?.getString("location")
+
+
+                ReservationScreen(
+                    navController,
+                    name,
+                    initialDate = date,
+                    initialTime = time,
+                    initialGuests = guests,
+                    initialDuration = duration,
+                    initialLocation = location
+                )
             }
 
             composable("account") { AccountScreen(navController) }
@@ -171,7 +195,6 @@ fun Controller(navController: NavHostController) {
                     navArgument("time") { type = NavType.StringType; defaultValue = "" },
                     navArgument("guests") { type = NavType.StringType; defaultValue = "" },
                     navArgument("duration") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("type") { type = NavType.StringType; defaultValue = "" },
                     navArgument("location") { type = NavType.StringType; defaultValue = "Any" }
                 )
             ) { backStackEntry ->
@@ -188,6 +211,10 @@ fun Controller(navController: NavHostController) {
                 )
             }
         }
+
+//            composable("login") { LoginScreen(navController) }
+//            composable("reservations") { ReservationsScreen(navController) }
+//            composable("favourites") { FavouritesScreen(navController) }
 
 
     }
