@@ -334,7 +334,7 @@ fun FilterBottomSheetContent(
         Spacer(Modifier.height(15.dp))
 
         // City filter
-        Text("Wybierz miasto", style = MaterialTheme.typography.titleMedium)
+        Text("Choose a city", style = MaterialTheme.typography.titleMedium)
         allCities.forEach { city ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
