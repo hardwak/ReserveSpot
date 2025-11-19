@@ -111,7 +111,7 @@ public class PictureService {
                 
                 // Now delete the picture
                 pictureRepository.delete(picture);
-                return true;
+            return true;
             })
             .orElse(false);
     }

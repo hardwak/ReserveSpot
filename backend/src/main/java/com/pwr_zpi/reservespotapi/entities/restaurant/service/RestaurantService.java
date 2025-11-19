@@ -110,7 +110,7 @@ public class RestaurantService {
                     
                     // Now delete the restaurant (cascade will delete tables, reviews, etc.)
                     restaurantRepository.delete(restaurant);
-                    return true;
+            return true;
                 })
                 .orElse(false);
     }

@@ -169,12 +169,12 @@ public class AdminPictureController {
     @PostMapping("/{id}/delete")
     public String deletePicture(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            boolean deleted = pictureService.deletePicture(id);
-            if (deleted) {
-                redirectAttributes.addFlashAttribute("success", "Picture deleted successfully");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Picture not found");
-            }
+        boolean deleted = pictureService.deletePicture(id);
+        if (deleted) {
+            redirectAttributes.addFlashAttribute("success", "Picture deleted successfully");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Picture not found");
+        }
         } catch (Exception e) {
             e.printStackTrace(); // Log the exception
             redirectAttributes.addFlashAttribute("error", "Could not delete picture: " + e.getMessage());
