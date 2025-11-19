@@ -131,7 +131,10 @@ fun Controller(navController: NavHostController) {
         ) {
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
-            composable("restaurantDetails/{restaurantName}/{rating}") { backStackEntry ->
+            composable("restaurantDetails/{restaurantName}/{rating}", arguments = listOf(
+                navArgument("restaurantName") { type = NavType.StringType },
+                navArgument("rating") { type = NavType.FloatType }
+            )) { backStackEntry ->
                 val name =
                     backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
                 val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
