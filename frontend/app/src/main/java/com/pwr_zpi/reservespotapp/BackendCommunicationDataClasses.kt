@@ -102,6 +102,73 @@ interface RestaurantApi {
     suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 }
 
+//Restaurant and owners DTOs
+
+data class OwnerRestaurantDto(
+    val id: Long? = null, // Null when adding new
+    val ownerId: Long,
+    val name: String,
+    val address: String,
+    val city: String,
+    val description: String,
+    val openingHours: String,
+    val pic: String? = null, // photo URL
+    // Optional if backend returns it
+    val averageRating: Double? = 0.0,
+    val tableIds: List<Long>? = emptyList()
+)
+
+// DTO for table
+data class TableDto(
+    val id: Long? = null,
+    val restaurantId: Long,
+    val tableCapacity: Int,
+    val locationInRestaurant: String
+)
+
+// DTO for reservations (owner view - /api/reservations/owner/upcoming)
+data class OwnerReservationDto(
+    val id: Long,
+    val userId: Long,
+    val tableId: Long,
+    val reservationDatetime: String, //ISO format
+    val durationMinutes: Int,
+    val status: String // PENDING, CONFIRMED etc.
+)
+
+// API Interface for owner
+interface OwnerApi {
+    // Restaurant
+    @GET("/api/restaurants/owner/{ownerId}")
+    suspend fun getMyRestaurants(@Header("Authorization") token: String, @retrofit2.http.Path("ownerId") ownerId: Long): Response<List<OwnerRestaurantDto>>
+
+    @POST("/api/restaurants")
+    suspend fun addRestaurant(@Header("Authorization") token: String, @Body restaurant: OwnerRestaurantDto): Response<OwnerRestaurantDto>
+
+    @retrofit2.http.PUT("/api/restaurants/{id}")
+    suspend fun updateRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long, @Body restaurant: OwnerRestaurantDto): Response<OwnerRestaurantDto>
+
+    @retrofit2.http.DELETE("/api/restaurants/{id}")
+    suspend fun deleteRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
+
+    // Tables
+    @GET("/api/tables/restaurant/{restaurantId}") // endpoint for getting tables (nned to check if it ex.)
+    suspend fun getTablesByRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("restaurantId") restaurantId: Long): Response<List<TableDto>>
+
+    @POST("/api/tables")
+    suspend fun addTable(@Header("Authorization") token: String, @Body table: TableDto): Response<TableDto>
+
+    @retrofit2.http.DELETE("/api/tables/{id}")
+    suspend fun deleteTable(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
+
+    // Reservations
+    @GET("/api/reservations/owner/upcoming")
+    suspend fun getOwnerUpcomingReservations(@Header("Authorization") token: String): Response<List<OwnerReservationDto>>
+
+    @retrofit2.http.DELETE("/api/reservations/{id}")
+    suspend fun cancelReservation(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
+}
+
 
 object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
@@ -123,5 +190,9 @@ object RetrofitClient {
 
     val restaurantApi: RestaurantApi by lazy {
         retrofit.create(RestaurantApi::class.java)
+    }
+
+    val ownerApi: OwnerApi by lazy {
+        retrofit.create(OwnerApi::class.java)
     }
 }
