@@ -125,7 +125,8 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "reservations",
+            startDestination = "home",
+//            startDestination = "reservations",
             modifier = Modifier.padding(innerPadding)
 //            Routes below
         ) {
@@ -185,7 +186,7 @@ fun Controller(navController: NavHostController) {
             composable("register") { RegisterScreen(navController) }
             composable("restaurant_register") { RestaurantRegisterScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
-            // composable("favourites") { FavouritesScreen(navController) }
+//             composable("favourites") { FavouritesScreen(navController) }
 
             composable(
                 route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
@@ -206,15 +207,11 @@ fun Controller(navController: NavHostController) {
                     time = backStackEntry.arguments?.getString("time") ?: "No hours",
                     guests = backStackEntry.arguments?.getString("guests") ?: "0",
                     duration = backStackEntry.arguments?.getString("duration") ?: "No duration",
-                    type = backStackEntry.arguments?.getString("type") ?: "No type of reservation",
                     location = backStackEntry.arguments?.getString("location") ?: "Any"
                 )
             }
         }
 
-//            composable("login") { LoginScreen(navController) }
-//            composable("reservations") { ReservationsScreen(navController) }
-//            composable("favourites") { FavouritesScreen(navController) }
 
 
     }
