@@ -41,7 +41,7 @@
         </div>
 
         <div class="filters">
-            <form method="get" th:action="@{/admin/tables}">
+            <form method="get" th:action="@{/admin/tables/list}">
                 <div class="filter-group">
                     <label>Restaurant ID</label>
                     <input type="number" name="restaurantId" th:value="${restaurantId}" placeholder="Filter by restaurant">
@@ -99,15 +99,15 @@
 
         <div class="pagination" th:if="${totalPages > 1}">
             <a th:if="${currentPage > 0}" 
-               th:href="@{/admin/tables(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, minCapacity=${minCapacity != null ? minCapacity : ''})}">Previous</a>
+               th:href="@{/admin/tables/list(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, minCapacity=${minCapacity != null ? minCapacity : ''})}">Previous</a>
             <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
                 <a th:if="${page != currentPage}"
-                   th:href="@{/admin/tables(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, minCapacity=${minCapacity != null ? minCapacity : ''})}"
+                   th:href="@{/admin/tables/list(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, minCapacity=${minCapacity != null ? minCapacity : ''})}"
                    th:text="${page + 1}"></a>
                 <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
             </span>
             <a th:if="${currentPage < totalPages - 1}"
-               th:href="@{/admin/tables(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, minCapacity=${minCapacity != null ? minCapacity : ''})}">Next</a>
+               th:href="@{/admin/tables/list(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, minCapacity=${minCapacity != null ? minCapacity : ''})}">Next</a>
         </div>
     </main>
 

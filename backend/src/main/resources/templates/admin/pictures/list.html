@@ -41,7 +41,7 @@
         </div>
 
         <div class="filters">
-            <form method="get" th:action="@{/admin/pictures}">
+            <form method="get" th:action="@{/admin/pictures/list}">
                 <div class="filter-group">
                     <label>Search</label>
                     <input type="text" name="search" th:value="${search}" placeholder="URL or description...">
@@ -89,15 +89,15 @@
 
         <div class="pagination" th:if="${totalPages > 1}">
             <a th:if="${currentPage > 0}" 
-               th:href="@{/admin/pictures(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}">Previous</a>
+               th:href="@{/admin/pictures/list(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}">Previous</a>
             <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
                 <a th:if="${page != currentPage}"
-                   th:href="@{/admin/pictures(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}"
+                   th:href="@{/admin/pictures/list(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}"
                    th:text="${page + 1}"></a>
                 <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
             </span>
             <a th:if="${currentPage < totalPages - 1}"
-               th:href="@{/admin/pictures(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}">Next</a>
+               th:href="@{/admin/pictures/list(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}">Next</a>
         </div>
     </main>
 
