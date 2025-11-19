@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapi.controller.admin;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.CreateRestaurantDto;
@@ -19,7 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -33,6 +36,7 @@ public class AdminRestaurantController {
     private final RestaurantMapper restaurantMapper;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/list")
     @Transactional(readOnly = true)
@@ -78,8 +82,10 @@ public class AdminRestaurantController {
         int end = Math.min(start + size, allRestaurants.size());
         // Ensure start is within bounds
         start = Math.min(start, allRestaurants.size());
-        List<Restaurant> pageRestaurants = (start < end) ? allRestaurants.subList(start, end) : List.of();
+        List<Restaurant> pageRestaurants = (start < end) ? allRestaurants.subList(start, end) : new ArrayList<>();
         
+        // Map to DTOs - mappers will access lazy collections within the transaction
+        // Collections are accessed directly in mappers, which will trigger lazy loading safely
         List<RestaurantDto> restaurantDtos = pageRestaurants.stream()
             .map(restaurantMapper::toDto)
             .collect(Collectors.toList());
@@ -101,6 +107,7 @@ public class AdminRestaurantController {
         model.addAttribute("search", search);
         model.addAttribute("cityFilter", cityFilter);
         model.addAttribute("cities", cities);
+        model.addAttribute("pageSizes", List.of(10, 25, 50, 100));
         
         return "admin/restaurants/list";
     }
@@ -121,6 +128,7 @@ public class AdminRestaurantController {
                                   Model model,
                                   RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("restaurant", createDto);
             model.addAttribute("owners", userRepository.findAll().stream()
                 .filter(u -> u.getRole() == com.pwr_zpi.reservespotapi.entities.users.Role.RESTAURANT)
                 .collect(Collectors.toList()));
@@ -133,6 +141,8 @@ public class AdminRestaurantController {
             redirectAttributes.addFlashAttribute("success", "Restaurant created successfully");
             return "redirect:/admin/restaurants/list";
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("restaurant", createDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("owners", userRepository.findAll().stream()
                 .filter(u -> u.getRole() == com.pwr_zpi.reservespotapi.entities.users.Role.RESTAURANT)
@@ -148,12 +158,14 @@ public class AdminRestaurantController {
             .map(restaurant -> {
                 RestaurantDto restaurantDto = restaurantMapper.toDto(restaurant);
                 model.addAttribute("restaurant", restaurantDto);
+                model.addAttribute("tags", tagRepository.findAll());
                 return "admin/restaurants/view";
             })
-            .orElse("redirect:/admin/restaurants");
+            .orElse("redirect:/admin/restaurants/list");
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return restaurantRepository.findById(id)
             .map(restaurant -> {
@@ -162,10 +174,27 @@ public class AdminRestaurantController {
                 updateDto.setAddress(restaurant.getAddress());
                 updateDto.setCity(restaurant.getCity());
                 updateDto.setDescription(restaurant.getDescription());
-                updateDto.setOpeningHours(restaurant.getOpeningHours());
+                // Convert Map to JSON string for the form
+                try {
+                    if (restaurant.getOpeningHours() != null) {
+                        updateDto.setOpeningHours(objectMapper.writeValueAsString(restaurant.getOpeningHours()));
+                    } else {
+                        updateDto.setOpeningHours("{}");
+                    }
+                } catch (Exception e) {
+                    updateDto.setOpeningHours("{}");
+                }
                 updateDto.setLatitude(restaurant.getLatitude());
                 updateDto.setLongitude(restaurant.getLongitude());
                 updateDto.setPic(restaurant.getPic());
+                
+                // Set tagIds from restaurant's tags
+                if (restaurant.getTags() != null) {
+                    Set<Long> tagIds = restaurant.getTags().stream()
+                        .map(tag -> tag.getId())
+                        .collect(Collectors.toSet());
+                    updateDto.setTagIds(tagIds);
+                }
                 
                 model.addAttribute("restaurant", updateDto);
                 model.addAttribute("restaurantId", id);
@@ -173,10 +202,9 @@ public class AdminRestaurantController {
                     .filter(u -> u.getRole() == com.pwr_zpi.reservespotapi.entities.users.Role.RESTAURANT)
                     .collect(Collectors.toList()));
                 model.addAttribute("tags", tagRepository.findAll());
-                model.addAttribute("currentTags", restaurant.getTags());
                 return "admin/restaurants/edit";
             })
-            .orElse("redirect:/admin/restaurants");
+            .orElse("redirect:/admin/restaurants/list");
     }
 
     @PostMapping("/{id}/edit")
@@ -186,6 +214,7 @@ public class AdminRestaurantController {
                                   Model model,
                                   RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("restaurant", updateDto);
             model.addAttribute("restaurantId", id);
             model.addAttribute("owners", userRepository.findAll().stream()
                 .filter(u -> u.getRole() == com.pwr_zpi.reservespotapi.entities.users.Role.RESTAURANT)
@@ -202,6 +231,8 @@ public class AdminRestaurantController {
                 );
             return "redirect:/admin/restaurants/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("restaurant", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("restaurantId", id);
             model.addAttribute("owners", userRepository.findAll().stream()

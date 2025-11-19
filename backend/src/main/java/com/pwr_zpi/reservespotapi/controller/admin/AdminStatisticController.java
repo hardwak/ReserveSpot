@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -129,6 +130,7 @@ public class AdminStatisticController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return statisticRepository.findById(id)
             .map(statistic -> {
@@ -152,6 +154,7 @@ public class AdminStatisticController {
                                  Model model,
                                  RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("statistic", updateDto);
             model.addAttribute("statisticId", id);
             model.addAttribute("restaurants", restaurantRepository.findAll());
             return "admin/statistics/edit";
@@ -163,8 +166,10 @@ public class AdminStatisticController {
                     statisticDto -> redirectAttributes.addFlashAttribute("success", "Statistic updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Statistic not found")
                 );
-            return "redirect:/admin/statistics/list/" + id;
+            return "redirect:/admin/statistics/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("statistic", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("statisticId", id);
             model.addAttribute("restaurants", restaurantRepository.findAll());

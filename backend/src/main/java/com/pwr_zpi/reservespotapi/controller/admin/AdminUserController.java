@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,14 +44,7 @@ public class AdminUserController {
             Model model) {
         
         // For now, fetch all and filter in memory (can be optimized with JPA queries later)
-        // Initialize picture relationships to avoid lazy loading issues
         List<User> allUsers = userRepository.findAll();
-        // Force initialization of picture relationships
-        allUsers.forEach(user -> {
-            if (user.getPicture() != null) {
-                user.getPicture().getId(); // Force initialization
-            }
-        });
         
         // Apply filters
         if (search != null && !search.trim().isEmpty()) {
@@ -85,8 +79,10 @@ public class AdminUserController {
         int end = Math.min(start + size, allUsers.size());
         // Ensure start is within bounds
         start = Math.min(start, allUsers.size());
-        List<User> pageUsers = (start < end) ? allUsers.subList(start, end) : List.of();
+        List<User> pageUsers = (start < end) ? allUsers.subList(start, end) : new ArrayList<>();
         
+        // Map to DTOs - mappers will access lazy relationships within the transaction
+        // The picture relationship is accessed directly in the mapper, which will trigger lazy loading safely
         List<UserDto> userDtos = pageUsers.stream()
             .map(userMapper::toDto)
             .collect(Collectors.toList());
@@ -101,6 +97,7 @@ public class AdminUserController {
         model.addAttribute("search", search);
         model.addAttribute("roleFilter", roleFilter);
         model.addAttribute("roles", Role.values());
+        model.addAttribute("pageSizes", List.of(10, 25, 50, 100));
         
         return "admin/users/list";
     }
@@ -137,6 +134,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public String viewUser(@PathVariable Long id, Model model) {
         return userRepository.findById(id)
             .map(user -> {
@@ -144,7 +142,7 @@ public class AdminUserController {
                 model.addAttribute("user", userDto);
                 return "admin/users/view";
             })
-            .orElse("redirect:/admin/users");
+            .orElse("redirect:/admin/users/list");
     }
 
     @GetMapping("/{id}/edit")

@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.Map;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -16,8 +17,9 @@ public class UpdateRestaurantDto {
     private String address;
     private String city;
     private String description;
-    private Map<String, String> openingHours;
+    private String openingHours; // JSON string from form, will be parsed to Map in mapper
     private Double latitude;
     private Double longitude;
     private String pic;
+    private Set<Long> tagIds;
 }
