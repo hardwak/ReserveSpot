@@ -139,10 +139,38 @@ fun Controller(navController: NavHostController) {
                 RestaurantDetailsScreen(navController, name, rating)
 
             }
-            composable("reservation/{restaurantName}") { backStackEntry ->
-                val name =
-                    backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
-                ReservationScreen(navController, name)
+            composable(
+
+                route = "reservation/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
+                arguments = listOf(
+                    navArgument("restaurantName") { type = NavType.StringType },
+
+                    navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("time") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("guests") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("duration") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                )
+            ) { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+
+                // getting parameters
+                val date = backStackEntry.arguments?.getString("date")
+                val time = backStackEntry.arguments?.getString("time")
+                val guests = backStackEntry.arguments?.getString("guests")
+                val duration = backStackEntry.arguments?.getString("duration")
+                val location = backStackEntry.arguments?.getString("location")
+
+
+                ReservationScreen(
+                    navController,
+                    name,
+                    initialDate = date,
+                    initialTime = time,
+                    initialGuests = guests,
+                    initialDuration = duration,
+                    initialLocation = location
+                )
             }
 
             composable("account") { AccountScreen(navController) }

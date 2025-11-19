@@ -112,7 +112,19 @@ fun ReservationSummaryScreen(
                 Spacer(modifier = Modifier.height(40.dp))
 
                 OutlinedButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        val route = "reservation/${restaurantName}?" +
+                                "date=$date&" +
+                                "time=$time&" +
+                                "guests=$guests&" +
+                                "duration=$duration&" +
+                                "location=$location"
+
+
+                        navController.navigate(route) {
+                            popUpTo("reservation/{restaurantName}") { inclusive = true }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
                     border = BorderStroke(1.dp, RSRed)
