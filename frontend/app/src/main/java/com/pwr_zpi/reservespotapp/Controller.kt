@@ -159,7 +159,6 @@ fun Controller(navController: NavHostController) {
                     navArgument("time") { type = NavType.StringType; defaultValue = "" },
                     navArgument("guests") { type = NavType.StringType; defaultValue = "" },
                     navArgument("duration") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("type") { type = NavType.StringType; defaultValue = "" },
                     navArgument("location") { type = NavType.StringType; defaultValue = "Any" }
                 )
             ) { backStackEntry ->
@@ -171,7 +170,6 @@ fun Controller(navController: NavHostController) {
                     time = backStackEntry.arguments?.getString("time") ?: "No hours",
                     guests = backStackEntry.arguments?.getString("guests") ?: "0",
                     duration = backStackEntry.arguments?.getString("duration") ?: "No duration",
-                    type = backStackEntry.arguments?.getString("type") ?: "No type of reservation",
                     location = backStackEntry.arguments?.getString("location") ?: "Any"
                 )
             }

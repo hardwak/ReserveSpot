@@ -64,12 +64,10 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var selectedGuests by remember { mutableStateOf(2) }
     var selectedDuration by remember { mutableStateOf("1 hour") }
-    var selectedType by remember { mutableStateOf("Basic reservation") }
     var selectedLocation by remember { mutableStateOf("Any") }
 
     val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     val durationOptions = listOf("1 hour", "1.5 hours", "2 hours")
-    val typeOptions = listOf("Basic reservation", "Business meeting")
     val locationOptions = listOf("Any", "By the window")
 
 //    generating time slots
@@ -181,13 +179,6 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                     onSelect = { selectedDuration = it }
                 )
 
-                // Type of meeting
-                FormSectionTitle("Meeting type")
-                HorizontalSelector(
-                    options = typeOptions,
-                    selectedValue = selectedType,
-                    onSelect = { selectedType = it }
-                )
 
                 FormSectionTitle("Table location")
                 HorizontalSelector(
@@ -208,7 +199,6 @@ fun ReservationScreen(navController: NavHostController, restaurantName: String) 
                             "time=$selectedTime&" +
                             "guests=$selectedGuests&" +
                             "duration=$selectedDuration&" +
-                            "type=$selectedType&" +
                             "location=$selectedLocation"
 
                     navController.navigate(route)
