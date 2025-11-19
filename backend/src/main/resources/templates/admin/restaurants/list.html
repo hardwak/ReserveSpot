@@ -59,7 +59,7 @@
                 <div class="filter-group">
                     <label>Page Size</label>
                     <select name="size">
-                        <option th:each="size : ${10, 25, 50, 100}" 
+                        <option th:each="size : ${pageSizes}" 
                                 th:value="${size}" 
                                 th:text="${size}"
                                 th:selected="${pageSize == size}"></option>

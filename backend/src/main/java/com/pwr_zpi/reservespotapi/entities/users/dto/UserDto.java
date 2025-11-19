@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,5 +22,17 @@ public class UserDto {
     private String oauthProviderId;
     private AuthProvider provider;
     private Long pictureId;
+    private List<RestaurantSummary> restaurants;
+    private List<Long> reservationIds;
+    private List<Long> reviewIds;
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @SuperBuilder
+    public static class RestaurantSummary {
+        private Long id;
+        private String name;
+    }
 }
 

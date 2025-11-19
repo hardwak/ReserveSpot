@@ -7,6 +7,10 @@ import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateUserDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UserDto;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Component
 public class UserMapper {
 
@@ -15,7 +19,7 @@ public class UserMapper {
             return null;
         }
 
-        return UserDto.builder()
+        UserDto.UserDtoBuilder<?, ?> builder = UserDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -23,8 +27,42 @@ public class UserMapper {
                 .role(user.getRole())
                 .oauthProviderId(user.getOauthProviderId())
                 .provider(user.getProvider())
-                .pictureId(user.getPicture() != null ? user.getPicture().getId() : null)
-                .build();
+                .pictureId(user.getPicture() != null ? user.getPicture().getId() : null);
+        
+        // Map restaurants
+        if (user.getRestaurants() != null) {
+            List<UserDto.RestaurantSummary> restaurants = user.getRestaurants().stream()
+                    .map(r -> UserDto.RestaurantSummary.builder()
+                            .id(r.getId())
+                            .name(r.getName())
+                            .build())
+                    .collect(Collectors.toList());
+            builder.restaurants(restaurants);
+        } else {
+            builder.restaurants(new ArrayList<>());
+        }
+        
+        // Map reservation IDs
+        if (user.getReservations() != null) {
+            List<Long> reservationIds = user.getReservations().stream()
+                    .map(r -> r.getId())
+                    .collect(Collectors.toList());
+            builder.reservationIds(reservationIds);
+        } else {
+            builder.reservationIds(new ArrayList<>());
+        }
+        
+        // Map review IDs
+        if (user.getReviews() != null) {
+            List<Long> reviewIds = user.getReviews().stream()
+                    .map(r -> r.getId())
+                    .collect(Collectors.toList());
+            builder.reviewIds(reviewIds);
+        } else {
+            builder.reviewIds(new ArrayList<>());
+        }
+        
+        return builder.build();
     }
 
     public User toEntity(CreateUserDto dto) {

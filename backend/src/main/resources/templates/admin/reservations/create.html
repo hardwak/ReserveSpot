@@ -55,7 +55,7 @@
                         <option value="">Select Table</option>
                         <option th:each="table : ${tables}" 
                                 th:value="${table.id}" 
-                                th:text="'Table #' + ${table.tableNumber} + ' - ' + ${table.restaurantId}"></option>
+                                th:text="'Table #' + ${table.tableNumber ?: 'N/A'} + ' (Restaurant ID: ' + ${table.restaurantId ?: 'N/A'} + ')'"></option>
                     </select>
                     <div th:if="${#fields.hasErrors('tableId')}" class="error" th:errors="*{tableId}"></div>
                 </div>

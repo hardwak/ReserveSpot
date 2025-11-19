@@ -9,11 +9,14 @@ import com.pwr_zpi.reservespotapi.entities.reservation.dto.UpdateReservationDto;
 import com.pwr_zpi.reservespotapi.entities.reservation.mapper.ReservationMapper;
 import com.pwr_zpi.reservespotapi.entities.reservation.service.ReservationService;
 import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTableRepository;
+import com.pwr_zpi.reservespotapi.entities.restaurant_table.dto.RestaurantTableDto;
+import com.pwr_zpi.reservespotapi.entities.restaurant_table.mapper.RestaurantTableMapper;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +36,7 @@ public class AdminReservationController {
     private final ReservationMapper reservationMapper;
     private final UserRepository userRepository;
     private final RestaurantTableRepository tableRepository;
+    private final RestaurantTableMapper tableMapper;
 
     @GetMapping("/list")
     public String listReservations(
@@ -99,10 +103,15 @@ public class AdminReservationController {
     }
 
     @GetMapping("/create")
+    @Transactional(readOnly = true)
     public String showCreateForm(Model model) {
         model.addAttribute("reservation", new CreateReservationDto());
         model.addAttribute("users", userRepository.findAll());
-        model.addAttribute("tables", tableRepository.findAll());
+        // Convert entities to DTOs for the template
+        List<RestaurantTableDto> tableDtos = tableRepository.findAll().stream()
+            .map(tableMapper::toDto)
+            .collect(Collectors.toList());
+        model.addAttribute("tables", tableDtos);
         return "admin/reservations/create";
     }
 
@@ -113,8 +122,13 @@ public class AdminReservationController {
                                    Model model,
                                    RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("reservation", createDto);
             model.addAttribute("users", userRepository.findAll());
-            model.addAttribute("tables", tableRepository.findAll());
+            // Convert entities to DTOs for the template
+            List<RestaurantTableDto> tableDtos = tableRepository.findAll().stream()
+                .map(tableMapper::toDto)
+                .collect(Collectors.toList());
+            model.addAttribute("tables", tableDtos);
             return "admin/reservations/create";
         }
         
@@ -123,9 +137,15 @@ public class AdminReservationController {
             redirectAttributes.addFlashAttribute("success", "Reservation created successfully");
             return "redirect:/admin/reservations/list";
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("reservation", createDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("users", userRepository.findAll());
-            model.addAttribute("tables", tableRepository.findAll());
+            // Convert entities to DTOs for the template
+            List<RestaurantTableDto> tableDtos = tableRepository.findAll().stream()
+                .map(tableMapper::toDto)
+                .collect(Collectors.toList());
+            model.addAttribute("tables", tableDtos);
             return "admin/reservations/create";
         }
     }
@@ -142,6 +162,7 @@ public class AdminReservationController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return reservationRepository.findById(id)
             .map(reservation -> {
@@ -165,6 +186,7 @@ public class AdminReservationController {
                                   Model model,
                                   RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("reservation", updateDto);
             model.addAttribute("reservationId", id);
             model.addAttribute("statuses", ReservationStatus.values());
             return "admin/reservations/edit";
@@ -176,8 +198,10 @@ public class AdminReservationController {
                     reservationDto -> redirectAttributes.addFlashAttribute("success", "Reservation updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Reservation not found")
                 );
-            return "redirect:/admin/reservations/list/" + id;
+            return "redirect:/admin/reservations/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("reservation", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("reservationId", id);
             model.addAttribute("statuses", ReservationStatus.values());

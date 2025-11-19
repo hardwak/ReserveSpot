@@ -102,20 +102,20 @@
                 </div>
             </div>
 
-            <div class="view-field" th:if="${user.reservations != null && !user.reservations.isEmpty()}">
+            <div class="view-field" th:if="${user.reservationIds != null && !user.reservationIds.isEmpty()}">
                 <label>Reservations</label>
                 <div class="value">
                     <a th:href="@{/admin/reservations?userId=${user.id}}" class="relation-link">
-                        View <span th:text="${#lists.size(user.reservations)}"></span> reservations
+                        View <span th:text="${#lists.size(user.reservationIds)}"></span> reservations
                     </a>
                 </div>
             </div>
 
-            <div class="view-field" th:if="${user.reviews != null && !user.reviews.isEmpty()}">
+            <div class="view-field" th:if="${user.reviewIds != null && !user.reviewIds.isEmpty()}">
                 <label>Reviews</label>
                 <div class="value">
                     <a th:href="@{/admin/reviews?userId=${user.id}}" class="relation-link">
-                        View <span th:text="${#lists.size(user.reviews)}"></span> reviews
+                        View <span th:text="${#lists.size(user.reviewIds)}"></span> reviews
                     </a>
                 </div>
             </div>

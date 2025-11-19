@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapi.controller.admin;
 
+import com.pwr_zpi.reservespotapi.entities.ai_analysis.service.AiAnalysisService;
 import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
 import com.pwr_zpi.reservespotapi.entities.review.dto.CreateReviewDto;
@@ -11,11 +12,14 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -32,6 +36,7 @@ public class AdminReviewController {
     private final ReviewMapper reviewMapper;
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
+    private final AiAnalysisService aiAnalysisService;
 
     @GetMapping("/list")
     public String listReviews(
@@ -113,6 +118,7 @@ public class AdminReviewController {
                               Model model,
                               RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("review", createDto);
             model.addAttribute("users", userRepository.findAll());
             model.addAttribute("restaurants", restaurantRepository.findAll());
             return "admin/reviews/create";
@@ -122,7 +128,26 @@ public class AdminReviewController {
             reviewService.createReview(createDto, userId);
             redirectAttributes.addFlashAttribute("success", "Review created successfully");
             return "redirect:/admin/reviews/list";
+        } catch (ResponseStatusException e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("review", createDto);
+            // Customize error message for reservation-related errors
+            String errorMessage = e.getReason() != null ? e.getReason() : e.getMessage();
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                // Check if it's a reservation-related error
+                if (errorMessage != null && 
+                    (errorMessage.toLowerCase().contains("reservation") || 
+                     errorMessage.toLowerCase().contains("no completed"))) {
+                    errorMessage = "Unable to create review because there was no reservation for this user at this restaurant.";
+                }
+            }
+            model.addAttribute("error", errorMessage);
+            model.addAttribute("users", userRepository.findAll());
+            model.addAttribute("restaurants", restaurantRepository.findAll());
+            return "admin/reviews/create";
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("review", createDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("users", userRepository.findAll());
             model.addAttribute("restaurants", restaurantRepository.findAll());
@@ -142,6 +167,7 @@ public class AdminReviewController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return reviewRepository.findById(id)
             .map(review -> {
@@ -165,6 +191,7 @@ public class AdminReviewController {
                               Model model,
                               RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("review", updateDto);
             model.addAttribute("reviewId", id);
             return "admin/reviews/edit";
         }
@@ -175,8 +202,10 @@ public class AdminReviewController {
                     reviewDto -> redirectAttributes.addFlashAttribute("success", "Review updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Review not found")
                 );
-            return "redirect:/admin/reviews/list/" + id;
+            return "redirect:/admin/reviews/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("review", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("reviewId", id);
             return "admin/reviews/edit";
@@ -186,10 +215,31 @@ public class AdminReviewController {
     @PostMapping("/{id}/delete")
     public String deleteReview(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            reviewService.deleteReview(id, null); // Admin can delete any review
+            // Admin can delete any review - use repository directly
+            Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+            
+            // Get restaurant ID before deleting to regenerate AI analysis
+            Long restaurantId = review.getRestaurant() != null ? review.getRestaurant().getId() : null;
+            
+            reviewRepository.delete(review);
+            
+            // Trigger AI analysis regeneration for the restaurant
+            if (restaurantId != null) {
+                try {
+                    aiAnalysisService.generateAnalysisForRestaurant(restaurantId);
+                } catch (Exception e) {
+                    // Log error but don't fail the deletion
+                    System.err.println("Failed to regenerate AI analysis after review deletion: " + e.getMessage());
+                }
+            }
+            
             redirectAttributes.addFlashAttribute("success", "Review deleted successfully");
+        } catch (ResponseStatusException e) {
+            redirectAttributes.addFlashAttribute("error", e.getReason() != null ? e.getReason() : "Review not found");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Review not found or could not be deleted");
+            e.printStackTrace(); // Log the exception
+            redirectAttributes.addFlashAttribute("error", "Review not found or could not be deleted: " + e.getMessage());
         }
         return "redirect:/admin/reviews/list";
     }

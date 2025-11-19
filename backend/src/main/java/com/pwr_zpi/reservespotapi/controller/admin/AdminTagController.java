@@ -15,7 +15,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ public class AdminTagController {
     private final TagMapper tagMapper;
 
     @GetMapping("/list")
+    @Transactional(readOnly = true)
     public String listTags(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -58,8 +61,12 @@ public class AdminTagController {
         
         int start = page * size;
         int end = Math.min(start + size, allTags.size());
-        List<Tag> pageTags = allTags.subList(Math.min(start, allTags.size()), end);
+        // Ensure start is within bounds
+        start = Math.min(start, allTags.size());
+        List<Tag> pageTags = (start < end) ? allTags.subList(start, end) : new ArrayList<>();
         
+        // Map to DTOs - mappers will access lazy collections within the transaction
+        // Collections are accessed directly in mappers, which will trigger lazy loading safely
         List<TagDto> tagDtos = pageTags.stream()
             .map(tagMapper::toDto)
             .collect(Collectors.toList());
@@ -113,6 +120,7 @@ public class AdminTagController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return tagRepository.findById(id)
             .map(tag -> {
@@ -133,6 +141,7 @@ public class AdminTagController {
                            Model model,
                            RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("tag", updateDto);
             model.addAttribute("tagId", id);
             return "admin/tags/edit";
         }
@@ -143,8 +152,10 @@ public class AdminTagController {
                     tagDto -> redirectAttributes.addFlashAttribute("success", "Tag updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Tag not found")
                 );
-            return "redirect:/admin/tags/list/" + id;
+            return "redirect:/admin/tags/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("tag", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("tagId", id);
             return "admin/tags/edit";
@@ -153,11 +164,16 @@ public class AdminTagController {
 
     @PostMapping("/{id}/delete")
     public String deleteTag(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        boolean deleted = tagService.deleteTag(id);
-        if (deleted) {
-            redirectAttributes.addFlashAttribute("success", "Tag deleted successfully");
-        } else {
-            redirectAttributes.addFlashAttribute("error", "Tag not found");
+        try {
+            boolean deleted = tagService.deleteTag(id);
+            if (deleted) {
+                redirectAttributes.addFlashAttribute("success", "Tag deleted successfully");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Tag not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            redirectAttributes.addFlashAttribute("error", "Could not delete tag: " + e.getMessage());
         }
         return "redirect:/admin/tags/list";
     }
