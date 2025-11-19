@@ -125,7 +125,7 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "ownerDashboard",
 //            startDestination = "reservations",
             modifier = Modifier.padding(innerPadding)
 //            Routes below
@@ -181,11 +181,20 @@ fun Controller(navController: NavHostController) {
             composable("editDetails") { EditDetailsScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
             composable("changePassword") { ChangePasswordScreen(navController) }
-            composable("editRestaurant") { EditRestaurantScreen(navController) }
             composable("login") { LoginScreen(navController) }
             composable("register") { RegisterScreen(navController) }
             composable("restaurant_register") { RestaurantRegisterScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
+            composable("ownerDashboard") { OwnerDashboardScreen(navController) }
+            composable("ownerReservations") { OwnerReservationsScreen(navController) }
+            composable("ownerEditRestaurant/{id}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id") ?: "new"
+                OwnerEditRestaurantScreen(navController, id)
+            }
+            composable("ownerTables/{id}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
+                OwnerTablesScreen(navController, id)
+            }
 //             composable("favourites") { FavouritesScreen(navController) }
 
             composable(
