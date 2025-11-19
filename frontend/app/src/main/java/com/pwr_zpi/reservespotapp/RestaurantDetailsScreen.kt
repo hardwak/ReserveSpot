@@ -1,6 +1,5 @@
 package com.pwr_zpi.reservespotapp
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,7 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.BottomSheetDefaults.DragHandle
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,24 +60,21 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 
+
 data class RestaurantDetails(
     val name: String,
     val address: String,
     val description: String = "Description placeholder: Italian cuisine, open 12:00-22:00",
-//    need to change to real imgUrl from backend
     val imageUrl: Int = R.drawable.food_placeholder
 )
 
-
 // added lazy so Random would be initialized only once
 val randomValues by lazy { Random.nextInt(4, 5) }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailsScreen(
     navController: NavHostController,
-//    getting restaurants name
     restaurantName: String,
     rating : Float
 ) {
@@ -88,41 +84,36 @@ fun RestaurantDetailsScreen(
             name = restaurantName,
             address = "Wita Stwosza 56/57, 50-149 Wrocław, Polska",
             description = "Włoska kuchnia \nGodziny otwarcia:\nPon. - Pt: 12:00-22:00\nSob - Nd 10:00 - 22:00",
-            // TODO: Use R.drawable.food_placeholder or implement loading images
         )
     }
 
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Photos", "Reviews")
 
-//    states for visiting statistics
+    // states for visiting statistics
     var showOccupancySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
-//    reviews code
+
     var reviews by remember { mutableStateOf(dummyReviews) }
 
     val addOrUpdateReview: (Review) -> Unit = { newReview ->
         reviews = if (reviews.any { it.isCurrentUser }) {
-            // review editing
             reviews.map { if (it.isCurrentUser) newReview.copy(isCurrentUser = true) else it }
         } else {
-            // Adding new review
             listOf(newReview.copy(isCurrentUser = true)) + reviews.filter { !it.isCurrentUser }
         }
     }
 
     val deleteReview: () -> Unit = {
-        // deleting your own review
         reviews = reviews.filter { !it.isCurrentUser }
     }
 
-//    review window
+    // review window
     var isReviewFormVisible by remember { mutableStateOf(false) }
 
     Scaffold(
-//           Book now button
         bottomBar = {
             Button(
                 onClick = { navController.navigate("reservation/${details.name}") },
@@ -146,7 +137,7 @@ fun RestaurantDetailsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Main photo as sample app
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -159,98 +150,55 @@ fun RestaurantDetailsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Back button
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(RSRed)
 
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White,
-                    )
-                }
-
-                //            placeholder for restaurants logo
-                Box(
-                    modifier = Modifier
-//                    positions on the bottom and center of Box with photo
-                        .align(Alignment.BottomCenter)
-//                    offest 40 dp so it would not go to white panel
-                        .offset(y = (40).dp)
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(Color.Gray)
-                        .border(2.dp, RSRed, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.pizza_restaurant_logo_small),
-                        contentDescription = "Restaurant Logo",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                    )
-                }
 
             }
 
 
-
-            // Info panel
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 295.dp)
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                modifier = Modifier.fillMaxSize()
             ) {
-// restaurants info modifiers
+
+
+                item {
+                    Spacer(modifier = Modifier.height(240.dp))
+                }
+
+                //Info panel
                 item {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                             .background(Color.White)
                     ) {
-//                        Spacer to make sure that info starts below logo
-                        Spacer(modifier = Modifier.height(48.dp))
+                        // Spacer under logo
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalAlignment = Alignment.Start
-
                         ) {
 
                             Row(
                                 modifier = Modifier
-                                    .padding(top = 8.dp)
                                     .align(Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-
-
                                 Text(
                                     text = details.name,
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold
-
                                 )
 
                                 Spacer(Modifier.width(8.dp))
 
-
                                 Icon(
                                     imageVector = Icons.Default.Star,
                                     contentDescription = "Rating",
-                                    tint = Color(0xFFFFC107), // Złoty
+                                    tint = Color(0xFFFFC107),
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
@@ -261,31 +209,23 @@ fun RestaurantDetailsScreen(
                                 )
                             }
 
-
                             Text(
                                 text = details.address,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
-//                            opening hours
+
                             Text(
                                 text = details.description,
                                 color = Color.DarkGray,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
 
-                            TextButton(
-                                onClick = { showOccupancySheet = true },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp)
-                            ) {
-                                Text("See popular times", color = RSRed, fontWeight = FontWeight.Bold)
-                            }
-
                         }
                     }
                 }
+
+                // Sticky Header
                 stickyHeader {
                     TabRow(
                         selectedTabIndex = selectedTabIndex,
@@ -297,7 +237,7 @@ fun RestaurantDetailsScreen(
                         indicator = { tabPositions ->
                             TabRowDefaults.Indicator(
                                 Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = RSRed // setting color as red
+                                color = RSRed
                             )
                         }
                     ) {
@@ -315,12 +255,10 @@ fun RestaurantDetailsScreen(
                                 unselectedContentColor = Color.Gray
                             )
                         }
-
                     }
                 }
 
 
-// Elements in chosen card
                 item {
                     Box(
                         modifier = Modifier
@@ -329,6 +267,7 @@ fun RestaurantDetailsScreen(
                             .background(Color.White)
                     ) {
                         when (selectedTabIndex) {
+
                             0 -> PhotosTabContent()
                             1 -> ReviewsTabContent(
                                 reviews = reviews,
@@ -341,57 +280,23 @@ fun RestaurantDetailsScreen(
                     }
                 }
             }
-        }
-    }
-    if (showOccupancySheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showOccupancySheet = false },
-            sheetState = sheetState,
-            dragHandle = {
-                DragHandle(
-                    color = RSRed
-                )
-            }
-        ) {
-            // Panels filling
-            Column(
+
+            IconButton(
+                onClick = { navController.popBackStack() },
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .align(Alignment.TopStart)
                     .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(RSRed)
+
             ) {
-                Text(
-                    "Popular Times (Statistics)",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White,
                 )
-
-                // Placeholder should change it to diagram or list/table if we have time
-                Text("Monday: 18:00 - 20:00 (Very Busy)")
-                Text("Tuesday: 19:00 - 21:00 (Busy)")
-                Text("Wednesday: Usually not busy")
-                Text("Thursday: 18:00 - 20:00 (Busy)")
-                Text("Friday: 17:00 - 22:00 (Very Busy)")
-                Text("Saturday: 12:00 - 22:00 (Very Busy)")
-                Text("Sunday: 12:00 - 16:00 (Busy)")
-
-                Spacer(Modifier.height(24.dp))
-
-                Button(
-                    onClick = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) showOccupancySheet = false
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Close")
-                }
             }
         }
     }
 }
-
-
-
-
