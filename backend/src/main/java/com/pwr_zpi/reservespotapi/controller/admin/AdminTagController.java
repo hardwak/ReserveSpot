@@ -165,12 +165,12 @@ public class AdminTagController {
     @PostMapping("/{id}/delete")
     public String deleteTag(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            boolean deleted = tagService.deleteTag(id);
-            if (deleted) {
-                redirectAttributes.addFlashAttribute("success", "Tag deleted successfully");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Tag not found");
-            }
+        boolean deleted = tagService.deleteTag(id);
+        if (deleted) {
+            redirectAttributes.addFlashAttribute("success", "Tag deleted successfully");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Tag not found");
+        }
         } catch (Exception e) {
             e.printStackTrace(); // Log the exception
             redirectAttributes.addFlashAttribute("error", "Could not delete tag: " + e.getMessage());

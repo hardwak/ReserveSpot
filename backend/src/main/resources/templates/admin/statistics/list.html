@@ -103,15 +103,15 @@
 
         <div class="pagination" th:if="${totalPages > 1}">
             <a th:if="${currentPage > 0}" 
-               th:href="@{/admin/statistics(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, restaurantId=${restaurantId}, dateFilter=${dateFilter})}">Previous</a>
+               th:href="@{/admin/statistics(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, dateFilter=${dateFilter != null && !dateFilter.isEmpty() ? dateFilter : ''})}">Previous</a>
             <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
                 <a th:if="${page != currentPage}"
-                   th:href="@{/admin/statistics(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, restaurantId=${restaurantId}, dateFilter=${dateFilter})}"
+                   th:href="@{/admin/statistics(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, dateFilter=${dateFilter != null && !dateFilter.isEmpty() ? dateFilter : ''})}"
                    th:text="${page + 1}"></a>
                 <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
             </span>
             <a th:if="${currentPage < totalPages - 1}"
-               th:href="@{/admin/statistics(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, restaurantId=${restaurantId}, dateFilter=${dateFilter})}">Next</a>
+               th:href="@{/admin/statistics(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, restaurantId=${restaurantId != null ? restaurantId : ''}, dateFilter=${dateFilter != null && !dateFilter.isEmpty() ? dateFilter : ''})}">Next</a>
         </div>
     </main>
 

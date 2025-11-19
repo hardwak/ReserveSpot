@@ -72,7 +72,7 @@ public class TagService {
                 }
                 // Now delete the tag
                 tagRepository.delete(tag);
-                return true;
+            return true;
             })
             .orElse(false);
     }

@@ -121,15 +121,15 @@
 
         <div class="pagination" th:if="${totalPages > 1}">
             <a th:if="${currentPage > 0}" 
-               th:href="@{/admin/reservations(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, userId=${userId}, tableId=${tableId}, statusFilter=${statusFilter})}">Previous</a>
+               th:href="@{/admin/reservations(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, userId=${userId != null ? userId : ''}, tableId=${tableId != null ? tableId : ''}, statusFilter=${statusFilter != null ? statusFilter : ''})}">Previous</a>
             <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
                 <a th:if="${page != currentPage}"
-                   th:href="@{/admin/reservations(page=${page}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, userId=${userId}, tableId=${tableId}, statusFilter=${statusFilter})}"
+                   th:href="@{/admin/reservations(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, userId=${userId != null ? userId : ''}, tableId=${tableId != null ? tableId : ''}, statusFilter=${statusFilter != null ? statusFilter : ''})}"
                    th:text="${page + 1}"></a>
                 <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
             </span>
             <a th:if="${currentPage < totalPages - 1}"
-               th:href="@{/admin/reservations(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir}, userId=${userId}, tableId=${tableId}, statusFilter=${statusFilter})}">Next</a>
+               th:href="@{/admin/reservations(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, userId=${userId != null ? userId : ''}, tableId=${tableId != null ? tableId : ''}, statusFilter=${statusFilter != null ? statusFilter : ''})}">Next</a>
         </div>
     </main>
 

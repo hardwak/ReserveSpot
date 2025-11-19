@@ -179,12 +179,12 @@ public class AdminTableController {
     @PostMapping("/{id}/delete")
     public String deleteTable(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            boolean deleted = tableService.deleteTable(id);
-            if (deleted) {
-                redirectAttributes.addFlashAttribute("success", "Table deleted successfully");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Table not found");
-            }
+        boolean deleted = tableService.deleteTable(id);
+        if (deleted) {
+            redirectAttributes.addFlashAttribute("success", "Table deleted successfully");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Table not found");
+        }
         } catch (Exception e) {
             e.printStackTrace(); // Log the exception
             redirectAttributes.addFlashAttribute("error", "Could not delete table: " + e.getMessage());

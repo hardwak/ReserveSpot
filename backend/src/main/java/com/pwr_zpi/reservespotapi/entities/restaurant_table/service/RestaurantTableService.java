@@ -75,7 +75,7 @@ public class RestaurantTableService {
                 }
                 // Now delete the table
                 tableRepository.delete(table);
-                return true;
+            return true;
             })
             .orElse(false);
     }
