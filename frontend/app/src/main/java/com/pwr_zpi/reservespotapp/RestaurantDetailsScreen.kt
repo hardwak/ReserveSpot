@@ -1,5 +1,11 @@
 package com.pwr_zpi.reservespotapp
 
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,7 +66,6 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 
-
 data class RestaurantDetails(
     val name: String,
     val address: String,
@@ -76,7 +81,7 @@ val randomValues by lazy { Random.nextInt(4, 5) }
 fun RestaurantDetailsScreen(
     navController: NavHostController,
     restaurantName: String,
-    rating : Float
+    rating: Float
 ) {
     // temp data to show
     val details = remember {
@@ -89,6 +94,7 @@ fun RestaurantDetailsScreen(
 
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Photos", "Reviews")
+
 
     // states for visiting statistics
     var showOccupancySheet by remember { mutableStateOf(false) }
@@ -112,6 +118,14 @@ fun RestaurantDetailsScreen(
 
     // review window
     var isReviewFormVisible by remember { mutableStateOf(false) }
+
+    val listState = rememberLazyListState()
+
+    val showBackButton by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -151,12 +165,12 @@ fun RestaurantDetailsScreen(
                 )
 
 
-
             }
 
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                state = listState
             ) {
 
 
@@ -254,9 +268,15 @@ fun RestaurantDetailsScreen(
                                 selectedContentColor = RSRed,
                                 unselectedContentColor = Color.Gray
                             )
+
+
                         }
+
                     }
+
                 }
+
+
 
 
                 item {
@@ -279,24 +299,34 @@ fun RestaurantDetailsScreen(
                         }
                     }
                 }
+
+            }
+            AnimatedVisibility(
+                visible = showBackButton,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(RSRed)
+
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White,
+                    )
+                }
             }
 
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(RSRed)
 
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                )
-            }
         }
     }
 }
