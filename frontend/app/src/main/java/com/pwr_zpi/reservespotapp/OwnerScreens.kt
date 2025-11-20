@@ -32,6 +32,62 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import android.app.TimePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage // Potrzebna biblioteka Coil do wyświetlania zdjęć z URI
+import java.util.Calendar
 
 // Main screen for the owner (restaurants list)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,7 +191,24 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var openingHours by remember { mutableStateOf("") }
+    val openingHours = remember { mutableStateMapOf(
+        "monday" to "10:00-22:00",
+        "tuesday" to "10:00-22:00",
+        "wednesday" to "10:00-22:00",
+        "thursday" to "10:00-22:00",
+        "friday" to "10:00-23:00",
+        "saturday" to "12:00-23:00",
+        "sunday" to "12:00-22:00"
+    ) }
+
+    var latitude by remember { mutableStateOf("") }
+    var longitude by remember { mutableStateOf("") }
+
+    // NOWE: Wybór zdjęcia
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        selectedImageUri = uri
+    }
 
     // if editing need to fetch restaurants data
     // TODO LaunchedEffect should download data by ID
@@ -166,13 +239,113 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            Text("Dane Podstawowe", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nazwa") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Adres") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Miasto") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Opis") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = openingHours, onValueChange = { openingHours = it }, label = { Text("Godziny (np. 10-22)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Opis") },
+                modifier = Modifier.fillMaxWidth().height(150.dp),
+                maxLines = 5
+            )
+            Spacer(Modifier.height(24.dp))
+
+            Text("Lokalizacja na Mapie", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = latitude,
+                    onValueChange = { latitude = it },
+                    label = { Text("Latitude") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = { Icon(Icons.Default.LocationOn, null) }
+                )
+                OutlinedTextField(
+                    value = longitude,
+                    onValueChange = { longitude = it },
+                    label = { Text("Longitude") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = { Icon(Icons.Default.LocationOn, null) }
+                )
+            }
+            // TODO: Tutaj można dodać przycisk "Otwórz mapę", aby wybrać punkt wizualnie
 
             Spacer(Modifier.height(24.dp))
+
+            // --- Sekcja Zdjęcia ---
+            Text("Zdjęcie Restauracji", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+
+            if (selectedImageUri != null) {
+                AsyncImage(
+                    model = selectedImageUri,
+                    contentDescription = "Selected Image",
+                    modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(8.dp))
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
+            OutlinedButton(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.AddPhotoAlternate, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Wybierz zdjęcie z galerii")
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // --- Sekcja Godzin Otwarcia ---
+
+            Text("Godziny Otwarcia", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+
+            // Edytor godzin dla każdego dnia
+            val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+            days.forEach { day ->
+                OpeningHoursRow(day, openingHours[day] ?: "Zamknięte") { newHours ->
+                    openingHours[day] = newHours
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // --- Przycisk Zapisz ---
+            Button(
+                onClick = {
+                    scope.launch {
+                        // Konwersja lat/lon na Double
+                        val latVal = latitude.toDoubleOrNull()
+                        val lonVal = longitude.toDoubleOrNull()
+
+                        // Upload zdjęcia (TODO: Zaimplementuj upload i pobierz URL)
+                        val imageUrl = selectedImageUri?.toString() // Tymczasowo URI jako string
+
+                        val restaurant = OwnerRestaurantDto(
+                            id = if (isNew) null else restaurantIdString.toLong(),
+                            ownerId = 1L, // TODO: Get real owner ID
+                            name = name, address = address, city = city,
+                            description = description,
+                            openingHours = openingHours.toMap(), // Konwersja na Map
+                            latitude = latVal,
+                            longitude = lonVal,
+                            pic = imageUrl
+                        )
+                        saveRestaurant(context, restaurant, isNew)
+                        navController.popBackStack()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            ) {
+                Text("Zapisz")
+            }
+        }
+    }
+}
 
             Button(
                 onClick = {
@@ -191,6 +364,62 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
                 Text("Zapisz")
+            }
+        }
+    }
+}
+
+@Composable
+fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) -> Unit) {
+    val context = LocalContext.current
+
+    // Parsowanie obecnych godzin (proste założenie formatu "HH:MM-HH:MM" lub "Zamknięte")
+    // Dla uproszczenia otwieramy picker pusty lub z domyślną godziną
+
+    val showTimePicker = { isStart: Boolean ->
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        TimePickerDialog(
+            context,
+            { _, selectedHour, selectedMinute ->
+                val time = String.format("%02d:%02d", selectedHour, selectedMinute)
+                // Logika aktualizacji stringa (np. "10:00-18:00")
+                val parts = currentHours.split("-")
+                val newTime = if (isStart) {
+                    "$time-${if (parts.size > 1) parts[1] else "22:00"}"
+                } else {
+                    "${if (parts.isNotEmpty()) parts[0] else "10:00"}-$time"
+                }
+                onHoursChanged(newTime)
+            },
+            hour,
+            minute,
+            true // 24h format
+        ).show()
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(day.replaceFirstChar { it.uppercase() }, modifier = Modifier.width(100.dp), fontWeight = FontWeight.SemiBold)
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val parts = currentHours.split("-")
+            val start = if(parts.isNotEmpty()) parts[0] else "--:--"
+            val end = if(parts.size > 1) parts[1] else "--:--"
+
+            // Przycisk Godzina Od
+            OutlinedButton(onClick = { showTimePicker(true) }) {
+                Text(start)
+            }
+            Text(" - ", modifier = Modifier.padding(horizontal = 4.dp))
+            // Przycisk Godzina Do
+            OutlinedButton(onClick = { showTimePicker(false) }) {
+                Text(end)
             }
         }
     }

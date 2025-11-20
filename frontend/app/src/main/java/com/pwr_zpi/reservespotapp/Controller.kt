@@ -125,7 +125,8 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "ownerDashboard",
+            startDestination = "home",
+//            startDestination = "ownerDashboard",
 //            startDestination = "reservations",
             modifier = Modifier.padding(innerPadding)
 //            Routes below

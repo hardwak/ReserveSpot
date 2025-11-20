@@ -111,11 +111,12 @@ data class OwnerRestaurantDto(
     val address: String,
     val city: String,
     val description: String,
-    val openingHours: String,
-    val pic: String? = null, // photo URL
-    // Optional if backend returns it
+    val openingHours: Map<String, String>,
+    val pic: String? = null,
     val averageRating: Double? = 0.0,
-    val tableIds: List<Long>? = emptyList()
+    val tableIds: List<Long>? = emptyList(),
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 // DTO for table
