@@ -125,8 +125,8 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
-//            startDestination = "ownerDashboard",
+//            startDestination = "home",
+            startDestination = "ownerDashboard",
 //            startDestination = "reservations",
             modifier = Modifier.padding(innerPadding)
 //            Routes below
@@ -144,6 +144,22 @@ fun Controller(navController: NavHostController) {
                 RestaurantDetailsScreen(navController, name, rating)
 
             }
+
+            composable(
+                route = "pickLocation?lat={lat}&lng={lng}",
+                arguments = listOf(
+                    navArgument("lat") { type = NavType.FloatType; defaultValue = 0f },
+                    navArgument("lng") { type = NavType.FloatType; defaultValue = 0f }
+                )
+            ) { backStackEntry ->
+                val lat = backStackEntry.arguments?.getFloat("lat")?.toDouble()
+                val lng = backStackEntry.arguments?.getFloat("lng")?.toDouble()
+                val finalLat = if (lat != 0.0) lat else null
+                val finalLng = if (lng != 0.0) lng else null
+
+                LocationPickerScreen(navController, finalLat, finalLng)
+            }
+
             composable(
 
                 route = "reservation/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",

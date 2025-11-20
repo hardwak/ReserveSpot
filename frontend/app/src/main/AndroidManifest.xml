@@ -13,6 +13,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ReserveSpotApp" >
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="TU_WSTAW_SWOJ_KLUCZ_API_GOOGLE_MAPS" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

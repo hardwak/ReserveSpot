@@ -1,5 +1,8 @@
 package com.pwr_zpi.reservespotapp
 
+
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.MutableLiveData
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -16,10 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,9 +45,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
@@ -86,7 +84,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage // Potrzebna biblioteka Coil do wyświetlania zdjęć z URI
+import coil.compose.AsyncImage
 import java.util.Calendar
 
 // Main screen for the owner (restaurants list)
@@ -204,7 +202,22 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
     var latitude by remember { mutableStateOf("") }
     var longitude by remember { mutableStateOf("") }
 
-    // NOWE: Wybór zdjęcia
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = currentBackStackEntry?.savedStateHandle
+
+
+    val latLiveData = remember { savedStateHandle?.getLiveData<Double>("picked_lat") ?: MutableLiveData<Double>() }
+    val lngLiveData = remember { savedStateHandle?.getLiveData<Double>("picked_lng") ?: MutableLiveData<Double>() }
+
+    val pickedLat by latLiveData.observeAsState()
+    val pickedLng by lngLiveData.observeAsState()
+
+    LaunchedEffect(pickedLat, pickedLng) {
+        pickedLat?.let { latitude = it.toString() }
+        pickedLng?.let { longitude = it.toString() }
+    }
+
+    // Choosing photo
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
         selectedImageUri = uri
@@ -239,6 +252,7 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+//            Basic info
             Text("Dane Podstawowe", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
 
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nazwa") }, modifier = Modifier.fillMaxWidth())
@@ -254,6 +268,27 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
             Spacer(Modifier.height(24.dp))
 
             Text("Lokalizacja na Mapie", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+
+            // Przycisk otwierający mapę
+            OutlinedButton(
+                onClick = {
+                    // Przekazujemy obecne wartości (jeśli istnieją), aby mapa wycentrowała się na nich
+                    val latArg = latitude.toDoubleOrNull() ?: 0.0
+                    val lngArg = longitude.toDoubleOrNull() ?: 0.0
+                    navController.navigate("pickLocation?lat=$latArg&lng=$lngArg")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                border = androidx.compose.foundation.BorderStroke(1.dp, RSRed),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed)
+            ) {
+                Icon(Icons.Default.LocationOn, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Wybierz punkt na mapie")
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = latitude,
@@ -261,7 +296,7 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                     label = { Text("Latitude") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    trailingIcon = { Icon(Icons.Default.LocationOn, null) }
+                    readOnly = false // Można zmienić na true, jeśli chcesz zabronić ręcznej edycji
                 )
                 OutlinedTextField(
                     value = longitude,
@@ -269,10 +304,9 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                     label = { Text("Longitude") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    trailingIcon = { Icon(Icons.Default.LocationOn, null) }
+                    readOnly = false
                 )
             }
-            // TODO: Tutaj można dodać przycisk "Otwórz mapę", aby wybrać punkt wizualnie
 
             Spacer(Modifier.height(24.dp))
 
@@ -299,11 +333,11 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
 
             Spacer(Modifier.height(24.dp))
 
-            // --- Sekcja Godzin Otwarcia ---
+            // Opening hours section
 
             Text("Godziny Otwarcia", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
 
-            // Edytor godzin dla każdego dnia
+            // Hours editor for each day
             val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
             days.forEach { day ->
                 OpeningHoursRow(day, openingHours[day] ?: "Zamknięte") { newHours ->
@@ -313,23 +347,23 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
 
             Spacer(Modifier.height(24.dp))
 
-            // --- Przycisk Zapisz ---
+            // Save button
             Button(
                 onClick = {
                     scope.launch {
-                        // Konwersja lat/lon na Double
+                        // Conversion lat, long to Double
                         val latVal = latitude.toDoubleOrNull()
                         val lonVal = longitude.toDoubleOrNull()
 
-                        // Upload zdjęcia (TODO: Zaimplementuj upload i pobierz URL)
-                        val imageUrl = selectedImageUri?.toString() // Tymczasowo URI jako string
+                        // Photo upload (TODO: Zaimplementuj upload i pobierz URL)
+                        val imageUrl = selectedImageUri?.toString() // Temp URI as String
 
                         val restaurant = OwnerRestaurantDto(
                             id = if (isNew) null else restaurantIdString.toLong(),
                             ownerId = 1L, // TODO: Get real owner ID
                             name = name, address = address, city = city,
                             description = description,
-                            openingHours = openingHours.toMap(), // Konwersja na Map
+                            openingHours = openingHours.toMap(), // Conversion to Map
                             latitude = latVal,
                             longitude = lonVal,
                             pic = imageUrl
@@ -347,27 +381,6 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
     }
 }
 
-            Button(
-                onClick = {
-                    scope.launch {
-                        val restaurant = OwnerRestaurantDto(
-                            id = if (isNew) null else restaurantIdString.toLong(),
-                            ownerId = 1L, // TODO: Get real owner ID
-                            name = name, address = address, city = city,
-                            description = description, openingHours = openingHours
-                        )
-                        saveRestaurant(context, restaurant, isNew)
-                        navController.popBackStack()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
-            ) {
-                Text("Zapisz")
-            }
-        }
-    }
-}
 
 @Composable
 fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) -> Unit) {
@@ -450,7 +463,7 @@ fun OwnerTablesScreen(navController: NavHostController, restaurantId: Long) {
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            // Formularz dodawania
+            // Adding form
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Ilość osób") }, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
@@ -461,7 +474,7 @@ fun OwnerTablesScreen(navController: NavHostController, restaurantId: Long) {
                     scope.launch {
                         val newTable = TableDto(restaurantId = restaurantId, tableCapacity = newCapacity.toIntOrNull() ?: 2, locationInRestaurant = newLocation)
                         addTable(context, newTable)
-                        tables = fetchTables(context, restaurantId) // Odśwież
+                        tables = fetchTables(context, restaurantId) // Refresh
                         newCapacity = ""; newLocation = ""
                     }
                 },
