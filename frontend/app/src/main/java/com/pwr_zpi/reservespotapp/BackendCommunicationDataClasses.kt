@@ -4,10 +4,11 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
-import java.time.LocalDateTime
+import retrofit2.http.Path
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -59,12 +60,13 @@ data class ReservationDto(
     val id: Long,
     val userId: Long,
     val tableId: Long,
-    val reservationDatetime: LocalDateTime,
+    val reservationDatetime: String,   // LocalDateTime → String in JSON
     val durationMinutes: Int,
     val status: ReservationStatus,
+    val restaurantId: Long,
     val restaurantName: String,
     val numOfPeople: Int,
-    val rating: Float
+    val restaurantRating: Double
 )
 
 interface AuthApi {
@@ -95,6 +97,12 @@ data class RestaurantDto(
 interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
     suspend fun getMyUpcomingReservations(@Header("Authorization") token: String): Response<List<ReservationDto>>
+
+    @DELETE("api/reservations/{id}")
+    suspend fun cancelReservation(
+        @Header("Authorization") token: String,
+        @Path("id") reservationId: Long
+    ): Response<Unit>
 }
 
 interface RestaurantApi {

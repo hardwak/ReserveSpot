@@ -1,6 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,11 +16,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +35,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 //data class ReservationDto (
@@ -43,15 +55,17 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ReservationInfoCard(
     modifier: Modifier,
+    onCancel: () -> Unit,
     info: ReservationDto
 ) {
     val id = info.id
     val restaurantName = info.restaurantName
-    val datetime = info.reservationDatetime
+    val datetime = LocalDateTime.parse(info.reservationDatetime)
     val numOfPeople = info.numOfPeople
     val durationM = info.durationMinutes
 
     val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -137,7 +151,7 @@ fun ReservationInfoCard(
 
         Button(
             onClick = {
-                cancelReservation(id, context)
+                showDialog = true
             },
             modifier = Modifier
                 .padding(8.dp)
@@ -154,13 +168,77 @@ fun ReservationInfoCard(
             )
         }
 
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("Cancel reservation?") },
+                text = { Text("Are you sure you want to cancel your reservation?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showDialog = false
+                            cancelReservation(
+                                id = id,
+                                context = context,
+                                onSuccess = { onCancel() },
+                                onError = {
+                                    Toast.makeText(context, "Error: $it", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    ) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showDialog = false }) {
+                        Text("No")
+                    }
+                }
+            )
+        }
+
     }
 
 }
 
 fun cancelReservation(
     id: Long,
-    context: Context
+    context: Context,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit
 ) {
-    // TODO
+    val dataStore = DataStoreManager(context)
+    val scope = CoroutineScope(Dispatchers.IO)
+
+    scope.launch {
+        try {
+            val token = dataStore.getBackendToken()
+            if (token == null) {
+                withContext(Dispatchers.Main) {
+                    onError("User not logged in")
+                }
+                return@launch
+            }
+
+            val response = RetrofitClient.reservationApi.cancelReservation(
+                token = "Bearer $token",
+                reservationId = id
+            )
+
+            if (response.isSuccessful) {
+                withContext(Dispatchers.Main) { onSuccess() }
+            } else {
+                withContext(Dispatchers.Main) {
+                    onError("Failed: ${response.code()}")
+                }
+            }
+
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                onError(e.message ?: "Unknown error")
+            }
+        }
+    }
 }
+

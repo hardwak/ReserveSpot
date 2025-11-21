@@ -29,8 +29,9 @@ fun ReservationsScreen(navController: NavHostController) {
     val context = LocalContext.current
     var reservations by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshTrigger) {
         isLoading = true
         reservations = fetchReservations(context)
         isLoading = false
@@ -42,15 +43,23 @@ fun ReservationsScreen(navController: NavHostController) {
         LazyColumn {
             items(reservations) { reservation ->
                 ReservationInfoCard(
+                    info = reservation,
+                    onCancel = {
+                        refreshTrigger++
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(150.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable(onClick = { navController.navigate("restaurantDetails/${reservation.restaurantName}/${reservation.rating}") }),
-                    info = reservation
+                        .clickable {
+                            navController.navigate(
+                                "restaurantDetails/${reservation.restaurantName}/${reservation.rating}"
+                            )
+                        }
                 )
             }
         }
+
     }
 }
 
