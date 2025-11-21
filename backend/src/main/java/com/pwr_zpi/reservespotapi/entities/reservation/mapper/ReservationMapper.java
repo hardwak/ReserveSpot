@@ -24,6 +24,10 @@ public class ReservationMapper {
                 .reservationDatetime(reservation.getReservationDatetime())
                 .durationMinutes(reservation.getDurationMinutes())
                 .status(reservation.getStatus())
+                .restaurantId(reservation.getTable().getRestaurant().getId())
+                .restaurantName(reservation.getTable().getRestaurant().getName())
+                .numOfPeople(reservation.getTable().getCapacity())
+                .restaurantRating(reservation.getTable().getRestaurant().getAverageRating())
                 .build();
     }
 

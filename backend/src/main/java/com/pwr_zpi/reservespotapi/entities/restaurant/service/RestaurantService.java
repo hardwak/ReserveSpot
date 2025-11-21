@@ -1,5 +1,8 @@
 package com.pwr_zpi.reservespotapi.entities.restaurant.service;
 
+import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationRepository;
+import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.CreateRestaurantDto;
@@ -7,12 +10,19 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantSearchDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.mapper.RestaurantMapper;
+import com.pwr_zpi.reservespotapi.entities.review.Review;
+import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTable;
+import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTableRepository;
 import com.pwr_zpi.reservespotapi.entities.tag.Tag;
 import com.pwr_zpi.reservespotapi.entities.tag.TagRepository;
+import com.pwr_zpi.reservespotapi.entities.users.User;
+import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import com.pwr_zpi.reservespotapi.service.AiQueryParserService;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Join;
 import java.util.HashSet;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +42,9 @@ public class RestaurantService {
     private final RestaurantMapper restaurantMapper;
     private final AiQueryParserService aiQueryParser;
     private final TagRepository tagRepository;
+    private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
+    private final RestaurantTableRepository restaurantTableRepository;
 
     public List<RestaurantDto> getAllRestaurants() {
         return restaurantRepository.findAll()
@@ -61,6 +74,13 @@ public class RestaurantService {
 
     public RestaurantDto createRestaurant(CreateRestaurantDto createDto) {
         Restaurant restaurant = restaurantMapper.toEntity(createDto);
+
+        // Set tags if provided
+        if (createDto.getTagIds() != null && !createDto.getTagIds().isEmpty()) {
+            Set<Tag> tags = new HashSet<>(tagRepository.findAllById(createDto.getTagIds()));
+            restaurant.setTags(tags);
+        }
+
         Restaurant savedRestaurant = restaurantRepository.save(restaurant);
         return restaurantMapper.toDto(savedRestaurant);
     }
@@ -69,17 +89,37 @@ public class RestaurantService {
         return restaurantRepository.findById(id)
                 .map(restaurant -> {
                     restaurantMapper.updateEntity(updateDto, restaurant);
+
+                    // Update tags if provided
+                    if (updateDto.getTagIds() != null) {
+                        Set<Tag> tags = new HashSet<>(tagRepository.findAllById(updateDto.getTagIds()));
+                        restaurant.setTags(tags);
+                    }
+
                     Restaurant savedRestaurant = restaurantRepository.save(restaurant);
                     return restaurantMapper.toDto(savedRestaurant);
                 });
     }
 
     public boolean deleteRestaurant(Long id) {
-        if (restaurantRepository.existsById(id)) {
-            restaurantRepository.deleteById(id);
+        return restaurantRepository.findById(id)
+                .map(restaurant -> {
+                    // Get all tables for this restaurant
+                    List<RestaurantTable> tables = restaurantTableRepository.findByRestaurantId(id);
+
+                    // Delete all reservations for all tables
+                    tables.forEach(table -> {
+                        List<Reservation> reservations = reservationRepository.findByTableId(table.getId());
+                        if (!reservations.isEmpty()) {
+                            reservationRepository.deleteAll(reservations);
+                        }
+                    });
+
+                    // Now delete the restaurant (cascade will delete tables, reviews, etc.)
+                    restaurantRepository.delete(restaurant);
             return true;
-        }
-        return false;
+                })
+                .orElse(false);
     }
 
     public boolean existsById(Long id) {
@@ -88,6 +128,62 @@ public class RestaurantService {
 
     public long count() {
         return restaurantRepository.count();
+    }
+
+    public List<RestaurantDto> getRecommendations(Long userId) {
+        int limit = 5;
+        Pageable pageable = PageRequest.of(0, limit);
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return restaurantRepository.findTopRated(pageable)
+                    .stream().map(restaurantMapper::toDto).toList();
+        }
+
+        Set<Long> preferredTagIds = new HashSet<>();
+        Set<Long> visitedRestaurantIds = new HashSet<>();
+
+        if (user.getReservations() != null) {
+            for (Reservation res : user.getReservations()) {
+                Restaurant r = res.getTable().getRestaurant();
+                visitedRestaurantIds.add(r.getId());
+                r.getTags().forEach(tag -> preferredTagIds.add(tag.getId()));
+            }
+        }
+
+        if (user.getReviews() != null) {
+            for (Review review : user.getReviews()) {
+                Restaurant r = review.getRestaurant();
+                visitedRestaurantIds.add(r.getId());
+                r.getTags().forEach(tag -> preferredTagIds.add(tag.getId()));
+            }
+        }
+
+        if (preferredTagIds.isEmpty()) {
+            return restaurantRepository.findTopRated(pageable)
+                    .stream().map(restaurantMapper::toDto).toList();
+        }
+
+        List<Restaurant> recommendations;
+        if (visitedRestaurantIds.isEmpty()) {
+            recommendations = restaurantRepository.findByTagsIn(preferredTagIds, pageable);
+        } else {
+            recommendations = restaurantRepository.findByTagsInAndIdNotIn(preferredTagIds, visitedRestaurantIds, pageable);
+        }
+
+        if (recommendations.size() < limit) {
+            List<Restaurant> topRated = restaurantRepository.findTopRated(pageable);
+            for (Restaurant r : topRated) {
+                if (recommendations.size() >= limit) break;
+                if (!recommendations.contains(r) && !visitedRestaurantIds.contains(r.getId())) {
+                    recommendations.add(r);
+                }
+            }
+        }
+
+        return recommendations.stream()
+                .map(restaurantMapper::toDto)
+                .toList();
     }
 
     public List<RestaurantDto> searchRestaurants(RestaurantSearchDto searchDto) {

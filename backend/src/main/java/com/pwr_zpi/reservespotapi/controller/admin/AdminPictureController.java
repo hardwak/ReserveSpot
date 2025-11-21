@@ -15,7 +15,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ public class AdminPictureController {
     private final PictureMapper pictureMapper;
 
     @GetMapping("/list")
+    @Transactional(readOnly = true)
     public String listPictures(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -61,8 +64,12 @@ public class AdminPictureController {
         
         int start = page * size;
         int end = Math.min(start + size, allPictures.size());
-        List<Picture> pagePictures = allPictures.subList(Math.min(start, allPictures.size()), end);
+        // Ensure start is within bounds
+        start = Math.min(start, allPictures.size());
+        List<Picture> pagePictures = (start < end) ? allPictures.subList(start, end) : new ArrayList<>();
         
+        // Map to DTOs - mappers will access lazy collections within the transaction
+        // Collections are accessed directly in mappers, which will trigger lazy loading safely
         List<PictureDto> pictureDtos = pagePictures.stream()
             .map(pictureMapper::toDto)
             .collect(Collectors.toList());
@@ -116,6 +123,7 @@ public class AdminPictureController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return pictureRepository.findById(id)
             .map(picture -> {
@@ -137,6 +145,7 @@ public class AdminPictureController {
                                Model model,
                                RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("picture", updateDto);
             model.addAttribute("pictureId", id);
             return "admin/pictures/edit";
         }
@@ -147,8 +156,10 @@ public class AdminPictureController {
                     pictureDto -> redirectAttributes.addFlashAttribute("success", "Picture updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Picture not found")
                 );
-            return "redirect:/admin/pictures/list/" + id;
+            return "redirect:/admin/pictures/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("picture", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("pictureId", id);
             return "admin/pictures/edit";
@@ -157,11 +168,16 @@ public class AdminPictureController {
 
     @PostMapping("/{id}/delete")
     public String deletePicture(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
         boolean deleted = pictureService.deletePicture(id);
         if (deleted) {
             redirectAttributes.addFlashAttribute("success", "Picture deleted successfully");
         } else {
             redirectAttributes.addFlashAttribute("error", "Picture not found");
+        }
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            redirectAttributes.addFlashAttribute("error", "Could not delete picture: " + e.getMessage());
         }
         return "redirect:/admin/pictures/list";
     }
