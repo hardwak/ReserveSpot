@@ -8,6 +8,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import java.time.LocalDateTime
+import com.google.gson.GsonBuilder
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -174,10 +175,16 @@ interface OwnerApi {
 object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
 
+
+    private val gson = GsonBuilder()
+
+        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
+
+        .create()
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
