@@ -98,12 +98,12 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
 
     val restaurants = listOf(
-        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f),
-        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f),
-        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f),
-        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f),
-        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f),
-        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f)
+        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f, 1),
+        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f, 2),
+        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f, 3),
+        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f, 4),
+        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f,5),
+        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f,6)
     )
 
     val filteredRestaurants = restaurants.filter { restaurant ->

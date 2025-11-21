@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
@@ -46,7 +47,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -84,7 +88,6 @@ fun OwnerDashboardScreen(navController: NavHostController) {
     var restaurants by remember { mutableStateOf<List<OwnerRestaurantDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    // Fetching data during start
     LaunchedEffect(Unit) {
         isLoading = true
         // TODO: Pobrac prawdziwe ID właściciela z DataStore lub Tokena
@@ -338,7 +341,7 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                             longitude = lonVal,
                             pic = imageUrl
                         )
-                        saveRestaurant(context, restaurant, isNew)
+                        saveRestaurant(context, restaurant, isNew = false)
                         navController.popBackStack()
                     }
                 },
@@ -538,6 +541,7 @@ fun OwnerReservationsScreen(navController: NavHostController) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerRestaurantListScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -547,7 +551,7 @@ fun OwnerRestaurantListScreen(navController: NavHostController) {
 
     LaunchedEffect(ownerId) {
         isLoading = true
-        restaurants = fetchMyRestaurants(context, ownerId)
+//        restaurants = fetchMyRestaurants(context, ownerId)
         isLoading = false
     }
 
@@ -606,18 +610,13 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
 
 
     var reservations by remember { mutableStateOf<List<OwnerReservationDto>>(emptyList()) }
-
     var reviews by remember { mutableStateOf<List<ReviewDto>>(emptyList()) }
 
 
 
     LaunchedEffect(restaurantId) {
         isLoadingDetails = true
-        // TODO: Użyj nowego endpointu getRestaurantDetailsForOwner, zamiast pobierać całą listę
-
-        val ownerId = 1L // TODO: Faktyczne ownerId
-        val allRestaurants = fetchMyRestaurants(context, ownerId)
-        restaurantDetails = allRestaurants.find { it.id == restaurantId }
+        restaurantDetails = fetchRestaurantDetailsForOwner(context, restaurantId)
         isLoadingDetails = false
     }
 
@@ -738,11 +737,19 @@ fun ReviewsViewTab(reviews: List<ReviewDto>) {
 
 @Composable
 fun EditRestaurantTab(restaurant: OwnerRestaurantDto, context: Context) {
-    var name by remember { mutableStateOf(restaurant.name) }
-    var description by remember { mutableStateOf(restaurant.description) }
-    var address by remember { mutableStateOf(restaurant.address) }
+    val scope = rememberCoroutineScope()
+    val isNew = restaurant.id == null
 
-    // TODO: Zaimplementuj pełny formularz edycji z polem na godziny otwarcia i inne pola z OwnerRestaurantDto
+
+    var name by remember(restaurant.name) { mutableStateOf(restaurant.name) }
+    var address by remember(restaurant.address) { mutableStateOf(restaurant.address) }
+    var city by remember(restaurant.city) { mutableStateOf(restaurant.city) }
+    var description by remember(restaurant.description) { mutableStateOf(restaurant.description) }
+
+
+    val openingHours = remember(restaurant.openingHours) {
+        mutableStateMapOf<String, String>().apply { putAll(restaurant.openingHours) }
+    }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Text("Edytuj Dane Restauracji", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
@@ -786,12 +793,14 @@ fun EditRestaurantTab(restaurant: OwnerRestaurantDto, context: Context) {
 
 // Helper functions (API CALLS) ---
 
+
+
 suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<OwnerRestaurantDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
         val response = RetrofitClient.ownerApi.getMyRestaurants("Bearer $token", ownerId)
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) { emptyList() }
+    } catch (e: Exception) { Log.e("OwnerScreens", "Błąd fetchOwnerRestaurants", e); emptyList() }
 }
 
 suspend fun saveRestaurant(context: Context, restaurant: OwnerRestaurantDto, isNew: Boolean) = withContext(Dispatchers.IO) {
@@ -799,37 +808,36 @@ suspend fun saveRestaurant(context: Context, restaurant: OwnerRestaurantDto, isN
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         if (isNew) RetrofitClient.ownerApi.addRestaurant("Bearer $token", restaurant)
         else RetrofitClient.ownerApi.updateRestaurant("Bearer $token", restaurant.id!!, restaurant)
-    } catch (e: Exception) { Log.e("Owner", "Error saving", e) }
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error saving", e) }
 }
 
 suspend fun deleteRestaurant(context: Context, id: Long) = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         RetrofitClient.ownerApi.deleteRestaurant("Bearer $token", id)
-    } catch (e: Exception) {}
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error deleting", e) }
 }
 
 suspend fun fetchTables(context: Context, restaurantId: Long): List<TableDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-        // TODO Need to check if there is getTablesByRestaurant endpoint and change if needed
         val response = RetrofitClient.ownerApi.getTablesByRestaurant("Bearer $token", restaurantId)
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) { emptyList() }
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error fetchTables", e); emptyList() }
 }
 
 suspend fun addTable(context: Context, table: TableDto) = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         RetrofitClient.ownerApi.addTable("Bearer $token", table)
-    } catch (e: Exception) {}
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error addTable", e) }
 }
 
 suspend fun deleteTable(context: Context, id: Long) = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         RetrofitClient.ownerApi.deleteTable("Bearer $token", id)
-    } catch (e: Exception) {}
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error deleteTable", e) }
 }
 
 suspend fun fetchOwnerReservations(context: Context): List<OwnerReservationDto> = withContext(Dispatchers.IO) {
@@ -837,14 +845,14 @@ suspend fun fetchOwnerReservations(context: Context): List<OwnerReservationDto> 
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
         val response = RetrofitClient.ownerApi.getOwnerUpcomingReservations("Bearer $token")
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) { emptyList() }
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error fetchOwnerReservations", e); emptyList() }
 }
 
 suspend fun cancelOwnerReservation(context: Context, id: Long) = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         RetrofitClient.ownerApi.cancelReservation("Bearer $token", id)
-    } catch (e: Exception) {}
+    } catch (e: Exception) { Log.e("OwnerScreens", "Error cancelReservation", e) }
 }
 
 suspend fun fetchOwnerReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
@@ -855,5 +863,16 @@ suspend fun fetchOwnerReviews(context: Context, restaurantId: Long): List<Review
     } catch (e: Exception) {
         Log.e("OwnerScreens", "Błąd pobierania opinii: ${e.message}")
         emptyList()
+    }
+}
+
+suspend fun fetchRestaurantDetailsForOwner(context: Context, restaurantId: Long): OwnerRestaurantDto? = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+        val response = RetrofitClient.ownerApi.getRestaurantDetailsForOwner("Bearer $token", restaurantId)
+        if (response.isSuccessful) response.body() else null
+    } catch (e: Exception) {
+        Log.e("OwnerScreens", "Błąd pobierania detali restauracji: ${e.message}")
+        null
     }
 }

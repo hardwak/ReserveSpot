@@ -191,7 +191,7 @@ object RetrofitClient {
 
     private val gson = GsonBuilder()
 
-        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
+//        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
 
         .create()
     private val retrofit: Retrofit by lazy {
