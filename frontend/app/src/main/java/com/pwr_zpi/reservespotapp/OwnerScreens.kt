@@ -42,9 +42,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -536,6 +538,251 @@ fun OwnerReservationsScreen(navController: NavHostController) {
     }
 }
 
+@Composable
+fun OwnerRestaurantListScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val ownerId = 1L // TODO: Zmień na faktyczne ID właściciela pobrane z DataStore lub tokena
+    var restaurants by remember { mutableStateOf<List<OwnerRestaurantDto>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(ownerId) {
+        isLoading = true
+        restaurants = fetchMyRestaurants(context, ownerId)
+        isLoading = false
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Moje Restauracje", fontWeight = FontWeight.Bold) })
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* TODO: Implementuj dodawanie nowej restauracji */ }) {
+                Icon(Icons.Filled.Add, contentDescription = "Dodaj Restaurację")
+            }
+        }
+    ) { paddingValues ->
+        if (isLoading) {
+            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (restaurants.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Text("Brak dodanych restauracji.", color = Color.Gray)
+            }
+        } else {
+            LazyColumn(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+                items(restaurants) { restaurant ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable {
+                                navController.navigate("owner/restaurant/${restaurant.id}")
+                            },
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(restaurant.name, style = MaterialTheme.typography.titleLarge)
+                            Text("Adres: ${restaurant.address}, ${restaurant.city}", color = Color.Gray)
+                            Text("Ocena: ${String.format("%.1f", restaurant.averageRating)}", color = RSRed)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId: Long) {
+    val context = LocalContext.current
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Rezerwacje", "Opinie", "Edycja")
+
+
+    var restaurantDetails by remember { mutableStateOf<OwnerRestaurantDto?>(null) }
+    var isLoadingDetails by remember { mutableStateOf(true) }
+
+
+    var reservations by remember { mutableStateOf<List<OwnerReservationDto>>(emptyList()) }
+
+    var reviews by remember { mutableStateOf<List<ReviewDto>>(emptyList()) }
+
+
+
+    LaunchedEffect(restaurantId) {
+        isLoadingDetails = true
+        // TODO: Użyj nowego endpointu getRestaurantDetailsForOwner, zamiast pobierać całą listę
+
+        val ownerId = 1L // TODO: Faktyczne ownerId
+        val allRestaurants = fetchMyRestaurants(context, ownerId)
+        restaurantDetails = allRestaurants.find { it.id == restaurantId }
+        isLoadingDetails = false
+    }
+
+
+    LaunchedEffect(restaurantId, selectedTabIndex) {
+        when (selectedTabIndex) {
+            0 -> reservations = fetchOwnerReservations(context)
+            1 -> reviews = fetchOwnerReviews(context, restaurantId)
+        }
+    }
+
+    if (isLoadingDetails) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
+
+    val restaurant = restaurantDetails ?: run {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Nie znaleziono restauracji.", color = Color.Red) }
+        return
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(restaurant.name, maxLines = 1) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+
+
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = Color.White,
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        color = RSRed
+                    )
+                }
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) },
+                        selectedContentColor = RSRed,
+                        unselectedContentColor = Color.Gray
+                    )
+                }
+            }
+
+            // Zawartość zakładek
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(16.dp)
+            ) {
+                when (selectedTabIndex) {
+                    0 -> ReservationsManagementTab(reservations, restaurantId, context)
+                    1 -> ReviewsViewTab(reviews)
+                    2 -> EditRestaurantTab(restaurant, context)
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ReservationsManagementTab(allReservations: List<OwnerReservationDto>, currentRestaurantId: Long, context: Context) {
+
+    val filteredReservations = allReservations.filter {
+
+        true
+    }
+
+    if (filteredReservations.isEmpty()) {
+        Text("Brak nadchodzących rezerwacji.")
+    } else {
+        LazyColumn {
+            items(filteredReservations) { reservation ->
+                // TODO: Użyj komponentu OwnerReservationCard
+                Text("Rezerwacja ${reservation.id} - Status: ${reservation.status}", modifier = Modifier.padding(vertical = 4.dp))
+
+                Button(onClick = { /* TODO: Implementuj potwierdzenie/anulowanie */ }) { Text("Zarządzaj") }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ReviewsViewTab(reviews: List<ReviewDto>) {
+    if (reviews.isEmpty()) {
+        Text("Brak opinii dla tej restauracji.")
+    } else {
+        LazyColumn {
+            items(reviews) { review ->
+                // TODO: Użyj komponentu ReviewCard
+                Column(Modifier.padding(vertical = 8.dp).border(1.dp, Color.LightGray, RoundedCornerShape(4.dp)).padding(8.dp)) {
+                    Text("Użytkownik: ${review.userName} (${review.rating} Gwiazdki)", fontWeight = FontWeight.Bold)
+                    Text(review.comment)
+                    Text("Data: ${review.date}", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun EditRestaurantTab(restaurant: OwnerRestaurantDto, context: Context) {
+    var name by remember { mutableStateOf(restaurant.name) }
+    var description by remember { mutableStateOf(restaurant.description) }
+    var address by remember { mutableStateOf(restaurant.address) }
+
+    // TODO: Zaimplementuj pełny formularz edycji z polem na godziny otwarcia i inne pola z OwnerRestaurantDto
+
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        Text("Edytuj Dane Restauracji", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
+
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Nazwa Restauracji") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        )
+
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Opis") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            minLines = 3
+        )
+
+        Button(
+            onClick = {
+                // TODO: Użyj OwnerApi.updateRestaurant
+
+                val updatedDto = restaurant.copy(
+                    name = name,
+                    description = description,
+                    address = address
+                )
+
+                Log.d("Edit", "Próba zapisu: $updatedDto")
+            },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+        ) {
+            Text("Zapisz Zmiany")
+        }
+    }
+}
+
 
 // Helper functions (API CALLS) ---
 
@@ -598,4 +845,15 @@ suspend fun cancelOwnerReservation(context: Context, id: Long) = withContext(Dis
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         RetrofitClient.ownerApi.cancelReservation("Bearer $token", id)
     } catch (e: Exception) {}
+}
+
+suspend fun fetchOwnerReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+        val response = RetrofitClient.ownerApi.getRestaurantReviews("Bearer $token", restaurantId)
+        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+    } catch (e: Exception) {
+        Log.e("OwnerScreens", "Błąd pobierania opinii: ${e.message}")
+        emptyList()
+    }
 }

@@ -68,6 +68,16 @@ data class ReservationDto(
     val rating: Float
 )
 
+data class ReviewDto(
+    val id: Long,
+    val userId: Long,
+    val userName: String,
+    val restaurantId: Long,
+    val rating: Int,
+    val comment: String,
+    val date: String
+)
+
 interface AuthApi {
     @POST("/api/auth/google")
     suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
@@ -152,6 +162,9 @@ interface OwnerApi {
 
     @retrofit2.http.DELETE("/api/restaurants/{id}")
     suspend fun deleteRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
+
+    @GET("/api/reviews/restaurant/{restaurantId}")
+    suspend fun getRestaurantReviews(@Header("Authorization") token: String, @retrofit2.http.Path("restaurantId") restaurantId: Long): Response<List<ReviewDto>>
 
     // Tables
     @GET("/api/tables/restaurant/{restaurantId}") // endpoint for getting tables (nned to check if it ex.)

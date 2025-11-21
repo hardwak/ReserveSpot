@@ -134,11 +134,11 @@ fun Controller(navController: NavHostController) {
             composable("home") { MainMenuScreen(navController) }
 
             composable("restaurantDetails/{restaurantId}/{rating}") { backStackEntry ->
-                // ZMIANA: Odbieramy ID zamiast nazwy
+
                 val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
                 val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
 
-                // Przekazujemy ID
+
                 RestaurantDetailsScreen(navController, id, rating)
 
             }
@@ -156,6 +156,12 @@ fun Controller(navController: NavHostController) {
                 val finalLng = if (lng != 0.0) lng else null
 
                 LocationPickerScreen(navController, finalLat, finalLng)
+            }
+
+            composable("owner") { OwnerRestaurantListScreen(navController) } // Ekran z listą restauracji
+            composable("owner/restaurant/{restaurantId}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
+                OwnerRestaurantDetailsScreen(navController, id) // Ekran zarządzania rezerwacjami/opiniami/edycją
             }
 
             composable(
