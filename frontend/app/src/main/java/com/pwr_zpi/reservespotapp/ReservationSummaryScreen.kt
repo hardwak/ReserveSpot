@@ -48,7 +48,6 @@ fun ReservationSummaryScreen(
     time: String,
     guests: String,
     duration: String,
-    type: String,
     location: String
 
 ) {
@@ -108,13 +107,24 @@ fun ReservationSummaryScreen(
                 SummaryDetail("Date and time:", "$formattedDate o $time")
                 SummaryDetail("Guests number:", guests)
                 SummaryDetail("Duration:", duration)
-                SummaryDetail("Meeting type:", type)
                 SummaryDetail("Table location", location)
 
                 Spacer(modifier = Modifier.height(40.dp))
 
                 OutlinedButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        val route = "reservation/${restaurantName}?" +
+                                "date=$date&" +
+                                "time=$time&" +
+                                "guests=$guests&" +
+                                "duration=$duration&" +
+                                "location=$location"
+
+
+                        navController.navigate(route) {
+                            popUpTo("reservation/{restaurantName}") { inclusive = true }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
                     border = BorderStroke(1.dp, RSRed)
@@ -148,7 +158,7 @@ fun ReservationSummaryScreen(
 
         val navigateBackToDetails: () -> Unit = {
             showConfirmationDialog = false
-            navController.popBackStack("restaurantDetails/$restaurantName", inclusive = false)
+            navController.popBackStack("restaurantDetails/{restaurantName}/{rating}", inclusive = false)
         }
 
         AlertDialog(

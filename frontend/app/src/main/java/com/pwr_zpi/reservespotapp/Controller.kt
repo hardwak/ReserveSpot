@@ -1,6 +1,8 @@
 package com.pwr_zpi.reservespotapp
 
 
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -30,11 +32,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.navArgument
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,11 +145,38 @@ fun Controller(navController: NavHostController) {
                 RestaurantDetailsScreen(navController, name, rating)
 
             }
+            composable(
 
-            composable("reservation/{restaurantName}") { backStackEntry ->
-                val name =
-                    backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
-                ReservationScreen(navController, name)
+                route = "reservation/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
+                arguments = listOf(
+                    navArgument("restaurantName") { type = NavType.StringType },
+
+                    navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("time") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("guests") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("duration") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                )
+            ) { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+
+                // getting parameters
+                val date = backStackEntry.arguments?.getString("date")
+                val time = backStackEntry.arguments?.getString("time")
+                val guests = backStackEntry.arguments?.getString("guests")
+                val duration = backStackEntry.arguments?.getString("duration")
+                val location = backStackEntry.arguments?.getString("location")
+
+
+                ReservationScreen(
+                    navController,
+                    name,
+                    initialDate = date,
+                    initialTime = time,
+                    initialGuests = guests,
+                    initialDuration = duration,
+                    initialLocation = location
+                )
             }
 
             composable("account") { AccountScreen(navController) }
