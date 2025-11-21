@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -128,6 +129,7 @@ public class AdminTableController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional(readOnly = true)
     public String showEditForm(@PathVariable Long id, Model model) {
         return tableRepository.findById(id)
             .map(table -> {
@@ -151,6 +153,7 @@ public class AdminTableController {
                              Model model,
                              RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("table", updateDto);
             model.addAttribute("tableId", id);
             model.addAttribute("restaurants", restaurantRepository.findAll());
             return "admin/tables/edit";
@@ -162,8 +165,10 @@ public class AdminTableController {
                     tableDto -> redirectAttributes.addFlashAttribute("success", "Table updated successfully"),
                     () -> redirectAttributes.addFlashAttribute("error", "Table not found")
                 );
-            return "redirect:/admin/tables/list/" + id;
+            return "redirect:/admin/tables/" + id;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("table", updateDto);
             model.addAttribute("error", e.getMessage());
             model.addAttribute("tableId", id);
             model.addAttribute("restaurants", restaurantRepository.findAll());
@@ -173,11 +178,16 @@ public class AdminTableController {
 
     @PostMapping("/{id}/delete")
     public String deleteTable(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
         boolean deleted = tableService.deleteTable(id);
         if (deleted) {
             redirectAttributes.addFlashAttribute("success", "Table deleted successfully");
         } else {
             redirectAttributes.addFlashAttribute("error", "Table not found");
+        }
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            redirectAttributes.addFlashAttribute("error", "Could not delete table: " + e.getMessage());
         }
         return "redirect:/admin/tables/list";
     }
