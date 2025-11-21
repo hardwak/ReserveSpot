@@ -1,8 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
 
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -32,9 +30,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +125,7 @@ fun Controller(navController: NavHostController) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "reservations",
+            startDestination = "login",
             modifier = Modifier.padding(innerPadding)
 //            Routes below
         ) {
@@ -188,7 +188,7 @@ fun Controller(navController: NavHostController) {
             composable("register") { RegisterScreen(navController) }
             composable("restaurant_register") { RestaurantRegisterScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
-            // composable("favourites") { FavouritesScreen(navController) }
+            composable("favourites") { FavouritesScreen(navController) }
 
             composable(
                 route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
@@ -210,7 +210,7 @@ fun Controller(navController: NavHostController) {
                     time = backStackEntry.arguments?.getString("time") ?: "No hours",
                     guests = backStackEntry.arguments?.getString("guests") ?: "0",
                     duration = backStackEntry.arguments?.getString("duration") ?: "No duration",
-                    type = backStackEntry.arguments?.getString("type") ?: "No type of reservation",
+                    // type = backStackEntry.arguments?.getString("type") ?: "No type of reservation",
                     location = backStackEntry.arguments?.getString("location") ?: "Any"
                 )
             }

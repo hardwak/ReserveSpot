@@ -85,7 +85,7 @@ fun LoginScreen(navController: NavHostController) {
                             popUpTo("login") { inclusive = true }
                         }
                         "RESTAURANT" -> navController.navigate("restauranthome") {
-                            popUpTo("login") { inclusive = true }
+                            popUpTo("login") { inclusive = true } // TODO change to restaurant_login
                         }
                         "ADMIN" -> {
                             showErrorDialog = true
@@ -279,7 +279,7 @@ fun LoginScreen(navController: NavHostController) {
                     Text("OK")
                 }
             },
-            title = { Text("Registration Error") },
+            title = { Text("Login Error") },
             text = { Text(errorMessage) }
         )
     }
@@ -319,11 +319,18 @@ fun extractRolesFromJwt(token: String): List<String> {
         when {
             json.has("roles") -> {
                 val arr = json.getJSONArray("roles")
-                List(arr.length()) { arr.getString(it) }
+                List(arr.length()) { val item = arr.get(it)
+                    if (item is String) item
+                    else JSONObject(item.toString()).getString("authority")
+                }
             }
             json.has("role") -> listOf(json.getString("role"))
             json.has("authorities") -> {
                 val arr = json.getJSONArray("authorities")
+                List(arr.length()) { arr.getString(it) }
+            }
+            json.has("authority") -> {
+                val arr = json.getJSONArray("authority")
                 List(arr.length()) { arr.getString(it) }
             }
             else -> emptyList()

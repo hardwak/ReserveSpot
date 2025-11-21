@@ -12,6 +12,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,7 +30,7 @@ fun ReservationsScreen(navController: NavHostController) {
     val context = LocalContext.current
     var reservations by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
-    var refreshTrigger by remember { mutableStateOf(0) }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(refreshTrigger) {
         isLoading = true
@@ -53,7 +54,7 @@ fun ReservationsScreen(navController: NavHostController) {
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clickable {
                             navController.navigate(
-                                "restaurantDetails/${reservation.restaurantName}/${reservation.rating}"
+                                "restaurantDetails/${reservation.restaurantName}/${reservation.restaurantRating}" // TODO change this to restaurantId
                             )
                         }
                 )
