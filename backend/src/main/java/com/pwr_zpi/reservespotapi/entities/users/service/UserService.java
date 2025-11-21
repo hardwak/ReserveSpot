@@ -1,5 +1,11 @@
 package com.pwr_zpi.reservespotapi.entities.users.service;
 
+import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
+import com.pwr_zpi.reservespotapi.entities.reservation.ReservationRepository;
+import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
+import com.pwr_zpi.reservespotapi.entities.restaurant.service.RestaurantService;
+import com.pwr_zpi.reservespotapi.entities.review.Review;
+import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import com.pwr_zpi.reservespotapi.entities.users.dto.CreateUserDto;
@@ -23,6 +29,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final ReservationRepository reservationRepository;
+    private final ReviewRepository reviewRepository;
+    private final RestaurantService restaurantService;
 
     public List<UserDto> getAllUsers() {
         return userRepository.findAll()
@@ -77,11 +86,35 @@ public class UserService {
     }
 
     public boolean deleteUser(Long id) {
-        if (userRepository.existsById(id)) {
-            userRepository.deleteById(id);
-            return true;
-        }
-        return false;
+        return userRepository.findById(id)
+            .map(user -> {
+                // Delete all reservations for this user
+                if (user.getReservations() != null && !user.getReservations().isEmpty()) {
+                    List<Reservation> reservations = user.getReservations().stream().toList();
+                    reservationRepository.deleteAll(reservations);
+                }
+                
+                // Delete all reviews for this user
+                if (user.getReviews() != null && !user.getReviews().isEmpty()) {
+                    List<Review> reviews = user.getReviews().stream().toList();
+                    reviewRepository.deleteAll(reviews);
+                }
+                
+                // Delete all restaurants owned by this user
+                // Use RestaurantService.deleteRestaurant to ensure proper cascade deletion
+                if (user.getRestaurants() != null && !user.getRestaurants().isEmpty()) {
+                    List<Restaurant> restaurants = user.getRestaurants().stream().toList();
+                    for (Restaurant restaurant : restaurants) {
+                        restaurantService.deleteRestaurant(restaurant.getId());
+                    }
+                }
+                
+                // The picture will be deleted automatically due to cascade
+                // Now delete the user
+                userRepository.delete(user);
+                return true;
+            })
+            .orElse(false);
     }
 
     public boolean existsById(Long id) {

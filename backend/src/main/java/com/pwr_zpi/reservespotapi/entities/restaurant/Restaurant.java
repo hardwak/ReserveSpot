@@ -10,6 +10,7 @@ import com.pwr_zpi.reservespotapi.entities.users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -23,6 +24,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@EqualsAndHashCode(exclude = {"owner", "tables", "reviews", "aiAnalyses", "statistics", "tags", "pictures"})
 public class Restaurant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,7 +68,7 @@ public class Restaurant {
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<RestaurantStatistic> statistics;
 
-    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(cascade = { CascadeType.MERGE })
     @JoinTable(
             name = "restaurant_tags",
             joinColumns = @JoinColumn(name = "restaurant_id"),
@@ -74,7 +76,7 @@ public class Restaurant {
     )
     private Set<Tag> tags;
 
-    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(cascade = { CascadeType.MERGE })
     @JoinTable(
             name = "restaurant_pictures",
             joinColumns = @JoinColumn(name = "restaurant_id"),

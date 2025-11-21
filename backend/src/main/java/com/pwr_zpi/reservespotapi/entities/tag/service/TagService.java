@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapi.entities.tag.service;
 
+import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
+import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.CreateTagDto;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.TagDto;
 import com.pwr_zpi.reservespotapi.entities.tag.dto.UpdateTagDto;
@@ -20,6 +22,7 @@ public class TagService {
 
     private final TagRepository tagRepository;
     private final TagMapper tagMapper;
+    private final RestaurantRepository restaurantRepository;
 
     public List<TagDto> getAllTags() {
         return tagRepository.findAll()
@@ -54,11 +57,24 @@ public class TagService {
     }
 
     public boolean deleteTag(Long id) {
-        if (tagRepository.existsById(id)) {
-            tagRepository.deleteById(id);
+        return tagRepository.findById(id)
+            .map(tag -> {
+                // Remove this tag from all restaurants that have it
+                if (tag.getRestaurants() != null && !tag.getRestaurants().isEmpty()) {
+                    // Create a copy of the set to avoid ConcurrentModificationException
+                    List<Restaurant> restaurantsWithTag = tag.getRestaurants().stream().toList();
+                    for (Restaurant restaurant : restaurantsWithTag) {
+                        if (restaurant.getTags() != null) {
+                            restaurant.getTags().remove(tag);
+                            restaurantRepository.save(restaurant);
+                        }
+                    }
+                }
+                // Now delete the tag
+                tagRepository.delete(tag);
             return true;
-        }
-        return false;
+            })
+            .orElse(false);
     }
 
     public boolean existsById(Long id) {

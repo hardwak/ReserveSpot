@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Tag - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}" class="active">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Edit Tag</h2>
+            <a th:href="@{/admin/tags/{id}(id=${tagId})}" class="btn btn-secondary">View</a>
+            <a th:href="@{/admin/tags}" class="btn btn-secondary">Back to List</a>
+        </div>
+
+        <div class="form-container">
+            <form th:action="@{/admin/tags/{id}/edit(id=${tagId})}" th:object="${tag}" method="post" data-validate>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" th:field="*{name}">
+                    <div th:if="${#fields.hasErrors('name')}" class="error" th:errors="*{name}"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Update Tag</button>
+                    <a th:href="@{/admin/tags}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

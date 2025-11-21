@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapi.entities.restaurant.mapper;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.CreateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
@@ -7,10 +9,13 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
 public class RestaurantMapper {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public RestaurantDto toDto(Restaurant restaurant) {
         if (restaurant == null) {
@@ -54,7 +59,7 @@ public class RestaurantMapper {
                 .address(dto.getAddress())
                 .city(dto.getCity())
                 .description(dto.getDescription())
-                .openingHours(dto.getOpeningHours())
+                .openingHours(parseOpeningHours(dto.getOpeningHours()))
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
                 .pic(dto.getPic())
@@ -88,7 +93,7 @@ public class RestaurantMapper {
             restaurant.setDescription(dto.getDescription());
         }
         if (dto.getOpeningHours() != null) {
-            restaurant.setOpeningHours(dto.getOpeningHours());
+            restaurant.setOpeningHours(parseOpeningHours(dto.getOpeningHours()));
         }
         if (dto.getLatitude() != null) {
             restaurant.setLatitude(dto.getLatitude());
@@ -98,6 +103,19 @@ public class RestaurantMapper {
         }
         if (dto.getPic() != null) {
             restaurant.setPic(dto.getPic());
+        }
+    }
+
+    private Map<String, String> parseOpeningHours(String openingHoursStr) {
+        if (openingHoursStr == null || openingHoursStr.trim().isEmpty() || openingHoursStr.trim().equals("{}")) {
+            return null;
+        }
+        
+        try {
+            return objectMapper.readValue(openingHoursStr, new TypeReference<Map<String, String>>() {});
+        } catch (Exception e) {
+            // If parsing fails, return null or empty map
+            return null;
         }
     }
 }

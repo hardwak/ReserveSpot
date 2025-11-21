@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Picture - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}" class="active">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Create New Picture</h2>
+            <a th:href="@{/admin/pictures}" class="btn btn-secondary">Back to List</a>
+        </div>
+
+        <div class="form-container">
+            <form th:action="@{/admin/pictures/create}" th:object="${picture}" method="post" data-validate>
+                <div class="form-group">
+                    <label for="url">URL *</label>
+                    <input type="url" id="url" th:field="*{url}" required>
+                    <div th:if="${#fields.hasErrors('url')}" class="error" th:errors="*{url}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" th:field="*{description}" rows="4"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Picture</button>
+                    <a th:href="@{/admin/pictures}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

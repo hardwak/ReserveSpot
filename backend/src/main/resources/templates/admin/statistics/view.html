@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Statistic - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}" class="active">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Statistic Details</h2>
+            <div style="display: flex; gap: 1rem;">
+                <a th:href="@{/admin/statistics/{id}/edit(id=${statistic.id})}" class="btn btn-primary">Edit</a>
+                <form th:action="@{/admin/statistics/{id}/delete(id=${statistic.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-delete">Delete</button>
+                </form>
+                <a th:href="@{/admin/statistics}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="view-container">
+            <div class="view-field">
+                <label>ID</label>
+                <div class="value" th:text="${statistic.id}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Restaurant</label>
+                <div class="value">
+                    <a th:if="${statistic.restaurantId != null}"
+                       th:href="@{/admin/restaurants/{id}(id=${statistic.restaurantId})}" 
+                       class="relation-link" 
+                       th:text="${statistic.restaurantId}"></a>
+                    <span th:if="${statistic.restaurantId == null}">-</span>
+                </div>
+            </div>
+
+            <div class="view-field">
+                <label>Date</label>
+                <div class="value" th:text="${statistic.date != null ? (#temporals.format(statistic.date, 'yyyy-MM-dd')) : '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Hour of Day</label>
+                <div class="value" th:text="${statistic.hourOfDay != null ? (statistic.hourOfDay + ':00') : '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Average Occupancy</label>
+                <div class="value">
+                    <span th:if="${statistic.averageOccupancy != null}" 
+                          th:text="${#numbers.formatDecimal(statistic.averageOccupancy, 1, 2)}"></span>
+                    <span th:if="${statistic.averageOccupancy == null}">-</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

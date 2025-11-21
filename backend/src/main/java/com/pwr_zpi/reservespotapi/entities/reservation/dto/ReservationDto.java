@@ -19,4 +19,8 @@ public class ReservationDto {
     private LocalDateTime reservationDatetime;
     private Integer durationMinutes;
     private ReservationStatus status;
+    private Long restaurantId;
+    private String restaurantName;
+    private Integer numOfPeople;
+    private Double restaurantRating;
 }
