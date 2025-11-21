@@ -5,8 +5,10 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantSearchDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.service.RestaurantService;
+import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ import java.util.Optional;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping
     @Operation(summary = "Get all restaurants", description = "Retrieve a list of all restaurants")
@@ -93,5 +96,13 @@ public class RestaurantController {
     public ResponseEntity<List<RestaurantDto>> searchRestaurantsWithAi(@RequestBody RestaurantSearchDto searchDto) {
         List<RestaurantDto> restaurants = restaurantService.searchRestaurantsWithAi(searchDto);
         return ResponseEntity.ok(restaurants);
+    }
+
+    @GetMapping("/recommendations")
+    @Operation(summary = "Get restaurant recommendations", description = "Returns personalized recommendations for logged users, or top-rated for anonymous users.")
+    public ResponseEntity<List<RestaurantDto>> getRecommendations(HttpServletRequest request) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        List<RestaurantDto> recommendations = restaurantService.getRecommendations(userId);
+        return ResponseEntity.ok(recommendations);
     }
 }

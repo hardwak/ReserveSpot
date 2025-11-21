@@ -4,6 +4,7 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import java.util.Set;
@@ -14,6 +15,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@EqualsAndHashCode(exclude = "restaurants")
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

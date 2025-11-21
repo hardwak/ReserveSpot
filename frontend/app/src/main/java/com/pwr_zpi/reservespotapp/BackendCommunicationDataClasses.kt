@@ -4,11 +4,11 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
-import java.time.LocalDateTime
-import com.google.gson.GsonBuilder
+import retrofit2.http.Path
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -60,12 +60,13 @@ data class ReservationDto(
     val id: Long,
     val userId: Long,
     val tableId: Long,
-    val reservationDatetime: LocalDateTime,
+    val reservationDatetime: String,   // LocalDateTime → String in JSON
     val durationMinutes: Int,
     val status: ReservationStatus,
+    val restaurantId: Long,
     val restaurantName: String,
     val numOfPeople: Int,
-    val rating: Float
+    val restaurantRating: Double
 )
 
 data class ReviewDto(
@@ -97,15 +98,36 @@ interface AuthApi {
 }
 
 data class RestaurantDto(
-    val restaurantName: String,
-    val imageURL: String? = null,
-    val rating: Float,
-    val views: Int
+    val id: Long,
+    val ownerId: Long,
+    val name: String,
+    val address: String,
+    val city: String,
+    val description: String,
+    val openingHours: Map<String, String>,
+    val averageRating: Double?,
+    val latitude: Double?,
+    val longitude: Double?,
+    val pic: String?,
+    val tableIds: Set<Long>,
+    val reviewIds: Set<Long>,
+    val aiAnalysisIds: Set<Long>,
+    val statisticIds: Set<Long>,
+    val tagIds: Set<Long>,
+    val pictureIds: Set<Long>,
+    val views: Int // TODO wait for backend to include this parameter in a DTO
 )
+
 
 interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
     suspend fun getMyUpcomingReservations(@Header("Authorization") token: String): Response<List<ReservationDto>>
+
+    @DELETE("api/reservations/{id}")
+    suspend fun cancelReservation(
+        @Header("Authorization") token: String,
+        @Path("id") reservationId: Long
+    ): Response<Unit>
 }
 
 interface RestaurantApi {
@@ -189,15 +211,15 @@ object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
 
 
-    private val gson = GsonBuilder()
-
+//    private val gson = GsonBuilder()
+//
 //        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
-
-        .create()
+//
+//        .create()
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 

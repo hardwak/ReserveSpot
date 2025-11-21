@@ -97,13 +97,14 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     }
 
 
+    // TODO fetch from database
     val restaurants = listOf(
-        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f, 1),
-        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f, 2),
-        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f, 3),
-        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f, 4),
-        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f,5),
-        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f,6)
+        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f, id = 1L),
+        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f, id = 2L),
+        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f, id = 3L),
+        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f, id = 4L),
+        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f, id = 5L),
+        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f, id = 6L)
     )
 
     val filteredRestaurants = restaurants.filter { restaurant ->
@@ -250,10 +251,33 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                                 navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.rating}")
                             },
                         info = RestaurantDto(
-                            restaurantName = restaurant.name,
-                            rating = restaurant.rating,
-                            views = 450 // TODO fetch from database
-                        )
+                            name = restaurant.name,
+                            averageRating = restaurant.rating.toDouble(),
+                            views = 450,
+                            id = 1L,
+                            ownerId = 20L,
+                            address = "123 Placeholder St",
+                            city = "Sample City",
+                            description = "This is a placeholder description for the restaurant.",
+                            openingHours = mapOf(
+                                "Mon" to "10:00–22:00",
+                                "Tue" to "10:00–22:00",
+                                "Wed" to "10:00–22:00",
+                                "Thu" to "10:00–22:00",
+                                "Fri" to "10:00–23:00",
+                                "Sat" to "11:00–23:00",
+                                "Sun" to "11:00–21:00"
+                            ),
+                            latitude = 0.0,
+                            longitude = 0.0,
+                            pic = "https://example.com/placeholder.jpg",
+                            tableIds = setOf(1, 2, 3),
+                            reviewIds = setOf(101, 102),
+                            aiAnalysisIds = emptySet(),
+                            statisticIds = emptySet(),
+                            tagIds = setOf(1, 2),
+                            pictureIds = setOf(11, 12)
+                        ) // TODO fetch from database
                     )
                 }
             }

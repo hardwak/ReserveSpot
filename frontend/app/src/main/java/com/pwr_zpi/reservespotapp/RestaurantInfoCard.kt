@@ -35,9 +35,9 @@ fun RestaurantInfoCard(
     info: RestaurantDto
 
     ) {
-    val imageURL = info.imageURL ?: ""
-    val restaurantName = info.restaurantName
-    val rating = info.rating
+    val imageURL = info.pic ?: ""
+    val restaurantName = info.name
+    val rating = info.averageRating
     val views = info.views
 
     Box(

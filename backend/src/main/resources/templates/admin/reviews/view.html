@@ -82,11 +82,6 @@
             </div>
 
             <div class="view-field">
-                <label>Phone Number</label>
-                <div class="value" th:text="${review.phoneNumber ?: '-'}"></div>
-            </div>
-
-            <div class="view-field">
                 <label>Created At</label>
                 <div class="value" th:text="${review.createdAt != null ? (#temporals.format(review.createdAt, 'yyyy-MM-dd HH:mm')) : '-'}"></div>
             </div>
