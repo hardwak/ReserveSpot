@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Tag - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}" class="active">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Tag Details</h2>
+            <div style="display: flex; gap: 1rem;">
+                <a th:href="@{/admin/tags/{id}/edit(id=${tag.id})}" class="btn btn-primary">Edit</a>
+                <form th:action="@{/admin/tags/{id}/delete(id=${tag.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-delete">Delete</button>
+                </form>
+                <a th:href="@{/admin/tags}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="view-container">
+            <div class="view-field">
+                <label>ID</label>
+                <div class="value" th:text="${tag.id}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Name</label>
+                <div class="value" th:text="${tag.name}"></div>
+            </div>
+
+            <div class="view-field" th:if="${tag.restaurantIds != null && !tag.restaurantIds.isEmpty()}">
+                <label>Restaurants</label>
+                <div class="value">
+                    <a th:href="@{/admin/restaurants}" class="relation-link">
+                        View <span th:text="${#lists.size(tag.restaurantIds)}"></span> restaurants
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

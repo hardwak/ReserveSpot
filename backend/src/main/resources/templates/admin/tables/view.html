@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Table - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}" class="active">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Table Details</h2>
+            <div style="display: flex; gap: 1rem;">
+                <a th:href="@{/admin/tables/{id}/edit(id=${table.id})}" class="btn btn-primary">Edit</a>
+                <form th:action="@{/admin/tables/{id}/delete(id=${table.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-delete">Delete</button>
+                </form>
+                <a th:href="@{/admin/tables}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="view-container">
+            <div class="view-field">
+                <label>ID</label>
+                <div class="value" th:text="${table.id}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Restaurant</label>
+                <div class="value">
+                    <a th:if="${table.restaurantId != null}"
+                       th:href="@{/admin/restaurants/{id}(id=${table.restaurantId})}" 
+                       class="relation-link" 
+                       th:text="${table.restaurantId}"></a>
+                    <span th:if="${table.restaurantId == null}">-</span>
+                </div>
+            </div>
+
+            <div class="view-field">
+                <label>Table Number</label>
+                <div class="value" th:text="${table.tableNumber ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Capacity</label>
+                <div class="value" th:text="${table.capacity ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Location in Restaurant</label>
+                <div class="value" th:text="${table.locationInRestaurant ?: '-'}"></div>
+            </div>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

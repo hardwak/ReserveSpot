@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View User - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}" class="active">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>User Details</h2>
+            <div style="display: flex; gap: 1rem;">
+                <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-primary">Edit</a>
+                <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-delete">Delete</button>
+                </form>
+                <a th:href="@{/admin/users}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="view-container">
+            <div class="view-field">
+                <label>ID</label>
+                <div class="value" th:text="${user.id}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Name</label>
+                <div class="value" th:text="${user.name ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Email</label>
+                <div class="value" th:text="${user.email}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Phone Number</label>
+                <div class="value" th:text="${user.phoneNumber ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Role</label>
+                <div class="value">
+                    <span class="badge" 
+                          th:classappend="${user.role == T(com.pwr_zpi.reservespotapi.entities.users.Role).ADMIN ? 'badge-danger' : (user.role == T(com.pwr_zpi.reservespotapi.entities.users.Role).RESTAURANT ? 'badge-warning' : 'badge-primary')}"
+                          th:text="${user.role}"></span>
+                </div>
+            </div>
+
+            <div class="view-field">
+                <label>Auth Provider</label>
+                <div class="value" th:text="${user.provider ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>OAuth Provider ID</label>
+                <div class="value" th:text="${user.oauthProviderId ?: '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Picture ID</label>
+                <div class="value">
+                    <span th:if="${user.pictureId != null}">
+                        <a th:href="@{/admin/pictures/{id}(id=${user.pictureId})}" class="relation-link" th:text="${user.pictureId}"></a>
+                    </span>
+                    <span th:if="${user.pictureId == null}">-</span>
+                </div>
+            </div>
+
+            <div class="view-field" th:if="${user.restaurants != null && !user.restaurants.isEmpty()}">
+                <label>Restaurants Owned</label>
+                <div class="value">
+                    <div th:each="restaurant : ${user.restaurants}" style="margin-bottom: 0.5rem;">
+                        <a th:href="@{/admin/restaurants/{id}(id=${restaurant.id})}" class="relation-link" th:text="${restaurant.name}"></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view-field" th:if="${user.reservationIds != null && !user.reservationIds.isEmpty()}">
+                <label>Reservations</label>
+                <div class="value">
+                    <a th:href="@{/admin/reservations/list(userId=${user.id})}" class="relation-link">
+                        View <span th:text="${#lists.size(user.reservationIds)}"></span> reservations
+                    </a>
+                </div>
+            </div>
+
+            <div class="view-field" th:if="${user.reviewIds != null && !user.reviewIds.isEmpty()}">
+                <label>Reviews</label>
+                <div class="value">
+                    <a th:href="@{/admin/reviews/list(userId=${user.id})}" class="relation-link">
+                        View <span th:text="${#lists.size(user.reviewIds)}"></span> reviews
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

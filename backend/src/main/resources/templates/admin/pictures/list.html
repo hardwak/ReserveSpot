@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pictures - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}" class="active">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div class="page-header">
+            <h2>Pictures</h2>
+            <a th:href="@{/admin/pictures/create}" class="btn btn-primary">Create New Picture</a>
+        </div>
+
+        <div class="filters">
+            <form method="get" th:action="@{/admin/pictures/list}">
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" name="search" th:value="${search}" placeholder="URL or description...">
+                </div>
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a th:href="@{/admin/pictures}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="id">ID</th>
+                        <th class="sortable" data-sort="url">URL</th>
+                        <th>Description</th>
+                        <th class="sortable" data-sort="uploadedAt">Uploaded</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${pictures.isEmpty()}">
+                        <td colspan="5" style="text-align: center; padding: 2rem;">No pictures found</td>
+                    </tr>
+                    <tr th:each="picture : ${pictures}">
+                        <td th:text="${picture.id}"></td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;" 
+                            th:text="${picture.url ?: '-'}"></td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;" 
+                            th:text="${picture.description != null ? (#strings.abbreviate(picture.description, 50)) : '-'}"></td>
+                        <td th:text="${picture.uploadedAt != null ? (#temporals.format(picture.uploadedAt, 'yyyy-MM-dd')) : '-'}"></td>
+                        <td class="actions">
+                            <a th:href="@{/admin/pictures/{id}(id=${picture.id})}" class="btn btn-sm btn-secondary">View</a>
+                            <a th:href="@{/admin/pictures/{id}/edit(id=${picture.id})}" class="btn btn-sm btn-primary">Edit</a>
+                            <form th:action="@{/admin/pictures/{id}/delete(id=${picture.id})}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}" 
+               th:href="@{/admin/pictures/list(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}">Previous</a>
+            <span th:each="page : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:if="${page != currentPage}"
+                   th:href="@{/admin/pictures/list(page=${page}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}"
+                   th:text="${page + 1}"></a>
+                <span th:if="${page == currentPage}" class="active" th:text="${page + 1}"></span>
+            </span>
+            <a th:if="${currentPage < totalPages - 1}"
+               th:href="@{/admin/pictures/list(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy != null ? sortBy : 'id'}, sortDir=${sortDir != null ? sortDir : 'asc'}, search=${search != null && !search.isEmpty() ? search : ''})}">Next</a>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

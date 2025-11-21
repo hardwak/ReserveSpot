@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle != null ? pageTitle + ' - Admin Panel' : 'Admin Panel'}">Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}" th:classappend="${#strings.equals(currentPage, 'dashboard') ? 'active' : ''}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}" th:classappend="${#strings.equals(currentPage, 'users') ? 'active' : ''}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}" th:classappend="${#strings.equals(currentPage, 'restaurants') ? 'active' : ''}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}" th:classappend="${#strings.equals(currentPage, 'reservations') ? 'active' : ''}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}" th:classappend="${#strings.equals(currentPage, 'reviews') ? 'active' : ''}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}" th:classappend="${#strings.equals(currentPage, 'tags') ? 'active' : ''}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}" th:classappend="${#strings.equals(currentPage, 'tables') ? 'active' : ''}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}" th:classappend="${#strings.equals(currentPage, 'statistics') ? 'active' : ''}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}" th:classappend="${#strings.equals(currentPage, 'pictures') ? 'active' : ''}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}" th:classappend="${#strings.equals(currentPage, 'ai-analysis') ? 'active' : ''}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <div th:insert="${content}"></div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Restaurant - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}" class="active">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Edit Restaurant</h2>
+            <a th:href="@{/admin/restaurants/{id}(id=${restaurantId})}" class="btn btn-secondary">View</a>
+            <a th:href="@{/admin/restaurants}" class="btn btn-secondary">Back to List</a>
+        </div>
+
+        <div class="form-container">
+            <div th:if="${error}" class="alert alert-error" style="padding: 1rem; background-color: #fee; border: 1px solid #fcc; border-radius: 4px; margin-bottom: 1rem; color: #c00;">
+                <strong>Error:</strong> <span th:text="${error}"></span>
+            </div>
+            <form th:action="@{/admin/restaurants/{id}/edit(id=${restaurantId})}" th:object="${restaurant}" method="post" data-validate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div th:if="${#fields.hasErrors('*')}" class="alert alert-error" style="padding: 1rem; background-color: #fee; border: 1px solid #fcc; border-radius: 4px; margin-bottom: 1rem; color: #c00;">
+                    <strong>Validation Errors:</strong>
+                    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+                        <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" th:field="*{name}">
+                    <div th:if="${#fields.hasErrors('name')}" class="error" th:errors="*{name}"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <input type="text" id="address" th:field="*{address}">
+                </div>
+
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" th:field="*{city}">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" th:field="*{description}" rows="4"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="openingHours">Opening Hours (JSON format)</label>
+                    <textarea id="openingHours" th:field="*{openingHours}" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="latitude">Latitude</label>
+                    <input type="number" id="latitude" th:field="*{latitude}" step="any">
+                </div>
+
+                <div class="form-group">
+                    <label for="longitude">Longitude</label>
+                    <input type="number" id="longitude" th:field="*{longitude}" step="any">
+                </div>
+
+                <div class="form-group">
+                    <label for="pic">Picture URL</label>
+                    <input type="url" id="pic" th:field="*{pic}">
+                </div>
+
+                <div class="form-group">
+                    <label for="tagIds">Tags</label>
+                    <select id="tagIds" th:field="*{tagIds}" multiple size="5" style="min-height: 100px;">
+                        <option th:each="tag : ${tags}" 
+                                th:value="${tag.id}" 
+                                th:text="${tag.name}"></option>
+                    </select>
+                    <small style="display: block; margin-top: 0.5rem; color: #666;">
+                        Hold Ctrl (Windows) or Cmd (Mac) to select multiple tags
+                    </small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Update Restaurant</button>
+                    <a th:href="@{/admin/restaurants}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

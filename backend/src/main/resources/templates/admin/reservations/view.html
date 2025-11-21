@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Reservation - Admin Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-header">
+            <h1>ReserveSpot Admin</h1>
+            <div class="user-info" sec:authorize="isAuthenticated()">
+                <span sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+        <ul class="nav-tabs">
+            <li><a th:href="@{/admin}">Dashboard</a></li>
+            <li><a th:href="@{/admin/users}">Users</a></li>
+            <li><a th:href="@{/admin/restaurants}">Restaurants</a></li>
+            <li><a th:href="@{/admin/reservations}" class="active">Reservations</a></li>
+            <li><a th:href="@{/admin/reviews}">Reviews</a></li>
+            <li><a th:href="@{/admin/tags}">Tags</a></li>
+            <li><a th:href="@{/admin/tables}">Tables</a></li>
+            <li><a th:href="@{/admin/statistics}">Statistics</a></li>
+            <li><a th:href="@{/admin/pictures}">Pictures</a></li>
+            <li><a th:href="@{/admin/ai-analysis}">AI Analysis</a></li>
+        </ul>
+    </nav>
+
+    <main class="admin-content">
+        <div class="page-header">
+            <h2>Reservation Details</h2>
+            <div style="display: flex; gap: 1rem;">
+                <a th:href="@{/admin/reservations/{id}/edit(id=${reservation.id})}" class="btn btn-primary">Edit</a>
+                <form th:action="@{/admin/reservations/{id}/delete(id=${reservation.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-delete">Delete</button>
+                </form>
+                <a th:href="@{/admin/reservations}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="view-container">
+            <div class="view-field">
+                <label>ID</label>
+                <div class="value" th:text="${reservation.id}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>User</label>
+                <div class="value">
+                    <a th:if="${reservation.userId != null}"
+                       th:href="@{/admin/users/{id}(id=${reservation.userId})}" 
+                       class="relation-link" 
+                       th:text="${reservation.userId}"></a>
+                    <span th:if="${reservation.userId == null}">-</span>
+                </div>
+            </div>
+
+            <div class="view-field">
+                <label>Table</label>
+                <div class="value">
+                    <a th:if="${reservation.tableId != null}"
+                       th:href="@{/admin/tables/{id}(id=${reservation.tableId})}" 
+                       class="relation-link" 
+                       th:text="${reservation.tableId}"></a>
+                    <span th:if="${reservation.tableId == null}">-</span>
+                </div>
+            </div>
+
+            <div class="view-field">
+                <label>Date & Time</label>
+                <div class="value" th:text="${#temporals.format(reservation.reservationDatetime, 'yyyy-MM-dd HH:mm')}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Duration</label>
+                <div class="value" th:text="${reservation.durationMinutes != null ? (reservation.durationMinutes + ' minutes') : '-'}"></div>
+            </div>
+
+            <div class="view-field">
+                <label>Status</label>
+                <div class="value">
+                    <span class="badge" 
+                          th:classappend="${reservation.status == T(com.pwr_zpi.reservespotapi.entities.reservation.ReservationStatus).CANCELLED ? 'badge-danger' : 'badge-primary'}"
+                          th:text="${reservation.status}"></span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script th:src="@{/js/admin.js}"></script>
+</body>
+</html>
+

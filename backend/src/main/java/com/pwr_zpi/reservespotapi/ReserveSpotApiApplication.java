@@ -9,5 +9,4 @@ public class ReserveSpotApiApplication {
     public static void main(String[] args) {
         SpringApplication.run(ReserveSpotApiApplication.class, args);
     }
-
 }
