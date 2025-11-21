@@ -59,7 +59,8 @@ data class Restaurant(
     val address: String,
     val city: String,
     val cuisine: String,
-    val rating: Float
+    val rating: Float,
+    val id: Long
 )
 
 val allCuisines = listOf("Italian", "Polish", "Ukrainian", "Japanese", "Vegan", "American")
@@ -245,8 +246,9 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                             .height(250.dp)
                             .padding(vertical = 8.dp, horizontal = 4.dp) //outside padding
                             .clickable {
-                                navController.navigate("restaurantDetails/${restaurant.name}/${restaurant.rating}")
-                            } ,
+                                // ZMIANA: Zamiast nazwy, przekazujemy ID i rating
+                                navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.rating}")
+                            },
                         info = RestaurantDto(
                             restaurantName = restaurant.name,
                             rating = restaurant.rating,
@@ -334,7 +336,7 @@ fun FilterBottomSheetContent(
         Spacer(Modifier.height(15.dp))
 
         // City filter
-        Text("Wybierz miasto", style = MaterialTheme.typography.titleMedium)
+        Text("Choose a city", style = MaterialTheme.typography.titleMedium)
         allCities.forEach { city ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,

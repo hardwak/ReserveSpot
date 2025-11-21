@@ -1,6 +1,12 @@
 package com.pwr_zpi.reservespotapp
 
-
+import android.content.Context
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,6 +38,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,30 +73,80 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 
-data class RestaurantDetails(
+data class RestaurantDataModel(
     val name: String,
     val address: String,
-    val description: String = "Description placeholder: Italian cuisine, open 12:00-22:00",
-    val imageUrl: Int = R.drawable.food_placeholder
+    val description: String,
+    val imageUrl: String? = null
 )
+
+sealed class LoadState {
+    object Loading : LoadState()
+    data class Success(val data: RestaurantDataModel) : LoadState()
+    data class Error(val message: String) : LoadState()
+}
 
 // added lazy so Random would be initialized only once
 val randomValues by lazy { Random.nextInt(4, 5) }
+
+
+suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadState = withContext(Dispatchers.IO) {
+
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext LoadState.Error("Brak tokena")
+
+
+
+
+        kotlinx.coroutines.delay(500)
+        LoadState.Success(RestaurantDataModel(
+            name = "Testowa Restauracja $restaurantId",
+            address = "Pobrany adres",
+            description = "Pobrany opis i godziny pracy.",
+            imageUrl = null // Użyj prawdziwego URL
+        ))
+
+    } catch (e: Exception) {
+        Log.e("Details", "Błąd pobierania detali", e)
+        LoadState.Error("Nie udało się załadować danych restauracji.")
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailsScreen(
     navController: NavHostController,
-    restaurantName: String,
+    restaurantId: Long,
     rating: Float
 ) {
-    // temp data to show
-    val details = remember {
-        RestaurantDetails(
-            name = restaurantName,
-            address = "Wita Stwosza 56/57, 50-149 Wrocław, Polska",
-            description = "Włoska kuchnia \nGodziny otwarcia:\nPon. - Pt: 12:00-22:00\nSob - Nd 10:00 - 22:00",
-        )
+    val context = LocalContext.current
+
+
+    var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
+
+
+    LaunchedEffect(restaurantId) {
+        uiState = LoadState.Loading
+        uiState = fetchRestaurantDetails(context, restaurantId)
+    }
+
+
+    val detailsData = when (uiState) {
+        is LoadState.Loading -> {
+            // Możemy wyświetlić prosty wskaźnik ładowania
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return // Zakończ funkcję, jeśli trwa ładowanie
+        }
+        is LoadState.Error -> {
+            // Wyświetlanie komunikatu błędu
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Błąd: ${(uiState as LoadState.Error).message}", color = Color.Red)
+            }
+            return
+        }
+        is LoadState.Success -> (uiState as LoadState.Success).data
     }
 
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -130,7 +187,7 @@ fun RestaurantDetailsScreen(
     Scaffold(
         bottomBar = {
             Button(
-                onClick = { navController.navigate("reservation/${details.name}") },
+                onClick = { navController.navigate("reservation/${detailsData.name}") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)
@@ -159,7 +216,7 @@ fun RestaurantDetailsScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.food_placeholder),
-                    contentDescription = details.name,
+                    contentDescription = detailsData.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -202,7 +259,7 @@ fun RestaurantDetailsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = details.name,
+                                    text = detailsData.name,
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -224,13 +281,13 @@ fun RestaurantDetailsScreen(
                             }
 
                             Text(
-                                text = details.address,
+                                text = detailsData.address,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
 
                             Text(
-                                text = details.description,
+                                text = detailsData.description,
                                 color = Color.DarkGray,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )

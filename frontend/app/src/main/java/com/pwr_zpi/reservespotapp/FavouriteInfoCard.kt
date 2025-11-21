@@ -31,7 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import com.android.volley.toolbox.ImageRequest
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @Composable
@@ -69,17 +69,17 @@ fun FavouriteInfoCard(
                 modifier = Modifier.matchParentSize()
             )
         } else {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageURL)
-                    .crossfade(true) // smooth fade-in effect
-                    .build(),
-                placeholder = painterResource(R.drawable.loading_placeholder),
-                error = painterResource(R.drawable.food_placeholder),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
-            )
+//            AsyncImage(
+//                model = ImageRequest.Builder(LocalContext.current)
+//                    .data(imageURL)
+//                    .crossfade(true) // smooth fade-in effect
+//                    .build(),
+//                placeholder = painterResource(R.drawable.loading_placeholder),
+//                error = painterResource(R.drawable.food_placeholder),
+//                contentDescription = null,
+//                contentScale = ContentScale.Crop,
+//                modifier = Modifier.matchParentSize()
+//            )
         }
 
         Text(

@@ -75,13 +75,6 @@ fun AccountScreen(navController: NavHostController) {
             }
         )
 
-        AccountOptionRow(
-            icon = Icons.Default.AccountCircle,
-            text = "Edit restaurant data",
-            onClick = {
-                navController.navigate("editRestaurant")
-            }
-        )
 
         AccountOptionRow(
             icon = Icons.Default.Settings,
