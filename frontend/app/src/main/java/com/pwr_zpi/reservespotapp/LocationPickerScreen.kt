@@ -1,13 +1,26 @@
 package com.pwr_zpi.reservespotapp
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,12 +29,13 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.rememberCameraPositionState
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @Composable
 fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, initialLng: Double?) {
-    // Domyślnie Wrocław (Rynek) jeśli brak danych
     val startPos = LatLng(initialLat ?: 51.110, initialLng ?: 17.032)
 
     val cameraPositionState = rememberCameraPositionState {
@@ -30,14 +44,14 @@ fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, 
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // MAPA GOOGLE
+
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(zoomControlsEnabled = false)
         )
 
-        // NIERUCHOMA PINEZKA NA ŚRODKU EKRANU
+
         Icon(
             imageVector = Icons.Default.LocationOn,
             contentDescription = "Center Marker",
@@ -45,24 +59,24 @@ fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, 
             modifier = Modifier
                 .size(48.dp)
                 .align(Alignment.Center)
-                .offset(y = (-24).dp) // Przesunięcie, aby czubek pinezki wskazywał środek
+                .offset(y = (-24).dp)
                 .zIndex(1f)
         )
 
-        // PANEL Z PRZYCISKIEM ZATWIERDZENIA
+        // Confirm panel with button
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            // Wyświetlanie aktualnych współrzędnych
+            // Showing up to date coordinates
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Wybrana lokalizacja:", style = MaterialTheme.typography.labelMedium)
+                    Text("Selected location:", style = MaterialTheme.typography.labelMedium)
                     Text(
                         text = "${cameraPositionState.position.target.latitude}, ${cameraPositionState.position.target.longitude}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -73,7 +87,7 @@ fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, 
 
             Button(
                 onClick = {
-                    // PRZEKAZANIE DANYCH Z POWROTEM
+
                     val selectedLocation = cameraPositionState.position.target
                     navController.previousBackStackEntry?.savedStateHandle?.set("picked_lat", selectedLocation.latitude)
                     navController.previousBackStackEntry?.savedStateHandle?.set("picked_lng", selectedLocation.longitude)
@@ -84,7 +98,7 @@ fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, 
             ) {
                 Icon(Icons.Default.Check, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Zatwierdź lokalizację")
+                Text("Confirm location")
             }
         }
     }

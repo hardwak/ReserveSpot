@@ -1,57 +1,35 @@
 package com.pwr_zpi.reservespotapp
 
 
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.lifecycle.MutableLiveData
+import android.app.TimePickerDialog
 import android.content.Context
+import android.net.Uri
 import android.util.Log
-import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import com.pwr_zpi.reservespotapp.data.DataStoreManager
-import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import android.app.TimePickerDialog
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
@@ -72,7 +50,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -80,11 +58,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.MutableLiveData
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
+import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 // Main screen for the owner (restaurants list)
@@ -107,10 +94,10 @@ fun OwnerDashboardScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Twoje Restauracje") },
+                title = { Text("Your restaurants") },
                 actions = {
                     IconButton(onClick = { navController.navigate("ownerReservations") }) {
-                        Icon(Icons.Default.Event, contentDescription = "Rezerwacje")
+                        Icon(Icons.Default.Event, contentDescription = "Reservations")
                     }
                 }
             )
@@ -121,7 +108,7 @@ fun OwnerDashboardScreen(navController: NavHostController) {
                 containerColor = RSRed,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Dodaj")
+                Icon(Icons.Default.Add, contentDescription = "Add")
             }
         }
     ) { padding ->
@@ -163,13 +150,13 @@ fun OwnerRestaurantCard(
             Spacer(Modifier.height(8.dp))
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Ocena: ${restaurant.averageRating ?: 0.0}", color = RSRed, fontWeight = FontWeight.Bold)
+                Text("Rating: ${restaurant.averageRating ?: 0.0}", color = RSRed, fontWeight = FontWeight.Bold)
                 Button(
                     onClick = onManageTables,
                     colors = ButtonDefaults.buttonColors(containerColor = RSRed),
                     modifier = Modifier.height(36.dp)
                 ) {
-                    Text("Stoliki", fontSize = 12.sp)
+                    Text("Tables", fontSize = 12.sp)
                 }
             }
         }
@@ -229,7 +216,7 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "Dodaj Restaurację" else "Edytuj Restaurację") },
+                title = { Text(if (isNew) "Add restaurant" else "Edit restaurant") },
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } },
                 actions = {
                     if (!isNew) {
@@ -253,26 +240,26 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                 .verticalScroll(rememberScrollState())
         ) {
 //            Basic info
-            Text("Dane Podstawowe", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Basic information", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
 
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nazwa") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Adres") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Miasto") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("City") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Opis") },
+                label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth().height(150.dp),
                 maxLines = 5
             )
             Spacer(Modifier.height(24.dp))
 
-            Text("Lokalizacja na Mapie", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Location on map", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
 
-            // Przycisk otwierający mapę
+
             OutlinedButton(
                 onClick = {
-                    // Przekazujemy obecne wartości (jeśli istnieją), aby mapa wycentrowała się na nich
+
                     val latArg = latitude.toDoubleOrNull() ?: 0.0
                     val lngArg = longitude.toDoubleOrNull() ?: 0.0
                     navController.navigate("pickLocation?lat=$latArg&lng=$lngArg")
@@ -283,35 +270,16 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
             ) {
                 Icon(Icons.Default.LocationOn, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Wybierz punkt na mapie")
+                Text("Select location on map")
             }
 
             Spacer(Modifier.height(8.dp))
 
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = latitude,
-                    onValueChange = { latitude = it },
-                    label = { Text("Latitude") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    readOnly = false // Można zmienić na true, jeśli chcesz zabronić ręcznej edycji
-                )
-                OutlinedTextField(
-                    value = longitude,
-                    onValueChange = { longitude = it },
-                    label = { Text("Longitude") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    readOnly = false
-                )
-            }
-
             Spacer(Modifier.height(24.dp))
 
-            // --- Sekcja Zdjęcia ---
-            Text("Zdjęcie Restauracji", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+            // Photo section
+            Text("Restaurant photo", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
 
             if (selectedImageUri != null) {
                 AsyncImage(
@@ -328,19 +296,19 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
             ) {
                 Icon(Icons.Default.AddPhotoAlternate, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Wybierz zdjęcie z galerii")
+                Text("Select a photo from the gallery")
             }
 
             Spacer(Modifier.height(24.dp))
 
             // Opening hours section
 
-            Text("Godziny Otwarcia", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Opening hours", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
 
             // Hours editor for each day
             val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
             days.forEach { day ->
-                OpeningHoursRow(day, openingHours[day] ?: "Zamknięte") { newHours ->
+                OpeningHoursRow(day, openingHours[day] ?: "Closed") { newHours ->
                     openingHours[day] = newHours
                 }
             }
@@ -375,7 +343,7 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Text("Zapisz")
+                Text("Save")
             }
         }
     }
@@ -386,8 +354,7 @@ fun OwnerEditRestaurantScreen(navController: NavHostController, restaurantIdStri
 fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) -> Unit) {
     val context = LocalContext.current
 
-    // Parsowanie obecnych godzin (proste założenie formatu "HH:MM-HH:MM" lub "Zamknięte")
-    // Dla uproszczenia otwieramy picker pusty lub z domyślną godziną
+
 
     val showTimePicker = { isStart: Boolean ->
         val calendar = Calendar.getInstance()
@@ -398,7 +365,6 @@ fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) 
             context,
             { _, selectedHour, selectedMinute ->
                 val time = String.format("%02d:%02d", selectedHour, selectedMinute)
-                // Logika aktualizacji stringa (np. "10:00-18:00")
                 val parts = currentHours.split("-")
                 val newTime = if (isStart) {
                     "$time-${if (parts.size > 1) parts[1] else "22:00"}"
@@ -425,12 +391,12 @@ fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) 
             val start = if(parts.isNotEmpty()) parts[0] else "--:--"
             val end = if(parts.size > 1) parts[1] else "--:--"
 
-            // Przycisk Godzina Od
+            // Button hour from
             OutlinedButton(onClick = { showTimePicker(true) }) {
                 Text(start)
             }
             Text(" - ", modifier = Modifier.padding(horizontal = 4.dp))
-            // Przycisk Godzina Do
+            // Button hour to
             OutlinedButton(onClick = { showTimePicker(false) }) {
                 Text(end)
             }
@@ -457,7 +423,7 @@ fun OwnerTablesScreen(navController: NavHostController, restaurantId: Long) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Zarządzaj Stolikami") },
+                title = { Text("Manage tables") },
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } }
             )
         }
@@ -465,9 +431,9 @@ fun OwnerTablesScreen(navController: NavHostController, restaurantId: Long) {
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
             // Adding form
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Ilość osób") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Number of people") }, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
-                OutlinedTextField(value = newLocation, onValueChange = { newLocation = it }, label = { Text("Lokalizacja") }, modifier = Modifier.weight(2f))
+                OutlinedTextField(value = newLocation, onValueChange = { newLocation = it }, label = { Text("Loacation") }, modifier = Modifier.weight(2f))
             }
             Button(
                 onClick = {
@@ -481,7 +447,7 @@ fun OwnerTablesScreen(navController: NavHostController, restaurantId: Long) {
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Text("Dodaj stolik")
+                Text("Add table")
             }
 
             Divider(Modifier.padding(vertical = 16.dp))
@@ -496,7 +462,7 @@ fun OwnerTablesScreen(navController: NavHostController, restaurantId: Long) {
                     ) {
                         Column {
                             Text("ID: ${table.id}", fontWeight = FontWeight.Bold)
-                            Text("Miejsca: ${table.tableCapacity} | ${table.locationInRestaurant}")
+                            Text("Places: ${table.tableCapacity} | ${table.locationInRestaurant}")
                         }
                         IconButton(onClick = {
                             scope.launch {
@@ -529,7 +495,7 @@ fun OwnerReservationsScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Rezerwacje") },
+                title = { Text("Reservations") },
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } }
             )
         }
@@ -543,12 +509,12 @@ fun OwnerReservationsScreen(navController: NavHostController) {
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                            Text("Rezerwacja #${res.id}", fontWeight = FontWeight.Bold)
+                            Text("Reservation #${res.id}", fontWeight = FontWeight.Bold)
                             // Data formatting (simple approach)
                             Text(res.reservationDatetime.replace("T", " "), color = RSRed, fontWeight = FontWeight.Bold)
                         }
-                        Text("Stolik ID: ${res.tableId}")
-                        Text("Czas: ${res.durationMinutes} min")
+                        Text("Table ID: ${res.tableId}")
+                        Text("Time: ${res.durationMinutes} min")
                         Text("Status: ${res.status}")
 
                         Button(
@@ -561,7 +527,7 @@ fun OwnerReservationsScreen(navController: NavHostController) {
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                         ) {
-                            Text("Anuluj / Usuń")
+                            Text("Cancel / Delete")
                         }
                     }
                 }

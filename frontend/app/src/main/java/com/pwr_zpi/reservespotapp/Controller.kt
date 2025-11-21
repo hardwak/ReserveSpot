@@ -212,10 +212,10 @@ fun Controller(navController: NavHostController) {
                 val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
                 OwnerTablesScreen(navController, id)
             }
-//             composable("favourites") { FavouritesScreen(navController) }
+             composable("favourites") { FavouritesScreen(navController) }
 
             composable(
-                route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&type={type}&location={location}",
+                route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
                 arguments = listOf(
                     navArgument("restaurantName") { type = NavType.StringType },
                     navArgument("date") { type = NavType.StringType; defaultValue = "" },
