@@ -82,12 +82,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="phoneNumber">Phone Number</label>
-                    <input type="text" id="phoneNumber" th:field="*{phoneNumber}" placeholder="+1234567890">
-                    <div th:if="${#fields.hasErrors('phoneNumber')}" class="error" th:errors="*{phoneNumber}"></div>
-                </div>
-
-                <div class="form-group">
                     <label for="pic">Picture URL</label>
                     <input type="url" id="pic" th:field="*{pic}">
                 </div>
