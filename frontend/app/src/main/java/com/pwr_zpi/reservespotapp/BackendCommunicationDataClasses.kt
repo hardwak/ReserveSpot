@@ -9,8 +9,6 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
-import java.time.LocalDateTime
-import com.google.gson.GsonBuilder
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -100,11 +98,26 @@ interface AuthApi {
 }
 
 data class RestaurantDto(
-    val restaurantName: String,
-    val imageURL: String? = null,
-    val rating: Float,
-    val views: Int
+    val id: Long,
+    val ownerId: Long,
+    val name: String,
+    val address: String,
+    val city: String,
+    val description: String,
+    val openingHours: Map<String, String>,
+    val averageRating: Double?,
+    val latitude: Double?,
+    val longitude: Double?,
+    val pic: String?,
+    val tableIds: Set<Long>,
+    val reviewIds: Set<Long>,
+    val aiAnalysisIds: Set<Long>,
+    val statisticIds: Set<Long>,
+    val tagIds: Set<Long>,
+    val pictureIds: Set<Long>,
+    val views: Int // TODO wait for backend to include this parameter in a DTO
 )
+
 
 interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
@@ -198,15 +211,15 @@ object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
 
 
-    private val gson = GsonBuilder()
-
-        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
-
-        .create()
+//    private val gson = GsonBuilder()
+//
+//        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
+//
+//        .create()
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
