@@ -118,6 +118,19 @@ data class RestaurantDto(
     val views: Int // TODO wait for backend to include this parameter in a DTO
 )
 
+data class RestaurantSearchDto(
+    val query: String?,
+    val city: String,
+    val tagIds: Set<Long>?,
+    val minRating: Double?,
+    val maxRating: Double?
+)
+
+data class TagDto(
+    val id: Long,
+    val name: String
+)
+
 
 interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
@@ -133,6 +146,19 @@ interface ReservationApi {
 interface RestaurantApi {
     @GET("/api/") // TODO set favourites endpoint
     suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
+
+//    IT WORKS
+    @POST("/api/restaurants/search")
+    suspend fun searchRestaurants(
+        @Header("Authorization") token: String,
+        @Body searchDto: RestaurantSearchDto
+    ): Response<List<RestaurantDto>>
+
+    @GET("/api/tags")
+    suspend fun getAvailableTags(@Header("Authorization") token: String): Response<List<TagDto>>
+
+    @GET("/api/restaurants")
+    suspend fun getAllRestaurants(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 }
 
 //Restaurant and owners DTOs
@@ -209,6 +235,7 @@ interface OwnerApi {
 
 object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
+//    private const val BASE_URL = "http://localhost:8080"
 
 
 //    private val gson = GsonBuilder()

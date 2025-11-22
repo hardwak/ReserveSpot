@@ -117,7 +117,7 @@ suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadSt
 fun RestaurantDetailsScreen(
     navController: NavHostController,
     restaurantId: Long,
-    rating: Float
+    rating: Double
 ) {
     val context = LocalContext.current
 

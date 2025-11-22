@@ -616,7 +616,7 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
 
     LaunchedEffect(restaurantId) {
         isLoadingDetails = true
-        restaurantDetails = fetchRestaurantDetailsForOwner(context, restaurantId)
+//        restaurantDetails = fetchRestaurantDetailsForOwner(context, restaurantId)
         isLoadingDetails = false
     }
 
@@ -866,13 +866,13 @@ suspend fun fetchOwnerReviews(context: Context, restaurantId: Long): List<Review
     }
 }
 
-suspend fun fetchRestaurantDetailsForOwner(context: Context, restaurantId: Long): OwnerRestaurantDto? = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
-        val response = RetrofitClient.ownerApi.getRestaurantDetailsForOwner("Bearer $token", restaurantId)
-        if (response.isSuccessful) response.body() else null
-    } catch (e: Exception) {
-        Log.e("OwnerScreens", "Błąd pobierania detali restauracji: ${e.message}")
-        null
-    }
-}
+//suspend fun fetchRestaurantDetailsForOwner(context: Context, restaurantId: Long): OwnerRestaurantDto? = withContext(Dispatchers.IO) {
+//    try {
+//        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+//        val response = RetrofitClient.ownerApi.getRestaurantDetailsForOwner("Bearer $token", restaurantId)
+//        if (response.isSuccessful) response.body() else null
+//    } catch (e: Exception) {
+//        Log.e("OwnerScreens", "Błąd pobierania detali restauracji: ${e.message}")
+//        null
+//    }
+//}

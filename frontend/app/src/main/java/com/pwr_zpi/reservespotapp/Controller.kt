@@ -134,7 +134,7 @@ fun Controller(navController: NavHostController) {
             composable("restaurantDetails/{restaurantId}/{rating}") { backStackEntry ->
 
                 val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
-                val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
+                val rating = backStackEntry.arguments?.getDouble("rating") ?: 0.0
 
 
                 RestaurantDetailsScreen(navController, id, rating)
@@ -196,6 +196,7 @@ fun Controller(navController: NavHostController) {
                 )
             }
 
+            composable("restaurants") { ChooseRestaurantScreen(navController) }
             composable("account") { AccountScreen(navController) }
             composable("editDetails") { EditDetailsScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
@@ -214,7 +215,7 @@ fun Controller(navController: NavHostController) {
                 val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
                 OwnerTablesScreen(navController, id)
             }
-             composable("favourites") { FavouritesScreen(navController) }
+//             composable("favourites") { FavouritesScreen(navController) }
 
             composable(
                 route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
