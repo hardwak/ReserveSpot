@@ -60,7 +60,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.google.android.libraries.places.api.model.Review
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.Dispatchers
@@ -155,7 +154,7 @@ suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): Lis
 fun RestaurantDetailsScreen(
     navController: NavHostController,
     restaurantId: Long,
-    rating: Double
+//    rating: Double
 ) {
     val context = LocalContext.current
 
