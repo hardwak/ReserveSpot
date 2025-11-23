@@ -119,6 +119,17 @@ data class TagDto(
     val name: String
 )
 
+data class UserSummaryDto(
+    val id: Long,
+    val name: String
+
+)
+
+data class ReviewWithUser(
+    val review: ReviewDto,
+    val userName: String
+)
+
 
 interface AuthApi {
     @POST("/api/auth/google")
@@ -173,12 +184,19 @@ interface RestaurantApi {
 
 interface ReviewsApi {
 
-
     @GET("/api/reviews")
     suspend fun getReviews(
         @Header("Authorization") token: String,
-        @Query("restaurantId") restaurantId: Long // Dodano Query
+        @Query("restaurantId") restaurantId: Long
     ): Response<List<ReviewDto>>
+}
+
+interface UserApi {
+    @GET("/api/users/{id}")
+    suspend fun getUserDetails(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Long
+    ): Response<UserSummaryDto>
 }
 
 //Restaurant and owners DTOs
@@ -277,9 +295,9 @@ object RetrofitClient {
         retrofit.create(RestaurantApi::class.java)
     }
 
-//    val ownerApi: OwnerApi by lazy {
-//        retrofit.create(OwnerApi::class.java)
-//    }
+    val userApi: UserApi by lazy {
+        retrofit.create(UserApi::class.java)
+    }
 
     val reviewsApi: ReviewsApi by lazy {
         retrofit.create(ReviewsApi::class.java)

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -110,13 +111,42 @@ suspend fun fetchReviews(context: Context, restaurantId: Long): List<ReviewDto> 
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
-        // NAPRAWIONE: Użycie RetrofitClient.reviewsApi z parametrem restaurantId
+        // ZMIANA: Używamy RetrofitClient.reviewsApi
         val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
 
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
     } catch (e: Exception) {
         Log.e("Details", "Error fetching reviews: ${e.message}")
         emptyList()
+    }
+}
+
+suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): List<ReviewWithUser> = withContext(Dispatchers.IO) {
+    val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+    val reviews = fetchReviews(context, restaurantId) // Ta funkcja już istnieje i pobiera List<ReviewDto>
+
+    if (reviews.isEmpty()) return@withContext emptyList()
+
+    // Używamy async/await do równoległego pobierania detali użytkowników
+    reviews.map { review ->
+        // Uwaga: To jest bardzo nieefektywne, jeśli recenzji jest dużo!
+        // Użytkownik musi mieć ID, inaczej zwracamy domyślną nazwę.
+        val userName = if (review.userId != null) {
+            try {
+                val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", review.userId)
+                if (userResponse.isSuccessful) {
+                    userResponse.body()?.name ?: "Użytkownik #${review.userId}"
+                } else {
+                    "Użytkownik anonimowy (Błąd ${userResponse.code()})"
+                }
+            } catch (e: Exception) {
+                Log.e("Details", "Błąd pobierania nazwy użytkownika: ${e.message}")
+                "Użytkownik anonimowy (Błąd połączenia)"
+            }
+        } else {
+            "Użytkownik"
+        }
+        ReviewWithUser(review, userName)
     }
 }
 
@@ -131,7 +161,7 @@ fun RestaurantDetailsScreen(
 
 //    val detailsData =
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
-
+    var reviewsWithUser by remember { mutableStateOf(emptyList<ReviewWithUser>()) }
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Photos", "Reviews")
 
@@ -139,9 +169,9 @@ fun RestaurantDetailsScreen(
     // states for visiting statistics
     var showOccupancySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
     var reviews by remember { mutableStateOf(emptyList<ReviewDto>()) }
-    val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
     LaunchedEffect(restaurantId) {
@@ -152,7 +182,7 @@ fun RestaurantDetailsScreen(
     LaunchedEffect(restaurantId, selectedTabIndex) {
         // Ładuj opinie tylko wtedy, gdy zakładka 'Reviews' jest aktywna (index 1)
         if (selectedTabIndex == 1) {
-            reviews = fetchReviews(context, restaurantId)
+            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
         }
     }
 
@@ -348,23 +378,16 @@ fun RestaurantDetailsScreen(
 
                             // TODO: Aktualizuj wywołania do używania zaktualizowanych DTOs
                             0 -> Text("Photos tab (Not implemented)")
-                            1 -> ReviewsTabContent(reviews = reviews)
+                            1 -> ReviewsTabContent(reviewsWithUser = reviewsWithUser)
 
-//                            0 -> PhotosTabContent()
-//                            1 -> ReviewsTabContent(
-//                                reviews = reviews,
-//                                onAddOrEditReview = addOrUpdateReview,
-//                                onDeleteReview = deleteReview,
-//                                isFormVisible = isReviewFormVisible,
-//                                onToggleForm = { isReviewFormVisible = it }
-//                            )
+//
                         }
                     }
                 }
 
             }
             AnimatedVisibility(
-                visible = derivedStateOf { listState.firstVisibleItemIndex == 0 }.value,
+                visible = showBackButton,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.TopStart)
@@ -392,21 +415,23 @@ fun RestaurantDetailsScreen(
     }
 }
 
+
 @Composable
-fun ReviewsTabContent(reviews: List<ReviewDto>) {
-    if (reviews.isEmpty()) {
+fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
+    if (reviewsWithUser.isEmpty()) {
         Text("Brak opinii dla tej restauracji.", color = Color.Gray, modifier = Modifier.padding(16.dp))
     } else {
         LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
-            items(reviews) { review ->
+            items(reviewsWithUser) { item ->
+                val review = item.review
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Używamy danych z ReviewDto (userName jest opcjonalny)
-                            Text(review.userName ?: "Użytkownik", fontWeight = FontWeight.Bold)
+
+                            Text(item.userName, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(8.dp))
 
                             // Ocena (rating)
