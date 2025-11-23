@@ -72,14 +72,13 @@ suspend fun fetchRestaurants(context: Context, searchCriteria: RestaurantSearchD
 
             if (token.isNullOrEmpty()) {
                 Log.e("fetchRestaurants", "No authentication token found")
-                // Zwracamy pusta listę, jeśli brak autoryzacji
                 return@withContext emptyList()
             }
 
-            // Uruchomienie zapytania z parametrami z DTO
+
             val response = RetrofitClient.restaurantApi.searchRestaurants(
                 "Bearer $token",
-                searchCriteria // PRZEKAZUJEMY CAŁY OBIEKT WYSZUKIWANIA
+                searchCriteria
             )
 
             if (response.isSuccessful) {
@@ -114,15 +113,14 @@ suspend fun fetchAvailableCities(context: Context): List<String> {
             val dataStoreManager = DataStoreManager(context)
             val token = dataStoreManager.getBackendToken() ?: return@withContext emptyList()
 
-            // 1. Wywołanie endpointu zwracającego WSZYSTKIE restauracje
+
             val response = RetrofitClient.restaurantApi.getAllRestaurants("Bearer $token")
 
             if (response.isSuccessful) {
-                // 2. PRZETWARZANIE NA KLIENCIE:
-                // Mapowanie każdego obiektu na pole 'city' i usunięcie duplikatów.
+
                 response.body()
-                    ?.map { it.city } // Zakładając, że RestaurantDto ma pole 'city'
-                    ?.distinct()      // Użycie distinct() do usunięcia powtórzeń (np. 'Wrocław' raz)
+                    ?.map { it.city }
+                    ?.distinct()      // Distinct to prevent the duplication
                     ?: emptyList()
             } else {
                 Log.e("fetchCities", "Error: ${response.code()} - ${response.message()}")
@@ -136,11 +134,6 @@ suspend fun fetchAvailableCities(context: Context): List<String> {
 }
 
 
-
-//val allCuisines = listOf("Italian", "Polish", "Ukrainian", "Japanese", "Vegan", "American")
-//val allCuisines = fetchAvailableTags()
-val allCities = listOf("New York", "Warszawa", "Kraków", "Białystok")
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChooseRestaurantScreen(navController: NavHostController) {
@@ -152,10 +145,10 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
 
     var isLoading by remember { mutableStateOf(false) }
-    var restaurants by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) } // Lista wyników z API
-    var availableCuisines by remember { mutableStateOf<List<TagDto>>(emptyList()) } // Przechowuje ID i Nazwy
-    var availableCities by remember { mutableStateOf<List<String>>(emptyList()) } // Przechowuje nazwy miast
-    var isFiltersLoading by remember { mutableStateOf(true) } // Stan ładowania obu list
+    var restaurants by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) } // List of API results
+    var availableCuisines by remember { mutableStateOf<List<TagDto>>(emptyList()) } // Contains ID and names
+    var availableCities by remember { mutableStateOf<List<String>>(emptyList()) } // Contains city names
+    var isFiltersLoading by remember { mutableStateOf(true) }
 
 //    filter states
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -167,14 +160,12 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
     LaunchedEffect(Unit) {
         isFiltersLoading = true
-        // Równoczesne ładowanie miast i kuchni
         val fetchedCuisines = fetchAvailableTags(context)
         val fetchedCities = fetchAvailableCities(context)
 
         availableCuisines = fetchedCuisines
         availableCities = fetchedCities
 
-        // Ustaw domyślne miasto na pierwsze z listy, jeśli istnieje
         if (fetchedCities.isNotEmpty()) {
             selectedCity = fetchedCities.first()
         }
@@ -182,7 +173,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(searchQuery.text, selectedCity, selectedCuisines, selectedRatingRange, isFiltersLoading) {
-        // Nie uruchamiaj głównego wyszukiwania, jeśli filtry jeszcze się ładują
         if (isFiltersLoading) return@LaunchedEffect
 
         delay(300)
@@ -190,8 +180,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
         // Mapowanie wybranych nazw kuchni na ich ID (konieczne dla API)
         val selectedTagIds = availableCuisines
-            .filter { selectedCuisines.contains(it.name) } // Filtrujemy tylko wybrane nazwy
-            .map { it.id } // Bierzemy ich ID
+            .filter { selectedCuisines.contains(it.name) }
+            .map { it.id }
             .toSet()
 
 
@@ -245,35 +235,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 //    }
 
 
-    // TODO fetch from database
-//    val restaurants = listOf(
-//        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f, id = 1L),
-//        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f, id = 2L),
-//        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f, id = 3L),
-//        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f, id = 4L),
-//        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f, id = 5L),
-//        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f, id = 6L)
-//    )
 
-//    val restaurants = fetchRestaurants(
-//        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f, id = 1L),
-//        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f, id = 2L),
-//        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f, id = 3L),
-//        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f, id = 4L),
-//        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f, id = 5L),
-//        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f, id = 6L)
-//    )
-
-
-//    val filteredRestaurants = restaurants.filter { restaurant ->
-//        val matchesSearch = restaurant.name.contains(searchQuery.text, ignoreCase = true)
-//        val matchesCity = restaurant.city == selectedCity
-//        val matchesCuisine =
-//            selectedCuisines.isEmpty() || selectedCuisines.contains(restaurant.cuisine)
-//        val matchesRating = restaurant.rating in selectedRatingRange
-//
-//        matchesSearch && matchesCity && matchesCuisine && matchesRating
-//    }
 
     Scaffold(
 
@@ -394,7 +356,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = RSRed)
                 }
-                // Nie wyświetlamy reszty UI, jeśli filtry się ładują
+
                 return@Column
             }
 
@@ -416,14 +378,14 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             } else {
                 LazyColumn {
                     items(restaurants) { restaurant ->
-                        // Używamy danych z API
+
                         RestaurantInfoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(250.dp)
                                 .padding(vertical = 8.dp, horizontal = 4.dp)
                                 .clickable {
-                                    // ZMIANA: Nawigacja używa ID i Rating z pobranego DTO
+
                                     navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.averageRating}")
                                 },
                             info = restaurant

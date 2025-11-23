@@ -131,7 +131,7 @@ fun Controller(navController: NavHostController) {
         ) {
             composable("home") { MainMenuScreen(navController) }
 
-            composable("restaurantDetails/{restaurantId}/{rating}") { backStackEntry ->
+            composable("restaurantDetails/{restaurantId}") { backStackEntry ->
 
                 val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
                 val rating = backStackEntry.arguments?.getDouble("rating") ?: 0.0

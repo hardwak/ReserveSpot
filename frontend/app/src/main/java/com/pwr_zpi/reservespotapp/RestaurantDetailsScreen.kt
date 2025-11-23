@@ -1,20 +1,12 @@
 package com.pwr_zpi.reservespotapp
 
 import android.content.Context
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
-import com.pwr_zpi.reservespotapp.data.DataStoreManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,36 +15,34 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,52 +53,70 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.android.libraries.places.api.model.Review
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 
-data class RestaurantDataModel(
-    val name: String,
-    val address: String,
-    val description: String,
-    val imageUrl: String? = null
-)
+//data class RestaurantDataModel(
+//    val name: String,
+//    val address: String,
+//    val description: String,
+//    val imageUrl: String? = null
+//)
 
 sealed class LoadState {
     object Loading : LoadState()
-    data class Success(val data: RestaurantDataModel) : LoadState()
+    data class Success(val data: RestaurantDto) : LoadState()
     data class Error(val message: String) : LoadState()
 }
 
-// added lazy so Random would be initialized only once
-val randomValues by lazy { Random.nextInt(4, 5) }
 
 
 suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadState = withContext(Dispatchers.IO) {
-
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext LoadState.Error("Brak tokena")
 
+        // Wywołanie endpointu z ID
+        val response = RetrofitClient.restaurantApi.getRestaurantDetails("Bearer $token", restaurantId)
 
-
-
-        kotlinx.coroutines.delay(500)
-        LoadState.Success(RestaurantDataModel(
-            name = "Testowa Restauracja $restaurantId",
-            address = "Pobrany adres",
-            description = "Pobrany opis i godziny pracy.",
-            imageUrl = null // Użyj prawdziwego URL
-        ))
-
+        if (response.isSuccessful) {
+            val dto = response.body()
+            if (dto != null) {
+                LoadState.Success(dto) // Sukces zwraca pełny RestaurantDto
+            } else {
+                LoadState.Error("Puste dane z serwera.")
+            }
+        } else {
+            Log.e("Details", "Błąd serwera: ${response.code()} - ${response.message()}")
+            LoadState.Error("Błąd serwera: ${response.code()}")
+        }
     } catch (e: Exception) {
         Log.e("Details", "Błąd pobierania detali", e)
-        LoadState.Error("Nie udało się załadować danych restauracji.")
+        LoadState.Error("Nie udało się połączyć z serwerem.")
+    }
+}
+
+suspend fun fetchReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+
+        // NAPRAWIONE: Użycie RetrofitClient.reviewsApi z parametrem restaurantId
+        val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
+
+        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+    } catch (e: Exception) {
+        Log.e("Details", "Error fetching reviews: ${e.message}")
+        emptyList()
     }
 }
 
@@ -121,15 +129,32 @@ fun RestaurantDetailsScreen(
 ) {
     val context = LocalContext.current
 
-
+//    val detailsData =
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
 
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Photos", "Reviews")
+
+
+    // states for visiting statistics
+    var showOccupancySheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    var reviews by remember { mutableStateOf(emptyList<ReviewDto>()) }
+    val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     LaunchedEffect(restaurantId) {
         uiState = LoadState.Loading
         uiState = fetchRestaurantDetails(context, restaurantId)
     }
 
+    LaunchedEffect(restaurantId, selectedTabIndex) {
+        // Ładuj opinie tylko wtedy, gdy zakładka 'Reviews' jest aktywna (index 1)
+        if (selectedTabIndex == 1) {
+            reviews = fetchReviews(context, restaurantId)
+        }
+    }
 
     val detailsData = when (uiState) {
         is LoadState.Loading -> {
@@ -137,7 +162,7 @@ fun RestaurantDetailsScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            return // Zakończ funkcję, jeśli trwa ładowanie
+            return
         }
         is LoadState.Error -> {
             // Wyświetlanie komunikatu błędu
@@ -149,40 +174,16 @@ fun RestaurantDetailsScreen(
         is LoadState.Success -> (uiState as LoadState.Success).data
     }
 
-    var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Photos", "Reviews")
+    val displayRating = detailsData.averageRating?.toFloat() ?: 0.0f
 
 
-    // states for visiting statistics
-    var showOccupancySheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
-
-
-    var reviews by remember { mutableStateOf(dummyReviews) }
-
-    val addOrUpdateReview: (Review) -> Unit = { newReview ->
-        reviews = if (reviews.any { it.isCurrentUser }) {
-            reviews.map { if (it.isCurrentUser) newReview.copy(isCurrentUser = true) else it }
-        } else {
-            listOf(newReview.copy(isCurrentUser = true)) + reviews.filter { !it.isCurrentUser }
-        }
-    }
-
-    val deleteReview: () -> Unit = {
-        reviews = reviews.filter { !it.isCurrentUser }
-    }
-
-    // review window
-    var isReviewFormVisible by remember { mutableStateOf(false) }
-
-    val listState = rememberLazyListState()
 
     val showBackButton by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex == 0
         }
     }
+
 
     Scaffold(
         bottomBar = {
@@ -273,7 +274,7 @@ fun RestaurantDetailsScreen(
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
-                                    text = String.format("%.1f", rating),
+                                    text = String.format("%.1f", displayRating),
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(start = 4.dp)
@@ -345,21 +346,25 @@ fun RestaurantDetailsScreen(
                     ) {
                         when (selectedTabIndex) {
 
-                            0 -> PhotosTabContent()
-                            1 -> ReviewsTabContent(
-                                reviews = reviews,
-                                onAddOrEditReview = addOrUpdateReview,
-                                onDeleteReview = deleteReview,
-                                isFormVisible = isReviewFormVisible,
-                                onToggleForm = { isReviewFormVisible = it }
-                            )
+                            // TODO: Aktualizuj wywołania do używania zaktualizowanych DTOs
+                            0 -> Text("Photos tab (Not implemented)")
+                            1 -> ReviewsTabContent(reviews = reviews)
+
+//                            0 -> PhotosTabContent()
+//                            1 -> ReviewsTabContent(
+//                                reviews = reviews,
+//                                onAddOrEditReview = addOrUpdateReview,
+//                                onDeleteReview = deleteReview,
+//                                isFormVisible = isReviewFormVisible,
+//                                onToggleForm = { isReviewFormVisible = it }
+//                            )
                         }
                     }
                 }
 
             }
             AnimatedVisibility(
-                visible = showBackButton,
+                visible = derivedStateOf { listState.firstVisibleItemIndex == 0 }.value,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.TopStart)
@@ -383,7 +388,40 @@ fun RestaurantDetailsScreen(
                 }
             }
 
+        }
+    }
+}
 
+@Composable
+fun ReviewsTabContent(reviews: List<ReviewDto>) {
+    if (reviews.isEmpty()) {
+        Text("Brak opinii dla tej restauracji.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+    } else {
+        LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
+            items(reviews) { review ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Używamy danych z ReviewDto (userName jest opcjonalny)
+                            Text(review.userName ?: "Użytkownik", fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.width(8.dp))
+
+                            // Ocena (rating)
+                            review.rating?.let { rating ->
+                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
+                                Text(" ${rating}/5", color = Color.Gray)
+                            }
+                        }
+                        Text(review.comment ?: "Brak komentarza.", modifier = Modifier.padding(top = 4.dp))
+                        review.createdAt?.let {
+                            Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray)
+                        }
+                    }
+                }
+            }
         }
     }
 }
