@@ -11,6 +11,10 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.time.LocalDateTime
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
+import java.time.format.DateTimeFormatter
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -279,10 +283,21 @@ object RetrofitClient {
 //    private const val BASE_URL = "http://localhost:8080"
 
 
+    private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
+        JsonDeserializer { json, _, _ ->
+            // Backend prawdopodobnie używa standardu ISO, np. "2025-11-24T22:30:00"
+            LocalDateTime.parse(json.asString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        }
+
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(LocalDateTime::class.java, localDateTimeDeserializer)
+        .create()
+
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            // Używamy naszej skonfigurowanej instancji Gson
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 

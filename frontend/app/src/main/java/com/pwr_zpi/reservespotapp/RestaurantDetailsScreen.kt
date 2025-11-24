@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
@@ -174,7 +176,7 @@ fun RestaurantDetailsScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
-    var reviews by remember { mutableStateOf(emptyList<ReviewDto>()) }
+
     val listState = rememberLazyListState()
 
     LaunchedEffect(restaurantId) {
@@ -382,7 +384,7 @@ fun RestaurantDetailsScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 500.dp)
+                            .heightIn(min = 1.dp)
                             .background(Color.White)
                     ) {
                         when (selectedTabIndex) {
@@ -432,16 +434,15 @@ fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
     if (reviewsWithUser.isEmpty()) {
         Text("Brak opinii dla tej restauracji.", color = Color.Gray, modifier = Modifier.padding(16.dp))
     } else {
-        LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
-            items(reviewsWithUser) { item ->
+        Column(modifier = Modifier.padding(top = 8.dp)) {
+            reviewsWithUser.forEach { item ->
                 val review = item.review
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-
                             Text(item.userName, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(8.dp))
 
