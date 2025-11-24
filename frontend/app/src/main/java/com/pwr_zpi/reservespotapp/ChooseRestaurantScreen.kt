@@ -386,7 +386,9 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                                 .padding(vertical = 8.dp, horizontal = 4.dp)
                                 .clickable {
 
-                                    navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.averageRating}")
+//                                    navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.averageRating}")
+                                    val restaurantIdToNavigate = restaurant.id
+                                    navController.navigate("restaurantDetails/$restaurantIdToNavigate")
                                 },
                             info = restaurant
 //                            info = RestaurantDto(
@@ -487,7 +489,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 Spacer(Modifier.height(16.dp))
 
                 // Cuisine filter
-                Text("Choose cuisine", style = MaterialTheme.typography.titleMedium)
+                Text("Choose filter", style = MaterialTheme.typography.titleMedium)
                 availableCuisines.forEach { cuisine ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

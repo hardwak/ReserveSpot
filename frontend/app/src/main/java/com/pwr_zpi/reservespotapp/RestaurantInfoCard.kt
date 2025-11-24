@@ -37,8 +37,9 @@ fun RestaurantInfoCard(
     ) {
     val imageURL = info.pic ?: ""
     val restaurantName = info.name
-    val rating = info.averageRating
-    val views = info.views
+    val rating = info.averageRating ?: 0.0
+    val reviewsCount = info.reviewIds.size
+    //used another Dto, because there is no this value on the backend
 
     Box(
         modifier = modifier
@@ -114,10 +115,10 @@ fun RestaurantInfoCard(
             )
 
             Text(
-                text = "(" + views.toString() + ")",
-                fontSize = 20.sp,
+                text = "($reviewsCount)",
+                fontSize = 18.sp,
                 modifier = Modifier
-                    .padding(4.dp),
+                    .padding(6.dp),
                 color = Color.White
             )
         }

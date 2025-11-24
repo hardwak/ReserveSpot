@@ -131,9 +131,27 @@ fun Controller(navController: NavHostController) {
         ) {
             composable("home") { MainMenuScreen(navController) }
 
-            composable("restaurantDetails/{restaurantId}") { backStackEntry ->
+            composable(
+                route = "restaurantDetails/{restaurantId}",
+                arguments = listOf(
+                    // Wymagane, aby to działało poprawnie
+                    navArgument("restaurantId") {
+                        type = NavType.LongType;
+                        defaultValue = 0L // Opcjonalnie, ale bezpieczniej
+                    }
+                )
+            ) { backStackEntry ->
+                // Teraz używamy getLong, co jest zgodne z NavType.LongType
+                val id = backStackEntry.arguments?.getLong("restaurantId") ?: 0L
 
-                val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
+                // Walidacja ID, aby uniknąć problemów
+                if (id == 0L) {
+                    // Jeśli ID jest 0, możemy wrócić lub wyświetlić błąd
+                    // Log.e("Nav", "Nieprawidłowe Restaurant ID przekazane: 0")
+                    // navController.popBackStack()
+                    Text("Błąd: Nie znaleziono ID restauracji.") // Tymczasowe wyświetlanie błędu
+                    return@composable
+                }
 //                val rating = backStackEntry.arguments?.getDouble("rating") ?: 0.0
 
 

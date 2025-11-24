@@ -57,6 +57,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -84,8 +85,11 @@ sealed class LoadState {
 
 suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadState = withContext(Dispatchers.IO) {
     try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext LoadState.Error("Brak tokena")
+        val token = DataStoreManager(context).getBackendToken()
 
+        if (token.isNullOrBlank()) {
+            return@withContext LoadState.Error("Błąd autoryzacji: Brak tokena.")
+        }
         // Wywołanie endpointu z ID
         val response = RetrofitClient.restaurantApi.getRestaurantDetails("Bearer $token", restaurantId)
 
@@ -102,7 +106,7 @@ suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadSt
         }
     } catch (e: Exception) {
         Log.e("Details", "Błąd pobierania detali", e)
-        LoadState.Error("Nie udało się połączyć z serwerem.")
+        LoadState.Error("Nie udało się połączyć z serwerem lub błąd parsowania danych.")
     }
 }
 
@@ -285,29 +289,37 @@ fun RestaurantDetailsScreen(
 
                             Row(
                                 modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
                                     .align(Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = detailsData.name,
                                     fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis // Add 3 dots if does not fit
                                 )
 
                                 Spacer(Modifier.width(8.dp))
 
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = "Rating",
-                                    tint = Color(0xFFFFC107),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Text(
-                                    text = String.format("%.1f", displayRating),
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 4.dp)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = "Rating",
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Text(
+                                        text = String.format("%.1f", displayRating),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    )
+                                }
                             }
 
                             Text(
