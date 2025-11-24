@@ -115,7 +115,6 @@ data class RestaurantDto(
     val statisticIds: Set<Long>,
     val tagIds: Set<Long>,
     val pictureIds: Set<Long>,
-    val views: Int // TODO wait for backend to include this parameter in a DTO
 )
 
 
@@ -133,6 +132,9 @@ interface ReservationApi {
 interface RestaurantApi {
     @GET("/api/") // TODO set favourites endpoint
     suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
+
+    @GET("/api/restaurants/recommendations")
+    suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 }
 
 //Restaurant and owners DTOs

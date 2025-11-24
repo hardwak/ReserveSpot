@@ -38,7 +38,7 @@ fun RestaurantInfoCard(
     val imageURL = info.pic ?: ""
     val restaurantName = info.name
     val rating = info.averageRating
-    val views = info.views
+    val views = info.reviewIds.size
 
     Box(
         modifier = modifier

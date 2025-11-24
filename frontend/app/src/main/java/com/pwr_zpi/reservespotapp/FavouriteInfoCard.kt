@@ -30,8 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.android.volley.toolbox.ImageRequest
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @Composable
@@ -39,10 +37,10 @@ fun FavouriteInfoCard(
     modifier: Modifier = Modifier,
     info: RestaurantDto
 ) {
-    val imageURL = info.imageURL ?: ""
-    val restaurantName = info.restaurantName
-    val rating = info.rating
-    val views = info.views
+    val imageURL = info.pic ?: ""
+    val restaurantName = info.name
+    val rating = info.averageRating
+    val views = info.reviewIds.size
 
     val context = LocalContext.current
 

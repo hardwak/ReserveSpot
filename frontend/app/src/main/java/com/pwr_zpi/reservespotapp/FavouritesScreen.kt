@@ -46,7 +46,7 @@ fun FavouritesScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(200.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable(onClick = { navController.navigate("restaurantDetails/${reservation.restaurantName}/${reservation.rating}") }),
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${reservation.id}") }),
                     info = reservation
                 )
             }

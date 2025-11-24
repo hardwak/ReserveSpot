@@ -54,7 +54,7 @@ fun ReservationsScreen(navController: NavHostController) {
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clickable {
                             navController.navigate(
-                                "restaurantDetails/${reservation.restaurantName}/${reservation.restaurantRating}" // TODO change this to restaurantId
+                                "restaurantDetails/${reservation.restaurantId}}"
                             )
                         }
                 )

@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ArrowBack
@@ -46,7 +47,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -538,6 +542,7 @@ fun OwnerReservationsScreen(navController: NavHostController) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerRestaurantListScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -547,7 +552,7 @@ fun OwnerRestaurantListScreen(navController: NavHostController) {
 
     LaunchedEffect(ownerId) {
         isLoading = true
-        restaurants = fetchMyRestaurants(context, ownerId)
+        restaurants = fetchOwnerRestaurants(context, ownerId)
         isLoading = false
     }
 
@@ -616,7 +621,7 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
         // TODO: Użyj nowego endpointu getRestaurantDetailsForOwner, zamiast pobierać całą listę
 
         val ownerId = 1L // TODO: Faktyczne ownerId
-        val allRestaurants = fetchMyRestaurants(context, ownerId)
+        val allRestaurants = fetchOwnerRestaurants(context, ownerId)
         restaurantDetails = allRestaurants.find { it.id == restaurantId }
         isLoadingDetails = false
     }

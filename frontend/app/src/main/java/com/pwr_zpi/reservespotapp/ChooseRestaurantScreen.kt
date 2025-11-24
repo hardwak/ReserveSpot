@@ -253,7 +253,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                         info = RestaurantDto(
                             name = restaurant.name,
                             averageRating = restaurant.rating.toDouble(),
-                            views = 450,
                             id = 1L,
                             ownerId = 20L,
                             address = "123 Placeholder St",
