@@ -130,8 +130,27 @@ interface ReservationApi {
 }
 
 interface RestaurantApi {
-    @GET("/api/") // TODO set favourites endpoint
+    @GET("/api/users/me/favorites")
     suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
+
+    @POST("api/users/me/favorites/{restaurantId}")
+    suspend fun addFavourite(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<Unit>
+
+    @DELETE("api/users/me/favorites/{restaurantId}")
+    suspend fun removeFavourite(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<Unit>
+
+    @GET("api/users/me/favorites/{restaurantId}/check")
+    suspend fun checkFavourite(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<Boolean>
+
 
     @GET("/api/restaurants/recommendations")
     suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>

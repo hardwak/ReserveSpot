@@ -12,6 +12,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,8 +30,9 @@ fun FavouritesScreen(navController: NavHostController) {
     val context = LocalContext.current
     var favourites by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshTrigger) {
         isLoading = true
         favourites = fetchFavourites(context)
         isLoading = false
@@ -41,13 +43,14 @@ fun FavouritesScreen(navController: NavHostController) {
     } else {
         LazyColumn {
             items(favourites) { reservation ->
-                FavouriteInfoCard(
+                RestaurantInfoCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clickable(onClick = { navController.navigate("restaurantDetails/${reservation.id}") }),
-                    info = reservation
+                    info = reservation,
+                    onRefresh = { refreshTrigger++ }
                 )
             }
         }
