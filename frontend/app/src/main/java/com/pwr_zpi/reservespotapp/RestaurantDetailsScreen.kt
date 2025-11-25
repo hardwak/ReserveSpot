@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -69,14 +71,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
-
-//data class RestaurantDataModel(
-//    val name: String,
-//    val address: String,
-//    val description: String,
-//    val imageUrl: String? = null
-//)
-
 sealed class LoadState {
     object Loading : LoadState()
     data class Success(val data: RestaurantDto) : LoadState()
@@ -90,25 +84,25 @@ suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadSt
         val token = DataStoreManager(context).getBackendToken()
 
         if (token.isNullOrBlank()) {
-            return@withContext LoadState.Error("Błąd autoryzacji: Brak tokena.")
+            return@withContext LoadState.Error("Authorization error: No token")
         }
-        // Wywołanie endpointu z ID
+
         val response = RetrofitClient.restaurantApi.getRestaurantDetails("Bearer $token", restaurantId)
 
         if (response.isSuccessful) {
             val dto = response.body()
             if (dto != null) {
-                LoadState.Success(dto) // Sukces zwraca pełny RestaurantDto
+                LoadState.Success(dto)
             } else {
-                LoadState.Error("Puste dane z serwera.")
+                LoadState.Error("Empty data from server.")
             }
         } else {
-            Log.e("Details", "Błąd serwera: ${response.code()} - ${response.message()}")
-            LoadState.Error("Błąd serwera: ${response.code()}")
+            Log.e("Details", "Server error: ${response.code()} - ${response.message()}")
+            LoadState.Error("Server error: ${response.code()}")
         }
     } catch (e: Exception) {
-        Log.e("Details", "Błąd pobierania detali", e)
-        LoadState.Error("Nie udało się połączyć z serwerem lub błąd parsowania danych.")
+        Log.e("Details", "Error fetching details", e)
+        LoadState.Error("Error connecting with server or parsing data.")
     }
 }
 
@@ -116,7 +110,7 @@ suspend fun fetchReviews(context: Context, restaurantId: Long): List<ReviewDto> 
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
-        // ZMIANA: Używamy RetrofitClient.reviewsApi
+
         val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
 
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
@@ -128,28 +122,26 @@ suspend fun fetchReviews(context: Context, restaurantId: Long): List<ReviewDto> 
 
 suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): List<ReviewWithUser> = withContext(Dispatchers.IO) {
     val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-    val reviews = fetchReviews(context, restaurantId) // Ta funkcja już istnieje i pobiera List<ReviewDto>
+    val reviews = fetchReviews(context, restaurantId)
 
     if (reviews.isEmpty()) return@withContext emptyList()
 
-    // Używamy async/await do równoległego pobierania detali użytkowników
+
     reviews.map { review ->
-        // Uwaga: To jest bardzo nieefektywne, jeśli recenzji jest dużo!
-        // Użytkownik musi mieć ID, inaczej zwracamy domyślną nazwę.
         val userName = if (review.userId != null) {
             try {
                 val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", review.userId)
                 if (userResponse.isSuccessful) {
-                    userResponse.body()?.name ?: "Użytkownik #${review.userId}"
+                    userResponse.body()?.name ?: "User #${review.userId}"
                 } else {
-                    "Użytkownik anonimowy (Błąd ${userResponse.code()})"
+                    "Anonymous user (Error ${userResponse.code()})"
                 }
             } catch (e: Exception) {
-                Log.e("Details", "Błąd pobierania nazwy użytkownika: ${e.message}")
-                "Użytkownik anonimowy (Błąd połączenia)"
+                Log.e("Details", "Error downloading users name: ${e.message}")
+                "Anonymous user (Connection error)"
             }
         } else {
-            "Użytkownik"
+            "User"
         }
         ReviewWithUser(review, userName)
     }
@@ -160,18 +152,16 @@ suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): Lis
 fun RestaurantDetailsScreen(
     navController: NavHostController,
     restaurantId: Long,
-//    rating: Double
 ) {
     val context = LocalContext.current
 
-//    val detailsData =
+
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
     var reviewsWithUser by remember { mutableStateOf(emptyList<ReviewWithUser>()) }
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Photos", "Reviews")
 
 
-    // states for visiting statistics
     var showOccupancySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -185,7 +175,6 @@ fun RestaurantDetailsScreen(
     }
 
     LaunchedEffect(restaurantId, selectedTabIndex) {
-        // Ładuj opinie tylko wtedy, gdy zakładka 'Reviews' jest aktywna (index 1)
         if (selectedTabIndex == 1) {
             reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
         }
@@ -193,16 +182,14 @@ fun RestaurantDetailsScreen(
 
     val detailsData = when (uiState) {
         is LoadState.Loading -> {
-            // Możemy wyświetlić prosty wskaźnik ładowania
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
             return
         }
         is LoadState.Error -> {
-            // Wyświetlanie komunikatu błędu
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Błąd: ${(uiState as LoadState.Error).message}", color = Color.Red)
+                Text("Error: ${(uiState as LoadState.Error).message}", color = Color.Red)
             }
             return
         }
@@ -243,6 +230,8 @@ fun RestaurantDetailsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .offset(y = (-40).dp)
+
         ) {
 
             Box(
@@ -266,16 +255,22 @@ fun RestaurantDetailsScreen(
                 state = listState
             ) {
 
-
-                item {
-                    Spacer(modifier = Modifier.height(240.dp))
-                }
+//                item {
+//                    Column(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(top = 240.dp)
+//                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+//                            .background(Color.White)
+//                    )
+//                }
 
                 //Info panel
                 item {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(top = 240.dp)
                             .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                             .background(Color.White)
                     ) {
@@ -336,6 +331,48 @@ fun RestaurantDetailsScreen(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
 
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Opening hours:",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+
+                            val orderedDaysMap = listOf(
+                                "monday" to "Monday",
+                                "tuesday" to "Tuesday",
+                                "wednesday" to "Wednesday",
+                                "thursday" to "Thursday",
+                                "friday" to "Friday",
+                                "saturday" to "Saturday",
+                                "sunday" to "Sunday"
+                            )
+
+                            Column(modifier = Modifier.padding(start = 4.dp)) {
+                                orderedDaysMap.forEach { (backendKey, englishName) ->
+
+
+                                    val hours = detailsData.openingHours[backendKey] ?: "Closed"
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = englishName,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.DarkGray
+                                        )
+                                        Text(
+                                            text = hours,
+                                            color = Color.Gray,
+                                            fontWeight = FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                 }
@@ -393,7 +430,6 @@ fun RestaurantDetailsScreen(
                             0 -> Text("Photos tab (Not implemented)")
                             1 -> ReviewsTabContent(reviewsWithUser = reviewsWithUser)
 
-//
                         }
                     }
                 }
@@ -432,7 +468,7 @@ fun RestaurantDetailsScreen(
 @Composable
 fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
     if (reviewsWithUser.isEmpty()) {
-        Text("Brak opinii dla tej restauracji.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+        Text("No reviews for this restaurant.", color = Color.Gray, modifier = Modifier.padding(16.dp))
     } else {
         Column(modifier = Modifier.padding(top = 8.dp)) {
             reviewsWithUser.forEach { item ->
@@ -446,13 +482,13 @@ fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
                             Text(item.userName, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(8.dp))
 
-                            // Ocena (rating)
+                            // Rating
                             review.rating?.let { rating ->
                                 Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
                                 Text(" ${rating}/5", color = Color.Gray)
                             }
                         }
-                        Text(review.comment ?: "Brak komentarza.", modifier = Modifier.padding(top = 4.dp))
+                        Text(review.comment ?: "No comment.", modifier = Modifier.padding(top = 4.dp))
                         review.createdAt?.let {
                             Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray)
                         }

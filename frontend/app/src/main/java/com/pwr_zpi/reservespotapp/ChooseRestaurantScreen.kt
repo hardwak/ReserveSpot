@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -64,7 +65,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-suspend fun fetchRestaurants(context: Context, searchCriteria: RestaurantSearchDto): List<RestaurantDto> {
+suspend fun fetchRestaurants(
+    context: Context,
+    searchCriteria: RestaurantSearchDto
+): List<RestaurantDto> {
     return withContext(Dispatchers.IO) {
         try {
             val dataStoreManager = DataStoreManager(context)
@@ -97,7 +101,8 @@ suspend fun fetchRestaurants(context: Context, searchCriteria: RestaurantSearchD
 suspend fun fetchAvailableTags(context: Context): List<TagDto> {
     return withContext(Dispatchers.IO) {
         try {
-            val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
             val response = RetrofitClient.restaurantApi.getAvailableTags("Bearer $token")
             if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
         } catch (e: Exception) {
@@ -172,7 +177,13 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         isFiltersLoading = false
     }
 
-    LaunchedEffect(searchQuery.text, selectedCity, selectedCuisines, selectedRatingRange, isFiltersLoading) {
+    LaunchedEffect(
+        searchQuery.text,
+        selectedCity,
+        selectedCuisines,
+        selectedRatingRange,
+        isFiltersLoading
+    ) {
         if (isFiltersLoading) return@LaunchedEffect
 
         delay(300)
@@ -205,40 +216,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         geminiPrompt = TextFieldValue("")
     }
 
-    // --- KROK 1: URUCHOMIENIE API PRZY ZMIANIE FILTRÓW (DEBOUNCE) ---
-//    LaunchedEffect(searchQuery.text, selectedCity, selectedCuisines, selectedRatingRange) {
-//        delay(300)
-//
-//        isLoading = true
-//
-//        // Mapowanie wybranych kuchni na przykładowe Tag IDs (Long) dla API
-//        // UWAGA: Trzeba to zastąpić rzeczywistą logiką mapowania!
-////        val tagIds = if (selectedCuisines.isEmpty()) null else selectedCuisines.map {
-////            when (it) {
-////                "Italian" -> 1L
-////                "Polish" -> 2L
-////                "Ukrainian" -> 3L
-////                else -> 99L
-////            }
-////        }.toSet()
-//
-//        val searchCriteria = RestaurantSearchDto(
-//            query = searchQuery.text.ifBlank { null },
-//            city = selectedCity,
-//            tagIds = tagIds,
-//            minRating = selectedRatingRange.start.toDouble(),
-//            maxRating = selectedRatingRange.endInclusive.toDouble()
-//        )
-//
-//        restaurants = fetchRestaurants(context, searchCriteria)
-//        isLoading = false
-//    }
-
-
-
-
     Scaffold(
-
 
     ) { padding ->
         Column(
@@ -253,7 +231,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 0.dp, bottom = 16.dp),
+                    .offset(y = (-40).dp)
+                    .padding(bottom = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
@@ -296,7 +275,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .offset(y=(-20).dp)
+                    .padding(bottom = 2.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = RSRed
                 )
@@ -353,7 +333,12 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             }
 
             if (isFiltersLoading) {
-                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator(color = RSRed)
                 }
 
@@ -363,14 +348,18 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
             if (isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(color = RSRed)
                 }
             } else if (restaurants.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("No restaurants meeting this criteria.")
@@ -391,35 +380,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                                     navController.navigate("restaurantDetails/$restaurantIdToNavigate")
                                 },
                             info = restaurant
-//                            info = RestaurantDto(
-//                                name = restaurant.name,
-//                                averageRating = restaurant.averageRating,
-//                                views = 450,
-//                                id = 1L,
-//                                ownerId = 20L,
-//                                address = "123 Placeholder St",
-//                                city = "Sample City",
-//                                description = "This is a placeholder description for the restaurant.",
-//                                openingHours = mapOf(
-//                                    "Mon" to "10:00–22:00",
-//                                    "Tue" to "10:00–22:00",
-//                                    "Wed" to "10:00–22:00",
-//                                    "Thu" to "10:00–22:00",
-//                                    "Fri" to "10:00–23:00",
-//                                    "Sat" to "11:00–23:00",
-//                                    "Sun" to "11:00–21:00"
-//                                ),
-//                                latitude = 0.0,
-//                                longitude = 0.0,
-//                                pic = "https://example.com/placeholder.jpg",
-//                                tableIds = setOf(1, 2, 3),
-//                                reviewIds = setOf(101, 102),
-//                                aiAnalysisIds = emptySet(),
-//                                statisticIds = emptySet(),
-//                                tagIds = setOf(1, 2),
-//                                pictureIds = setOf(11, 12)
                         )
-                        // TODO fetch from database
                     }
                 }
             }
@@ -513,10 +474,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 // Rating filter
                 Text(
                     "Rating: od ${
-                        String.format(
-                            "%.1f",
-                            selectedRatingRange.start
-                        )
+                        String.format("%.1f", selectedRatingRange.start)
                     } do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -586,8 +544,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             }
         }
     }
-
-
 
 
 }
