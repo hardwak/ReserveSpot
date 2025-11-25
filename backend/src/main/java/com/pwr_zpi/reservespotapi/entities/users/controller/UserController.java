@@ -1,6 +1,7 @@
 package com.pwr_zpi.reservespotapi.entities.users.controller;
 
 import com.pwr_zpi.reservespotapi.entities.users.Role;
+import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.CreateUserDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateProfileDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateUserDto;
@@ -111,6 +112,61 @@ public class UserController {
         Long userId = currentUserService.requireCurrentUserId(request);
         UserDto updatedUser = userService.updateProfile(userId, updateDto);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @GetMapping("/me/favorites")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
+    public ResponseEntity<List<RestaurantDto>> getFavoriteRestaurants(HttpServletRequest request) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        List<RestaurantDto> favorites = userService.getFavoriteRestaurants(userId);
+        return ResponseEntity.ok(favorites);
+    }
+
+    @GetMapping("/{userId}/favorites")
+    public ResponseEntity<List<RestaurantDto>> getFavoriteRestaurantsByUserId(@PathVariable Long userId) {
+        List<RestaurantDto> favorites = userService.getFavoriteRestaurants(userId);
+        return ResponseEntity.ok(favorites);
+    }
+
+    @PostMapping("/{userId}/favorites/{restaurantId}")
+    public ResponseEntity<RestaurantDto> addFavoriteRestaurantByUserId(@PathVariable Long userId,
+                                                                      @PathVariable Long restaurantId) {
+        RestaurantDto restaurant = userService.addFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(restaurant);
+    }
+
+    @DeleteMapping("/{userId}/favorites/{restaurantId}")
+    public ResponseEntity<Void> removeFavoriteRestaurantByUserId(@PathVariable Long userId,
+                                                                @PathVariable Long restaurantId) {
+        userService.removeFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/me/favorites/{restaurantId}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
+    public ResponseEntity<RestaurantDto> addFavoriteRestaurant(HttpServletRequest request,
+                                                               @PathVariable Long restaurantId) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        RestaurantDto restaurant = userService.addFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(restaurant);
+    }
+
+    @DeleteMapping("/me/favorites/{restaurantId}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
+    public ResponseEntity<Void> removeFavoriteRestaurant(HttpServletRequest request,
+                                                         @PathVariable Long restaurantId) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        userService.removeFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me/favorites/{restaurantId}/check")
+    @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
+    public ResponseEntity<Boolean> isFavoriteRestaurant(HttpServletRequest request,
+                                                        @PathVariable Long restaurantId) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        boolean isFavorite = userService.isFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.ok(isFavorite);
     }
 }
 

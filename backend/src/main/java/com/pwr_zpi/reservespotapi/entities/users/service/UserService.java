@@ -3,6 +3,9 @@ package com.pwr_zpi.reservespotapi.entities.users.service;
 import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
 import com.pwr_zpi.reservespotapi.entities.reservation.ReservationRepository;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
+import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
+import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
+import com.pwr_zpi.reservespotapi.entities.restaurant.mapper.RestaurantMapper;
 import com.pwr_zpi.reservespotapi.entities.restaurant.service.RestaurantService;
 import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
@@ -19,8 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +37,8 @@ public class UserService {
     private final ReservationRepository reservationRepository;
     private final ReviewRepository reviewRepository;
     private final RestaurantService restaurantService;
+    private final RestaurantRepository restaurantRepository;
+    private final RestaurantMapper restaurantMapper;
 
     public List<UserDto> getAllUsers() {
         return userRepository.findAll()
@@ -151,6 +158,65 @@ public class UserService {
                     return userMapper.toDto(savedUser);
                 })
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    public List<RestaurantDto> getFavoriteRestaurants(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        if (user.getFavoriteRestaurants() == null || user.getFavoriteRestaurants().isEmpty()) {
+            return List.of();
+        }
+        
+        return user.getFavoriteRestaurants().stream()
+                .map(restaurantMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public RestaurantDto addFavoriteRestaurant(Long userId, Long restaurantId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        
+        if (user.getFavoriteRestaurants() == null) {
+            user.setFavoriteRestaurants(new HashSet<>());
+        }
+        
+        if (user.getFavoriteRestaurants().contains(restaurant)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Restaurant is already in favorites");
+        }
+        
+        user.getFavoriteRestaurants().add(restaurant);
+        userRepository.save(user);
+        
+        return restaurantMapper.toDto(restaurant);
+    }
+
+    public void removeFavoriteRestaurant(Long userId, Long restaurantId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        
+        if (user.getFavoriteRestaurants() == null || !user.getFavoriteRestaurants().contains(restaurant)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant is not in favorites");
+        }
+        
+        user.getFavoriteRestaurants().remove(restaurant);
+        userRepository.save(user);
+    }
+
+    public boolean isFavoriteRestaurant(Long userId, Long restaurantId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        
+        return user.getFavoriteRestaurants() != null && user.getFavoriteRestaurants().contains(restaurant);
     }
 }
 
