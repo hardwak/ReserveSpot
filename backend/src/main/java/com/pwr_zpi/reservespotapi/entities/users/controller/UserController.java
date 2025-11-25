@@ -128,6 +128,20 @@ public class UserController {
         return ResponseEntity.ok(favorites);
     }
 
+    @PostMapping("/{userId}/favorites/{restaurantId}")
+    public ResponseEntity<RestaurantDto> addFavoriteRestaurantByUserId(@PathVariable Long userId,
+                                                                      @PathVariable Long restaurantId) {
+        RestaurantDto restaurant = userService.addFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(restaurant);
+    }
+
+    @DeleteMapping("/{userId}/favorites/{restaurantId}")
+    public ResponseEntity<Void> removeFavoriteRestaurantByUserId(@PathVariable Long userId,
+                                                                @PathVariable Long restaurantId) {
+        userService.removeFavoriteRestaurant(userId, restaurantId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/me/favorites/{restaurantId}")
     @PreAuthorize("hasAnyRole('CLIENT', 'RESTAURANT', 'ADMIN')")
     public ResponseEntity<RestaurantDto> addFavoriteRestaurant(HttpServletRequest request,
