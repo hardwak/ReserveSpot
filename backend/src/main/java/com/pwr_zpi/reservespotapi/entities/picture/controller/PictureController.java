@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -50,6 +51,15 @@ public class PictureController {
     public ResponseEntity<PictureDto> createPicture(@Valid @RequestBody CreatePictureDto createDto) {
         PictureDto createdPicture = pictureService.createPicture(createDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPicture);
+    }
+
+    @PostMapping("/file")
+    public ResponseEntity<PictureDto> uploadPicture(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "description", required = false) String description
+    ) {
+        PictureDto uploadedPicture = pictureService.uploadPicture(file, description);
+        return ResponseEntity.status(HttpStatus.CREATED).body(uploadedPicture);
     }
 
     @PutMapping("/{id}")

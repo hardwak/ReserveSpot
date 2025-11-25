@@ -12,10 +12,16 @@ import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
+import com.pwr_zpi.reservespotapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +35,7 @@ public class PictureService {
     private final RestaurantRepository restaurantRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final StorageService storageService;
 
     public List<PictureDto> getAllPictures() {
         return pictureRepository.findAll()
@@ -59,6 +66,40 @@ public class PictureService {
     public PictureDto createPicture(CreatePictureDto createDto) {
         Picture picture = pictureMapper.toEntity(createDto);
         Picture savedPicture = pictureRepository.save(picture);
+        return pictureMapper.toDto(savedPicture);
+    }
+
+    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/webp"
+    );
+
+
+    public PictureDto uploadPicture(MultipartFile file, String description) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File cannot be empty");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Invalid file type. Only images (JPG, PNG, WebP) are allowed"
+            );
+        }
+
+        String fileUrl = storageService.uploadFile(file);
+
+        Picture picture = Picture.builder()
+                .url(fileUrl)
+                .description(description)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+
+        Picture savedPicture = pictureRepository.save(picture);
+
         return pictureMapper.toDto(savedPicture);
     }
 
@@ -109,7 +150,7 @@ public class PictureService {
                     userRepository.save(user);
                 }
                 
-                // Now delete the picture
+                storageService.deleteFile(picture.getUrl());
                 pictureRepository.delete(picture);
             return true;
             })
