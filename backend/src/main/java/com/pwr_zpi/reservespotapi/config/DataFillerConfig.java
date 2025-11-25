@@ -139,25 +139,25 @@ public class DataFillerConfig {
             Tag sushi = tagRepository.save(Tag.builder().name("Sushi").build());
             Tag japanese = tagRepository.save(Tag.builder().name("Japanese").build());
             Tag vegetarian = tagRepository.save(Tag.builder().name("Vegetarian").build());
-            Tag fineDining = tagRepository.save(Tag.builder().name("Fine Dining").build());
             tagRepository.save(Tag.builder().name("Fast Food").build());
-            Tag seafood = tagRepository.save(Tag.builder().name("Seafood").build());
             Tag french = tagRepository.save(Tag.builder().name("French").build());
             tagRepository.save(Tag.builder().name("Vegan").build());
-            Tag tagBar = tagRepository.save(Tag.builder().name("Bar").build());
             Tag tagBreakfast = tagRepository.save(Tag.builder().name("Breakfast").build());
-            Tag tagMexican = tagRepository.save(Tag.builder().name("Mexican").build());
-            Tag tagIndian = tagRepository.save(Tag.builder().name("Indian").build());
-            Tag tagGreek = tagRepository.save(Tag.builder().name("Greek").build());
             Tag tagSpanish = tagRepository.save(Tag.builder().name("Spanish").build());
             Tag tagGlutenFree = tagRepository.save(Tag.builder().name("Gluten-Free").build());
-            Tag tagSteakhouse = tagRepository.save(Tag.builder().name("Steakhouse").build());
-            Tag tagRomantic = tagRepository.save(Tag.builder().name("Romantic").build());
             Tag tagFamilyFriendly = tagRepository.save(Tag.builder().name("Family-Friendly").build());
-            Tag tagOutdoorSeating = tagRepository.save(Tag.builder().name("Outdoor Seating").build());
             Tag tagPetFriendly = tagRepository.save(Tag.builder().name("Pet-Friendly").build());
             Tag tagCheapEats = tagRepository.save(Tag.builder().name("Cheap Eats").build());
             Tag tagBrunch = tagRepository.save(Tag.builder().name("Brunch").build());
+            Tag mexican = tagRepository.save(Tag.builder().name("Mexican").build());
+            Tag indian = tagRepository.save(Tag.builder().name("Indian").build());
+            Tag steakhouse = tagRepository.save(Tag.builder().name("Steakhouse").build());
+            Tag greek = tagRepository.save(Tag.builder().name("Greek").build());
+            Tag seafood = tagRepository.save(Tag.builder().name("Seafood").build());
+            Tag bar = tagRepository.save(Tag.builder().name("Bar").build());
+            Tag fineDining = tagRepository.save(Tag.builder().name("Fine Dining").build());
+            Tag romantic = tagRepository.save(Tag.builder().name("Romantic").build());
+            Tag outdoorSeating = tagRepository.save(Tag.builder().name("Outdoor Seating").build());
 
             Picture pic1 = pictureRepository.save(Picture.builder()
                     .url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4")
@@ -431,33 +431,238 @@ public class DataFillerConfig {
                     .sentimentScore(0.88)
                     .lastUpdated(now.minusDays(1))
                     .build());
+
+
+            User owner4 = User.builder()
+                    .email("carlos.gomez@tacos.com")
+                    .passwordHash(passwordEncoder.encode("password123"))
+                    .role(Role.RESTAURANT)
+                    .name("Carlos Gomez")
+                    .phoneNumber("+1234567897")
+                    .provider(AuthProvider.LOCAL)
+                    .build();
+            owner4 = userRepository.save(owner4);
+
+            User owner5 = User.builder()
+                    .email("priya.patel@curry.com")
+                    .passwordHash(passwordEncoder.encode("password123"))
+                    .role(Role.RESTAURANT)
+                    .name("Priya Patel")
+                    .phoneNumber("+1234567898")
+                    .provider(AuthProvider.LOCAL)
+                    .build();
+            owner5 = userRepository.save(owner5);
+
+            User owner6 = User.builder()
+                    .email("jack.butcher@steak.com")
+                    .passwordHash(passwordEncoder.encode("password123"))
+                    .role(Role.RESTAURANT)
+                    .name("Jack Butcher")
+                    .phoneNumber("+1234567899")
+                    .provider(AuthProvider.LOCAL)
+                    .build();
+            owner6 = userRepository.save(owner6);
+
+            User owner7 = User.builder()
+                    .email("elena.papadopoulos@greek.com")
+                    .passwordHash(passwordEncoder.encode("password123"))
+                    .role(Role.RESTAURANT)
+                    .name("Elena Papadopoulos")
+                    .phoneNumber("+1234567800")
+                    .provider(AuthProvider.LOCAL)
+                    .build();
+            owner7 = userRepository.save(owner7);
+
+            User owner8 = User.builder()
+                    .email("lucas.marin@ocean.com")
+                    .passwordHash(passwordEncoder.encode("password123"))
+                    .role(Role.RESTAURANT)
+                    .name("Lucas Marin")
+                    .phoneNumber("+1234567801")
+                    .provider(AuthProvider.LOCAL)
+                    .build();
+            owner8 = userRepository.save(owner8);
+
+
+            Picture picMexican = pictureRepository.save(Picture.builder()
+                    .url("https://images.unsplash.com/photo-1565299585323-38d6b0865b47")
+                    .description("Tacos and ambiance")
+                    .uploadedAt(LocalDateTime.now().minusDays(2))
+                    .build());
+
+            Picture picIndian = pictureRepository.save(Picture.builder()
+                    .url("https://images.unsplash.com/photo-1585937421612-70a008356f36")
+                    .description("Curry dishes")
+                    .uploadedAt(LocalDateTime.now().minusDays(3))
+                    .build());
+
+            Picture picSteak = pictureRepository.save(Picture.builder()
+                    .url("https://images.unsplash.com/photo-1544025162-d76694265947")
+                    .description("Premium Steaks")
+                    .uploadedAt(LocalDateTime.now().minusDays(1))
+                    .build());
+
+            Picture picGreek = pictureRepository.save(Picture.builder()
+                    .url("https://images.unsplash.com/photo-1555939594-58d7cb561ad1")
+                    .description("Greek Salad and View")
+                    .uploadedAt(LocalDateTime.now().minusDays(4))
+                    .build());
+
+            Picture picSeafood = pictureRepository.save(Picture.builder()
+                    .url("https://images.unsplash.com/photo-1534939561126-855b8675edd7")
+                    .description("Fresh Seafood Platter")
+                    .uploadedAt(LocalDateTime.now().minusDays(5))
+                    .build());
+
+
+            Map<String, String> standardHours = new HashMap<>();
+            standardHours.put("monday", "12:00-22:00");
+            standardHours.put("tuesday", "12:00-22:00");
+            standardHours.put("wednesday", "12:00-22:00");
+            standardHours.put("thursday", "12:00-23:00");
+            standardHours.put("friday", "12:00-00:00");
+            standardHours.put("saturday", "12:00-00:00");
+            standardHours.put("sunday", "12:00-21:00");
+
+            Restaurant restMexican = Restaurant.builder()
+                    .owner(owner4)
+                    .name("El Camino Cantina")
+                    .address("202 Spicy Lane")
+                    .city("Austin")
+                    .description("Vibrant Mexican street food with a wide selection of tequila and mezcal.")
+                    .openingHours(standardHours)
+                    .averageRating(4.6)
+                    .latitude(30.2672)
+                    .longitude(-97.7431)
+                    .pic("https://images.unsplash.com/photo-1565299585323-38d6b0865b47")
+                    .tags(new HashSet<>(Arrays.asList(mexican, bar, outdoorSeating)))
+                    .pictures(new HashSet<>(Arrays.asList(picMexican)))
+                    .build();
+            restMexican = restaurantRepository.save(restMexican);
+
+            Restaurant restIndian = Restaurant.builder()
+                    .owner(owner5)
+                    .name("Spice Route Palace")
+                    .address("55 Curry Road")
+                    .city("London")
+                    .description("Authentic North Indian cuisine featuring rich curries and tandoori specials.")
+                    .openingHours(standardHours)
+                    .averageRating(4.7)
+                    .latitude(51.5074)
+                    .longitude(-0.1278)
+                    .pic("https://images.unsplash.com/photo-1585937421612-70a008356f36")
+                    .tags(new HashSet<>(Arrays.asList(indian, vegetarian, fineDining)))
+                    .pictures(new HashSet<>(Arrays.asList(picIndian)))
+                    .build();
+            restIndian = restaurantRepository.save(restIndian);
+
+
+            Restaurant restSteak = Restaurant.builder()
+                    .owner(owner6)
+                    .name("The Iron Grill")
+                    .address("88 Butcher Street")
+                    .city("Chicago")
+                    .description("Premium aged steaks grilled to perfection in an industrial-chic setting.")
+                    .openingHours(standardHours)
+                    .averageRating(4.8)
+                    .latitude(41.8781)
+                    .longitude(-87.6298)
+                    .pic("https://images.unsplash.com/photo-1544025162-d76694265947")
+                    .tags(new HashSet<>(Arrays.asList(steakhouse, fineDining, bar)))
+                    .pictures(new HashSet<>(Arrays.asList(picSteak)))
+                    .build();
+            restSteak = restaurantRepository.save(restSteak);
+
+
+            Restaurant restGreek = Restaurant.builder()
+                    .owner(owner7)
+                    .name("Santorini Breeze")
+                    .address("101 Olive Grove")
+                    .city("Miami")
+                    .description("Fresh Mediterranean flavors with a focus on seafood and healthy ingredients.")
+                    .openingHours(standardHours)
+                    .averageRating(4.5)
+                    .latitude(25.7617)
+                    .longitude(-80.1918)
+                    .pic("https://images.unsplash.com/photo-1555939594-58d7cb561ad1")
+                    .tags(new HashSet<>(Arrays.asList(greek, seafood, romantic)))
+                    .pictures(new HashSet<>(Arrays.asList(picGreek)))
+                    .build();
+            restGreek = restaurantRepository.save(restGreek);
+
+
+            Restaurant restSeafood = Restaurant.builder()
+                    .owner(owner8)
+                    .name("Blue Horizon Seafood")
+                    .address("1 Pier Way")
+                    .city("San Francisco")
+                    .description("Catch of the day served with stunning ocean views.")
+                    .openingHours(standardHours)
+                    .averageRating(4.4)
+                    .latitude(37.7749)
+                    .longitude(-122.4194)
+                    .pic("https://images.unsplash.com/photo-1534939561126-855b8675edd7")
+                    .tags(new HashSet<>(Arrays.asList(seafood, romantic, outdoorSeating)))
+                    .pictures(new HashSet<>(Arrays.asList(picSeafood)))
+                    .build();
+            restSeafood = restaurantRepository.save(restSeafood);
+
+
+
+            tableRepository.save(RestaurantTable.builder().restaurant(restMexican).tableNumber(1).capacity(2).locationInRestaurant("Patio").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restMexican).tableNumber(2).capacity(4).locationInRestaurant("Patio").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restMexican).tableNumber(3).capacity(6).locationInRestaurant("Inside").build());
+
+            tableRepository.save(RestaurantTable.builder().restaurant(restIndian).tableNumber(1).capacity(2).locationInRestaurant("Window").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restIndian).tableNumber(2).capacity(4).locationInRestaurant("Main Hall").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restIndian).tableNumber(3).capacity(8).locationInRestaurant("Private Room").build());
+
+            tableRepository.save(RestaurantTable.builder().restaurant(restSteak).tableNumber(1).capacity(2).locationInRestaurant("Bar").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restSteak).tableNumber(2).capacity(4).locationInRestaurant("Booth").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restSteak).tableNumber(3).capacity(6).locationInRestaurant("Main Dining").build());
+
+            tableRepository.save(RestaurantTable.builder().restaurant(restGreek).tableNumber(1).capacity(2).locationInRestaurant("Terrace").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restGreek).tableNumber(2).capacity(4).locationInRestaurant("Terrace").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restGreek).tableNumber(3).capacity(4).locationInRestaurant("Inside").build());
+
+            tableRepository.save(RestaurantTable.builder().restaurant(restSeafood).tableNumber(1).capacity(2).locationInRestaurant("Ocean View").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restSeafood).tableNumber(2).capacity(4).locationInRestaurant("Ocean View").build());
+            tableRepository.save(RestaurantTable.builder().restaurant(restSeafood).tableNumber(3).capacity(6).locationInRestaurant("Deck").build());
+
+            aiAnalysisRepository.save(AiAnalysis.builder()
+                    .restaurant(restMexican)
+                    .summaryText("Lively atmosphere, tacos are highly praised. Margaritas are a hit.")
+                    .sentimentScore(0.88)
+                    .lastUpdated(LocalDateTime.now().minusDays(1))
+                    .build());
+
+            aiAnalysisRepository.save(AiAnalysis.builder()
+                    .restaurant(restIndian)
+                    .summaryText("Rich flavors, authentic spices. Service is attentive and professional.")
+                    .sentimentScore(0.91)
+                    .lastUpdated(LocalDateTime.now().minusDays(1))
+                    .build());
+
+            aiAnalysisRepository.save(AiAnalysis.builder()
+                    .restaurant(restSteak)
+                    .summaryText("Excellent steak quality, perfectly cooked. Pricey but worth it for special occasions.")
+                    .sentimentScore(0.93)
+                    .lastUpdated(LocalDateTime.now().minusDays(1))
+                    .build());
+
+            aiAnalysisRepository.save(AiAnalysis.builder()
+                    .restaurant(restGreek)
+                    .summaryText("Fresh ingredients, beautiful setting. Great for a romantic dinner.")
+                    .sentimentScore(0.89)
+                    .lastUpdated(LocalDateTime.now().minusDays(1))
+                    .build());
+
+            aiAnalysisRepository.save(AiAnalysis.builder()
+                    .restaurant(restSeafood)
+                    .summaryText("Seafood is fresh, views are stunning. Can get crowded on weekends.")
+                    .sentimentScore(0.86)
+                    .lastUpdated(LocalDateTime.now().minusDays(1))
+                    .build());
         };
     }
-
-//    @Bean
-//    public CommandLineRunner aiAnalysisGenerator() {
-//        return (args) -> {
-//            // Generate AI analysis for all restaurants that don't have one yet
-//            // This runs after the application starts
-//            try {
-//                System.out.println("🤖 Generating AI analysis for restaurants...");
-//                restaurantRepository.findAll().forEach(restaurant -> {
-//                    try {
-//                        // Only generate if analysis doesn't exist
-//                        if (aiAnalysisService.getAnalysisByRestaurantId(restaurant.getId()).isEmpty()) {
-//                            aiAnalysisService.generateAnalysisForRestaurant(restaurant.getId());
-//                            System.out.println("✅ Generated AI analysis for restaurant: " + restaurant.getName());
-//                        } else {
-//                            System.out.println("⏭️  AI analysis already exists for restaurant: " + restaurant.getName());
-//                        }
-//                    } catch (Exception e) {
-//                        System.err.println("❌ Failed to generate AI analysis for restaurant " + restaurant.getId() + ": " + e.getMessage());
-//                    }
-//                });
-//                System.out.println("✅ AI analysis generation completed!");
-//            } catch (Exception e) {
-//                System.err.println("❌ Error during AI analysis generation: " + e.getMessage());
-//            }
-//        };
-//    }
 }

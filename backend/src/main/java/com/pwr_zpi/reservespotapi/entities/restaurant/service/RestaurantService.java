@@ -2,7 +2,6 @@ package com.pwr_zpi.reservespotapi.entities.restaurant.service;
 
 import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
 import com.pwr_zpi.reservespotapi.entities.reservation.ReservationRepository;
-import com.pwr_zpi.reservespotapi.entities.reservation.Reservation;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.CreateRestaurantDto;
@@ -10,27 +9,21 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantSearchDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.mapper.RestaurantMapper;
-import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTable;
 import com.pwr_zpi.reservespotapi.entities.restaurant_table.RestaurantTableRepository;
 import com.pwr_zpi.reservespotapi.entities.tag.Tag;
 import com.pwr_zpi.reservespotapi.entities.tag.TagRepository;
-import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
 import com.pwr_zpi.reservespotapi.service.AiQueryParserService;
-import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Join;
-import java.util.HashSet;
-
+import jakarta.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -133,52 +126,74 @@ public class RestaurantService {
     public List<RestaurantDto> getRecommendations(Long userId) {
         int limit = 5;
         Pageable pageable = PageRequest.of(0, limit);
-
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return restaurantRepository.findTopRated(pageable)
-                    .stream().map(restaurantMapper::toDto).toList();
-        }
-
-        Set<Long> preferredTagIds = new HashSet<>();
+        List<Restaurant> recommendations = new ArrayList<>();
         Set<Long> visitedRestaurantIds = new HashSet<>();
+        Set<Long> preferredTagIds = new HashSet<>();
 
-        if (user.getReservations() != null) {
-            for (Reservation res : user.getReservations()) {
-                Restaurant r = res.getTable().getRestaurant();
-                visitedRestaurantIds.add(r.getId());
-                r.getTags().forEach(tag -> preferredTagIds.add(tag.getId()));
+        if (userId != null) {
+            userRepository.findById(userId).ifPresent(user -> {
+                if (user.getReservations() != null) {
+                    user.getReservations().forEach(res -> {
+                        visitedRestaurantIds.add(res.getTable().getRestaurant().getId());
+                        res.getTable().getRestaurant().getTags().forEach(tag -> preferredTagIds.add(tag.getId()));
+                    });
+                }
+                if (user.getReviews() != null) {
+                    user.getReviews().forEach(review -> {
+                        visitedRestaurantIds.add(review.getRestaurant().getId());
+                        review.getRestaurant().getTags().forEach(tag -> preferredTagIds.add(tag.getId()));
+                    });
+                }
+            });
+        }
+
+        if (!preferredTagIds.isEmpty()) {
+            List<Restaurant> tagBased;
+            if (visitedRestaurantIds.isEmpty()) {
+                tagBased = restaurantRepository.findByTagsIn(preferredTagIds, pageable);
+            } else {
+                tagBased = restaurantRepository.findByTagsInAndIdNotIn(preferredTagIds, visitedRestaurantIds, pageable);
             }
-        }
-
-        if (user.getReviews() != null) {
-            for (Review review : user.getReviews()) {
-                Restaurant r = review.getRestaurant();
-                visitedRestaurantIds.add(r.getId());
-                r.getTags().forEach(tag -> preferredTagIds.add(tag.getId()));
-            }
-        }
-
-        if (preferredTagIds.isEmpty()) {
-            return restaurantRepository.findTopRated(pageable)
-                    .stream().map(restaurantMapper::toDto).toList();
-        }
-
-        List<Restaurant> recommendations;
-        if (visitedRestaurantIds.isEmpty()) {
-            recommendations = restaurantRepository.findByTagsIn(preferredTagIds, pageable);
-        } else {
-            recommendations = restaurantRepository.findByTagsInAndIdNotIn(preferredTagIds, visitedRestaurantIds, pageable);
+            recommendations.addAll(tagBased);
         }
 
         if (recommendations.size() < limit) {
-            List<Restaurant> topRated = restaurantRepository.findTopRated(pageable);
+            Pageable topRatedPage = PageRequest.of(0, limit * 2);
+            List<Restaurant> topRated = restaurantRepository.findTopRated(topRatedPage);
+
             for (Restaurant r : topRated) {
                 if (recommendations.size() >= limit) break;
                 if (!recommendations.contains(r) && !visitedRestaurantIds.contains(r.getId())) {
                     recommendations.add(r);
                 }
             }
+        }
+
+        if (recommendations.size() < limit) {
+            int needed = limit - recommendations.size();
+
+            Set<Long> excludedIds = recommendations.stream()
+                    .map(Restaurant::getId)
+                    .collect(Collectors.toSet());
+            excludedIds.addAll(visitedRestaurantIds);
+
+            List<Restaurant> randomRestaurants;
+
+            if (excludedIds.isEmpty()) {
+                randomRestaurants = restaurantRepository.findRandom(needed);
+            } else {
+                randomRestaurants = restaurantRepository.findRandomNotIn(excludedIds, needed);
+            }
+
+            recommendations.addAll(randomRestaurants);
+        }
+
+        if (recommendations.size() < limit) {
+            int needed = limit - recommendations.size();
+            Set<Long> currentRecIds = recommendations.stream().map(Restaurant::getId).collect(Collectors.toSet());
+
+            List<Restaurant> anyRandoms = restaurantRepository.findRandomNotIn(currentRecIds, needed);
+            recommendations.addAll(anyRandoms);
         }
 
         return recommendations.stream()
