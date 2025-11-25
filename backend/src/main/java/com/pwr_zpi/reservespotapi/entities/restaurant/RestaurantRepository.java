@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -35,4 +36,10 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long>, J
             "WHERE t.id IN :tagIds " +
             "ORDER BY r.averageRating DESC NULLS LAST")
     List<Restaurant> findByTagsIn(@Param("tagIds") Set<Long> tagIds, Pageable pageable);
+
+    @Query(value = "SELECT * FROM restaurants WHERE id NOT IN :excludedIds ORDER BY RANDOM() LIMIT :limit", nativeQuery = true)
+    List<Restaurant> findRandomNotIn(@Param("excludedIds") Collection<Long> excludedIds, @Param("limit") int limit);
+
+    @Query(value = "SELECT * FROM restaurants ORDER BY RANDOM() LIMIT :limit", nativeQuery = true)
+    List<Restaurant> findRandom(@Param("limit") int limit);
 }
