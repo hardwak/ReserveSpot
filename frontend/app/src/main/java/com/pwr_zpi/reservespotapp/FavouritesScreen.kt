@@ -42,14 +42,14 @@ fun FavouritesScreen(navController: NavHostController) {
         CircularProgressIndicator()
     } else {
         LazyColumn {
-            items(favourites) { reservation ->
+            items(favourites) { restaurant ->
                 RestaurantInfoCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable(onClick = { navController.navigate("restaurantDetails/${reservation.id}") }),
-                    info = reservation,
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${restaurant.id}") }),
+                    info = restaurant,
                     onRefresh = { refreshTrigger++ }
                 )
             }

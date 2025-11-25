@@ -2,6 +2,7 @@ package com.pwr_zpi.reservespotapp
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -69,7 +70,8 @@ fun MainMenuScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(300.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .align(Alignment.CenterHorizontally),
+                        .align(Alignment.CenterHorizontally)
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
                     recommendations[recNum]
                 )
                 recNum += 1
@@ -83,8 +85,9 @@ fun MainMenuScreen(navController: NavHostController) {
                     RestaurantInfoCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(300.dp), // fixed width
-                        recommendations[recNum]
+                            .height(300.dp) // fixed width
+                            .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
+                        info = recommendations[recNum]
                     )
                     recNum += 1
 
@@ -93,7 +96,8 @@ fun MainMenuScreen(navController: NavHostController) {
                     RestaurantInfoCard(
                         modifier = Modifier
                             .weight(1f) // dividing space in row
-                            .height(300.dp), // fixed width
+                            .height(300.dp) // fixed width
+                            .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
                         recommendations[recNum]
                     )
                     recNum += 1
@@ -106,7 +110,8 @@ fun MainMenuScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(300.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .align(Alignment.CenterHorizontally),
+                        .align(Alignment.CenterHorizontally)
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
                     recommendations[recNum]
                 )
                 recNum += 1
