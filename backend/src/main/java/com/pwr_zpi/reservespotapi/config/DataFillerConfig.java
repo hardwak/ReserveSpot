@@ -431,6 +431,13 @@ public class DataFillerConfig {
                     .sentimentScore(0.88)
                     .lastUpdated(now.minusDays(1))
                     .build());
+
+            // Add favorite restaurant for client1
+            if (client1.getFavoriteRestaurants() == null) {
+                client1.setFavoriteRestaurants(new HashSet<>());
+            }
+            client1.getFavoriteRestaurants().add(restaurant1);
+            userRepository.save(client1);
         };
     }
 
