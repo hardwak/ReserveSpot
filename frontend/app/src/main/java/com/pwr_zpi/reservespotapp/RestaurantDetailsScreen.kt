@@ -70,6 +70,8 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 sealed class LoadState {
     object Loading : LoadState()
@@ -239,14 +241,30 @@ fun RestaurantDetailsScreen(
                     .fillMaxWidth()
                     .height(250.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.food_placeholder),
-                    contentDescription = detailsData.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                val imageUrl = detailsData.pic
 
-
+                if (imageUrl.isNullOrBlank()) {
+//                   if there is no URL use a placeholder
+                    Image(
+                        painter = painterResource(id = R.drawable.food_placeholder),
+                        contentDescription = detailsData.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    // If there is URL fetch it from backend
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true) // Smooth photo appearance
+                            .build(),
+                        placeholder = painterResource(id = R.drawable.food_placeholder),
+                        error = painterResource(id = R.drawable.loading_placeholder),
+                        contentDescription = detailsData.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
 

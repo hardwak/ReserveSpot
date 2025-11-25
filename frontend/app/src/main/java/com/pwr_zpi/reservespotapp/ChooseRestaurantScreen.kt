@@ -375,7 +375,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                                 .padding(vertical = 8.dp, horizontal = 4.dp)
                                 .clickable {
 
-//                                    navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.averageRating}")
                                     val restaurantIdToNavigate = restaurant.id
                                     navController.navigate("restaurantDetails/$restaurantIdToNavigate")
                                 },
