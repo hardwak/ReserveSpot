@@ -24,7 +24,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@EqualsAndHashCode(exclude = {"picture", "restaurants", "reservations", "reviews"})
+@EqualsAndHashCode(exclude = {"picture", "restaurants", "reservations", "reviews", "favoriteRestaurants"})
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,6 +63,13 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private Set<Review> reviews;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_favorite_restaurants",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "restaurant_id")
+    )
+    private Set<Restaurant> favoriteRestaurants;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
