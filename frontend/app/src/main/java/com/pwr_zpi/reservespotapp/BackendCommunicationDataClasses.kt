@@ -76,7 +76,6 @@ data class ReservationDto(
 )
 
 
-
 data class ReviewDto(
     val id: Long?,
     val userId: Long?,
@@ -108,7 +107,7 @@ data class RestaurantDto(
     val tagIds: Set<Long>,
     val pictureIds: Set<Long>,
 
-)
+    )
 
 data class RestaurantSearchDto(
     val query: String?,
@@ -132,6 +131,15 @@ data class UserSummaryDto(
 data class ReviewWithUser(
     val review: ReviewDto,
     val userName: String
+)
+
+data class PictureDto(
+    val id: Long?,
+    val url: String?,
+    val uploadedAt: LocalDateTime?,
+    val description: String?,
+    val restaurantIds: Set<Long> = emptySet(),
+    val reviewIds: Set<Long> = emptySet()
 )
 
 
@@ -172,7 +180,7 @@ interface RestaurantApi {
     @GET("/api/restaurants/recommendations")
     suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 
-//    IT WORKS
+    //    IT WORKS
     @POST("/api/restaurants/search")
     suspend fun searchRestaurants(
         @Header("Authorization") token: String,
@@ -186,7 +194,10 @@ interface RestaurantApi {
     suspend fun getAllRestaurants(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 
     @GET("/api/restaurants/{id}")
-    suspend fun getRestaurantDetails(@Header("Authorization") token: String, @Path("id") id: Long): Response<RestaurantDto>
+    suspend fun getRestaurantDetails(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): Response<RestaurantDto>
 }
 
 interface ReviewsApi {
@@ -204,6 +215,14 @@ interface UserApi {
         @Header("Authorization") token: String,
         @Path("id") userId: Long
     ): Response<UserSummaryDto>
+}
+
+interface PicturesApi {
+    @GET("/api/pictures")
+    suspend fun getPictures(
+        @Header("Authorization") token: String,
+        @Query("restaurantId") restaurantId: Long
+    ): Response<List<PictureDto>>
 }
 
 //Restaurant and owners DTOs
@@ -240,6 +259,9 @@ data class OwnerReservationDto(
     val durationMinutes: Int,
     val status: String // PENDING, CONFIRMED etc.
 )
+
+
+
 
 // API Interface for owner
 //interface OwnerApi {
@@ -280,7 +302,7 @@ data class OwnerReservationDto(
 
 object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
-//    private const val BASE_URL = "http://localhost:8080"
+
 
 
     private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
@@ -319,5 +341,9 @@ object RetrofitClient {
 
     val reviewsApi: ReviewsApi by lazy {
         retrofit.create(ReviewsApi::class.java)
+    }
+
+    val picturesApi: PicturesApi by lazy {
+        retrofit.create(PicturesApi::class.java)
     }
 }

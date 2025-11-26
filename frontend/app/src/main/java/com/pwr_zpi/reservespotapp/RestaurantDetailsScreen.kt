@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -149,6 +150,30 @@ suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): Lis
     }
 }
 
+suspend fun fetchPhotos(context: Context, restaurantId: Long): List<PictureDto> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+
+        val response = RetrofitClient.picturesApi.getPictures("Bearer $token", restaurantId)
+
+        if (response.isSuccessful) {
+            val allPhotos = response.body() ?: emptyList()
+
+            val filteredPhotos = allPhotos.filter { picture ->
+                picture.restaurantIds.contains(restaurantId)
+            }
+
+            filteredPhotos
+        } else {
+            Log.e("Details", "Error fetching photos: ${response.code()} - ${response.message()}")
+            emptyList()
+        }
+    } catch (e: Exception) {
+        Log.e("Details", "Exception fetching photos", e)
+        emptyList()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailsScreen(
@@ -161,6 +186,7 @@ fun RestaurantDetailsScreen(
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
     var reviewsWithUser by remember { mutableStateOf(emptyList<ReviewWithUser>()) }
     var selectedTabIndex by remember { mutableStateOf(0) }
+    var photos by remember { mutableStateOf(emptyList<PictureDto>()) }
     val tabs = listOf("Photos", "Reviews")
 
 
@@ -179,6 +205,10 @@ fun RestaurantDetailsScreen(
     LaunchedEffect(restaurantId, selectedTabIndex) {
         if (selectedTabIndex == 1) {
             reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
+        }
+
+        if (selectedTabIndex == 0) {
+            photos = fetchPhotos(context, restaurantId)
         }
     }
 
@@ -202,11 +232,7 @@ fun RestaurantDetailsScreen(
 
 
 
-    val showBackButton by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex == 0
-        }
-    }
+
 
 
     Scaffold(
@@ -273,18 +299,11 @@ fun RestaurantDetailsScreen(
                 state = listState
             ) {
 
-//                item {
-//                    Column(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(top = 240.dp)
-//                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-//                            .background(Color.White)
-//                    )
-//                }
 
                 //Info panel
                 item {
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -393,7 +412,25 @@ fun RestaurantDetailsScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier
+                                .align(Alignment.TopStart) // Pozycjonujemy go na górze tego Boxa
+                                .padding(16.dp) // Odstęp od krawędzi
+                                .padding(top = 40.dp) // Dodatkowy odstęp, aby nie był za wysoko względem zdjęcia
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(RSRed)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White,
+                            )
+                        }
+                    }
                 }
+
 
                 // Sticky Header
                 stickyHeader {
@@ -445,7 +482,7 @@ fun RestaurantDetailsScreen(
                         when (selectedTabIndex) {
 
                             // TODO: Aktualizuj wywołania do używania zaktualizowanych DTOs
-                            0 -> Text("Photos tab (Not implemented)")
+                            0 -> PhotosTabContent(photos = photos)
                             1 -> ReviewsTabContent(reviewsWithUser = reviewsWithUser)
 
                         }
@@ -453,30 +490,7 @@ fun RestaurantDetailsScreen(
                 }
 
             }
-            AnimatedVisibility(
-                visible = showBackButton,
-                enter = fadeIn(),
-                exit = fadeOut(),
-                modifier = Modifier.align(Alignment.TopStart)
-            )
-            {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(RSRed)
 
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White,
-                    )
-                }
-            }
 
         }
     }
@@ -510,6 +524,61 @@ fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
                         review.createdAt?.let {
                             Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PhotosTabContent(photos: List<PictureDto>) {
+    if (photos.isEmpty()) {
+        Text("No photos available.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+    } else {
+        Column(modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)) {
+            // Dzielimy listę zdjęć na pary, aby wyświetlić je w dwóch kolumnach
+            photos.chunked(2).forEach { rowPhotos ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowPhotos.forEach { photo ->
+                        val url = photo.url
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f), // Kwadratowe zdjęcia
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            if (url != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(url)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = photo.description ?: "Restaurant photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize(),
+                                    placeholder = painterResource(id = R.drawable.food_placeholder),
+                                    error = painterResource(id = R.drawable.food_placeholder)
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.food_placeholder),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                    // If there is odd number od photos we add placeholder
+                    if (rowPhotos.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
