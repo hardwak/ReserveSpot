@@ -1,8 +1,18 @@
 package com.pwr_zpi.reservespotapp
 
+import android.webkit.MimeTypeMap
+import java.io.File
+import java.io.FileOutputStream
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -34,8 +44,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
@@ -201,6 +213,26 @@ suspend fun fetchPhotos(context: Context, restaurantId: Long): List<PictureDto> 
     }
 }
 
+suspend fun uploadImageToBackend(context: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+        val imagePart = prepareImagePart(context, uri) ?: return@withContext null
+
+        val response = RetrofitClient.picturesApi.uploadPicture("Bearer $token", imagePart)
+
+        if (response.isSuccessful) {
+            // Zwracamy URL utworzonego zdjęcia
+            response.body()?.url
+        } else {
+            Log.e("Upload", "Upload failed: ${response.code()}")
+            null
+        }
+    } catch (e: Exception) {
+        Log.e("Upload", "Upload exception", e)
+        null
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailsScreen(
@@ -268,7 +300,7 @@ fun RestaurantDetailsScreen(
         }
     }
 
-    // Obsługa formularza
+
     if (isReviewDialogVisible) {
         AddEditReviewDialog(
             restaurantId = restaurantId,
@@ -604,42 +636,6 @@ fun RestaurantDetailsScreen(
 
 
 
-
-//@Composable
-//fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
-//    if (reviewsWithUser.isEmpty()) {
-//        Text("No reviews for this restaurant.", color = Color.Gray, modifier = Modifier.padding(16.dp))
-//    } else {
-//        Column(modifier = Modifier.padding(top = 8.dp)) {
-//            reviewsWithUser.forEach { item ->
-//                val review = item.review
-//                Card(
-//                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
-//                    colors = CardDefaults.cardColors(containerColor = Color.White)
-//                ) {
-//                    Column(Modifier.padding(16.dp)) {
-//                        Row(verticalAlignment = Alignment.CenterVertically) {
-//                            Text(item.userName, fontWeight = FontWeight.Bold)
-//                            Spacer(Modifier.width(8.dp))
-//
-//                            // Rating
-//                            review.rating?.let { rating ->
-//                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
-//                                Text(" ${rating}/5", color = Color.Gray)
-//                            }
-//                        }
-//                        Text(review.comment ?: "No comment.", modifier = Modifier.padding(top = 4.dp))
-//                        review.createdAt?.let {
-//                            Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray)
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-
-
 @Composable
 fun ReviewsTabContent(
     reviewsWithUser: List<ReviewWithUser>,
@@ -740,7 +736,7 @@ fun StarRatingBar(
 @Composable
 fun AddEditReviewDialog(
     restaurantId: Long,
-    existingReview: ReviewDto?, // Jeśli null -> dodawanie, jeśli nie null -> edycja
+    existingReview: ReviewDto?,  //if null we add, not null we edit
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
 ) {
@@ -750,8 +746,20 @@ fun AddEditReviewDialog(
     // Stany formularza
     var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
     var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var picUrl by remember { mutableStateOf(existingReview?.pic ?: "") }
+    var existingPicUrl by remember { mutableStateOf(existingReview?.pic) }
     var isSubmitting by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                selectedImageUri = uri
+                existingPicUrl = null
+            }
+        }
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -771,15 +779,64 @@ fun AddEditReviewDialog(
                     maxLines = 4
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = picUrl,
-                    onValueChange = { picUrl = it },
-                    label = { Text("Image URL (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                // Przycisk dodawania/zmiany zdjęcia
+                Button(
+                    onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray, contentColor = Color.Black),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = "Select Photo from Gallery")
+                }
+
+                // Podgląd wybranego zdjęcia (lokalne URI lub zdalne URL)
+                if (selectedImageUri != null) {
+                    // Nowe zdjęcie z galerii
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Selected Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        // Przycisk usuwania zdjęcia
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier.align(Alignment.TopEnd).background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove photo", tint = Color.Red)
+                        }
+                    }
+                } else if (!existingPicUrl.isNullOrBlank()) {
+                    // Istniejące zdjęcie z backendu (przy edycji)
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context).data(existingPicUrl).build(),
+                            contentDescription = "Existing Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = { existingPicUrl = null },
+                            modifier = Modifier.align(Alignment.TopEnd).background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove photo", tint = Color.Red)
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -789,21 +846,36 @@ fun AddEditReviewDialog(
                     scope.launch(Dispatchers.IO) {
                         val token = DataStoreManager(context).getBackendToken()
                         if (token != null) {
+                            var finalPicUrl: String? = existingPicUrl
+
+                            // 1. Jeśli wybrano nowe zdjęcie, najpierw je wyślij
+                            if (selectedImageUri != null) {
+                                val uploadedUrl = uploadImageToBackend(context, selectedImageUri!!)
+                                if (uploadedUrl != null) {
+                                    finalPicUrl = uploadedUrl
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Failed to upload image", Toast.LENGTH_SHORT).show()
+                                        isSubmitting = false
+                                    }
+                                    return@launch
+                                }
+                            }
+
+                            // 2. Wyślij recenzję z URL-em zdjęcia
                             val response = if (existingReview == null) {
-                                // TWORZENIE
                                 val createDto = CreateReviewDto(
                                     restaurantId = restaurantId,
                                     rating = rating,
                                     comment = comment,
-                                    pic = picUrl.ifBlank { null }
+                                    pic = finalPicUrl // Tutaj trafia URL z backendu
                                 )
                                 RetrofitClient.reviewsApi.createReview("Bearer $token", createDto)
                             } else {
-                                // EDYCJA
                                 val updateDto = UpdateReviewDto(
                                     rating = rating,
                                     comment = comment,
-                                    pic = picUrl.ifBlank { null }
+                                    pic = finalPicUrl
                                 )
                                 RetrofitClient.reviewsApi.updateReview("Bearer $token", existingReview.id!!, updateDto)
                             }
@@ -836,7 +908,6 @@ fun AddEditReviewDialog(
         }
     )
 }
-
 @Composable
 fun PhotosTabContent(photos: List<PictureDto>) {
     if (photos.isEmpty()) {
@@ -889,5 +960,33 @@ fun PhotosTabContent(photos: List<PictureDto>) {
                 }
             }
         }
+    }
+}
+
+fun prepareImagePart(context: Context, uri: Uri): MultipartBody.Part? {
+    return try {
+        val contentResolver = context.contentResolver
+        // Pobieramy typ pliku (np. jpeg, png)
+        val type = contentResolver.getType(uri)
+        val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(type)
+
+        // Tworzymy plik tymczasowy w cache aplikacji
+        val file = File(context.cacheDir, "upload_image.$extension")
+
+        // Kopiujemy dane ze strumienia do pliku
+        contentResolver.openInputStream(uri)?.use { inputStream ->
+            FileOutputStream(file).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+
+        // Tworzymy RequestBody
+        val requestFile = file.asRequestBody(type?.toMediaTypeOrNull())
+
+        // Tworzymy MultipartBody.Part ("file" musi pasować do @RequestParam("file") w Springu)
+        MultipartBody.Part.createFormData("file", file.name, requestFile)
+    } catch (e: Exception) {
+        Log.e("Upload", "Error preparing image", e)
+        null
     }
 }

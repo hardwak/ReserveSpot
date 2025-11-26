@@ -16,6 +16,10 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
 import retrofit2.http.PUT
 import java.time.format.DateTimeFormatter
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 
 data class GoogleTokenRequest(
     val googleToken: String
@@ -224,10 +228,10 @@ interface RestaurantApi {
 
 interface ReviewsApi {
 
-    @GET("/api/reviews")
+    @GET("/api/reviews/restaurant/{restaurantId}")
     suspend fun getReviews(
         @Header("Authorization") token: String,
-        @Query("restaurantId") restaurantId: Long
+        @Path("restaurantId") restaurantId: Long
     ): Response<List<ReviewDto>>
 
     @GET("/api/reviews/can-create")
@@ -276,7 +280,16 @@ interface PicturesApi {
         @Header("Authorization") token: String,
         @Query("restaurantId") restaurantId: Long
     ): Response<List<PictureDto>>
+
+    @Multipart
+    @POST("/api/pictures/file")
+    suspend fun uploadPicture(
+        @Header("Authorization") token: String,
+        @Part file: MultipartBody.Part,
+        @Part("description") description: RequestBody? = null
+    ): Response<PictureDto>
 }
+
 
 //Restaurant and owners DTOs
 
