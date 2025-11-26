@@ -14,6 +14,7 @@ import java.time.LocalDateTime
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
+import retrofit2.http.PUT
 import java.time.format.DateTimeFormatter
 
 data class GoogleTokenRequest(
@@ -142,6 +143,27 @@ data class PictureDto(
     val reviewIds: Set<Long> = emptySet()
 )
 
+data class CreateReviewDto(
+    val restaurantId: Long,
+    val reservationId: Long? = null,
+    val phoneNumber: String? = null,
+    val rating: Int,
+    val comment: String?,
+    val pic: String?
+)
+
+data class UpdateReviewDto(
+    val phoneNumber: String? = null,
+    val rating: Int,
+    val comment: String?,
+    val pic: String?
+)
+
+data class ReviewEligibilityResponse(
+    val canReview: Boolean,
+    val message: String?
+)
+
 
 interface AuthApi {
     @POST("/api/auth/google")
@@ -207,7 +229,38 @@ interface ReviewsApi {
         @Header("Authorization") token: String,
         @Query("restaurantId") restaurantId: Long
     ): Response<List<ReviewDto>>
+
+    @GET("/api/reviews/can-create")
+    suspend fun checkEligibility(
+        @Header("Authorization") token: String,
+        @Query("restaurantId") restaurantId: Long
+    ): Response<ReviewEligibilityResponse>
+
+    @GET("/api/reviews/me")
+    suspend fun getMyReviews(
+        @Header("Authorization") token: String
+    ): Response<List<ReviewDto>>
+
+    @POST("/api/reviews")
+    suspend fun createReview(
+        @Header("Authorization") token: String,
+        @Body review: CreateReviewDto
+    ): Response<ReviewDto>
+
+    @PUT("/api/reviews/{id}")
+    suspend fun updateReview(
+        @Header("Authorization") token: String,
+        @Path("id") reviewId: Long,
+        @Body review: UpdateReviewDto
+    ): Response<ReviewDto>
+
+    @DELETE("/api/reviews/{id}")
+    suspend fun deleteReview(
+        @Header("Authorization") token: String,
+        @Path("id") reviewId: Long
+    ): Response<Unit>
 }
+
 
 interface UserApi {
     @GET("/api/users/{id}")

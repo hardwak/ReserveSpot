@@ -2,11 +2,14 @@ package com.pwr_zpi.reservespotapp
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,21 +33,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +84,7 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.launch
 
 sealed class LoadState {
     object Loading : LoadState()
@@ -106,6 +118,21 @@ suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadSt
     } catch (e: Exception) {
         Log.e("Details", "Error fetching details", e)
         LoadState.Error("Error connecting with server or parsing data.")
+    }
+}
+
+suspend fun fetchMyReviewForRestaurant(context: Context, restaurantId: Long): ReviewDto? = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+        val response = RetrofitClient.reviewsApi.getMyReviews("Bearer $token")
+        if (response.isSuccessful) {
+            // Searching for review id matching restaurant id
+            response.body()?.find { it.restaurantId == restaurantId }
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        null
     }
 }
 
@@ -181,21 +208,25 @@ fun RestaurantDetailsScreen(
     restaurantId: Long,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
 
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
     var reviewsWithUser by remember { mutableStateOf(emptyList<ReviewWithUser>()) }
-    var selectedTabIndex by remember { mutableStateOf(0) }
     var photos by remember { mutableStateOf(emptyList<PictureDto>()) }
+    var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Photos", "Reviews")
+
+
+    var myReview by remember { mutableStateOf<ReviewDto?>(null) } // Czy użytkownik już dodał opinię?
+    var isReviewDialogVisible by remember { mutableStateOf(false) }
 
 
     var showOccupancySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
-
-
     val listState = rememberLazyListState()
+
+
 
     LaunchedEffect(restaurantId) {
         uiState = LoadState.Loading
@@ -209,6 +240,63 @@ fun RestaurantDetailsScreen(
 
         if (selectedTabIndex == 0) {
             photos = fetchPhotos(context, restaurantId)
+        }
+    }
+
+
+
+    fun refreshReviews() {
+        scope.launch {
+            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
+            myReview = fetchMyReviewForRestaurant(context, restaurantId)
+        }
+    }
+
+    LaunchedEffect(restaurantId) {
+        uiState = LoadState.Loading
+        uiState = fetchRestaurantDetails(context, restaurantId)
+        // Pobierz moją recenzję od razu, aby wiedzieć czy pokazać przycisk "Dodaj" czy "Edytuj"
+        myReview = fetchMyReviewForRestaurant(context, restaurantId)
+    }
+
+    LaunchedEffect(restaurantId, selectedTabIndex) {
+        if (selectedTabIndex == 1) {
+            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
+        }
+        if (selectedTabIndex == 0) {
+            photos = fetchPhotos(context, restaurantId)
+        }
+    }
+
+    // Obsługa formularza
+    if (isReviewDialogVisible) {
+        AddEditReviewDialog(
+            restaurantId = restaurantId,
+            existingReview = myReview,
+            onDismiss = { isReviewDialogVisible = false },
+            onSuccess = {
+                isReviewDialogVisible = false
+                refreshReviews()
+                Toast.makeText(context, "Success!", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    fun deleteMyReview() {
+        val reviewId = myReview?.id ?: return
+        scope.launch(Dispatchers.IO) {
+            val token = DataStoreManager(context).getBackendToken()
+            if (token != null) {
+                val response = RetrofitClient.reviewsApi.deleteReview("Bearer $token", reviewId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Review deleted", Toast.LENGTH_SHORT).show()
+                        refreshReviews()
+                    } else {
+                        Toast.makeText(context, "Failed to delete", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
@@ -229,10 +317,7 @@ fun RestaurantDetailsScreen(
     }
 
     val displayRating = detailsData.averageRating?.toFloat() ?: 0.0f
-
-
-
-
+    val showBackButton by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
 
 
     Scaffold(
@@ -252,7 +337,23 @@ fun RestaurantDetailsScreen(
                     color = Color.White
                 )
             }
+        },
+
+        floatingActionButton = {
+            // Floating Action Button widoczny tylko w zakładce Reviews
+            if (selectedTabIndex == 1) {
+                if (myReview == null) {
+                    FloatingActionButton(
+                        onClick = { isReviewDialogVisible = true },
+                        containerColor = RSRed,
+                        contentColor = Color.White
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Review")
+                    }
+                }
+            }
         }
+
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -483,7 +584,12 @@ fun RestaurantDetailsScreen(
 
                             // TODO: Aktualizuj wywołania do używania zaktualizowanych DTOs
                             0 -> PhotosTabContent(photos = photos)
-                            1 -> ReviewsTabContent(reviewsWithUser = reviewsWithUser)
+                            1 -> ReviewsTabContent(
+                                reviewsWithUser = reviewsWithUser,
+                                myReviewId = myReview?.id,
+                                onEditClick = { isReviewDialogVisible = true },
+                                onDeleteClick = { deleteMyReview() }
+                            )
 
                         }
                     }
@@ -497,38 +603,238 @@ fun RestaurantDetailsScreen(
 }
 
 
+
+
+//@Composable
+//fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
+//    if (reviewsWithUser.isEmpty()) {
+//        Text("No reviews for this restaurant.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+//    } else {
+//        Column(modifier = Modifier.padding(top = 8.dp)) {
+//            reviewsWithUser.forEach { item ->
+//                val review = item.review
+//                Card(
+//                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
+//                    colors = CardDefaults.cardColors(containerColor = Color.White)
+//                ) {
+//                    Column(Modifier.padding(16.dp)) {
+//                        Row(verticalAlignment = Alignment.CenterVertically) {
+//                            Text(item.userName, fontWeight = FontWeight.Bold)
+//                            Spacer(Modifier.width(8.dp))
+//
+//                            // Rating
+//                            review.rating?.let { rating ->
+//                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
+//                                Text(" ${rating}/5", color = Color.Gray)
+//                            }
+//                        }
+//                        Text(review.comment ?: "No comment.", modifier = Modifier.padding(top = 4.dp))
+//                        review.createdAt?.let {
+//                            Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+
+
 @Composable
-fun ReviewsTabContent(reviewsWithUser: List<ReviewWithUser>) {
+fun ReviewsTabContent(
+    reviewsWithUser: List<ReviewWithUser>,
+    myReviewId: Long?,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     if (reviewsWithUser.isEmpty()) {
         Text("No reviews for this restaurant.", color = Color.Gray, modifier = Modifier.padding(16.dp))
     } else {
         Column(modifier = Modifier.padding(top = 8.dp)) {
             reviewsWithUser.forEach { item ->
                 val review = item.review
+                val isMyReview = review.id == myReviewId
+
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp, horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = if(isMyReview) Color(0xFFFFF8F8) else Color.White),
+                    border = if (isMyReview) BorderStroke(1.dp, RSRed) else null
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(item.userName, fontWeight = FontWeight.Bold)
+                            Text(
+                                if(isMyReview) "You" else item.userName,
+                                fontWeight = FontWeight.Bold,
+                                color = if(isMyReview) RSRed else Color.Black
+                            )
                             Spacer(Modifier.width(8.dp))
 
-                            // Rating
                             review.rating?.let { rating ->
                                 Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
                                 Text(" ${rating}/5", color = Color.Gray)
                             }
+
+                            Spacer(Modifier.weight(1f))
+
+                            // Przyciski edycji/usuwania dla mojej recenzji
+                            if (isMyReview) {
+                                IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray)
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                                }
+                            }
                         }
+
                         Text(review.comment ?: "No comment.", modifier = Modifier.padding(top = 4.dp))
+
+                        // Wyświetlenie zdjęcia w opinii, jeśli istnieje
+                        if (!review.pic.isNullOrBlank()) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current).data(review.pic).crossfade(true).build(),
+                                contentDescription = "Review photo",
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .height(150.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
                         review.createdAt?.let {
-                            Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray)
+                            Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray, modifier = Modifier.padding(top = 8.dp))
                         }
                     }
                 }
             }
+            // Dodatkowy spacer na dole, aby FAB nie zasłaniał ostatniej recenzji
+            Spacer(Modifier.height(80.dp))
         }
     }
+}
+
+@Composable
+fun StarRatingBar(
+    rating: Int,
+    onRatingChanged: (Int) -> Unit
+) {
+    Row {
+        for (i in 1..5) {
+            Icon(
+                imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.Star,
+                contentDescription = null,
+                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable { onRatingChanged(i) }
+                    .padding(4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun AddEditReviewDialog(
+    restaurantId: Long,
+    existingReview: ReviewDto?, // Jeśli null -> dodawanie, jeśli nie null -> edycja
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Stany formularza
+    var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
+    var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
+    var picUrl by remember { mutableStateOf(existingReview?.pic ?: "") }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = if (existingReview == null) "Add Review" else "Edit Review") },
+        text = {
+            Column {
+                Text("Rating:")
+                StarRatingBar(rating = rating, onRatingChanged = { rating = it })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Comment") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 4
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = picUrl,
+                    onValueChange = { picUrl = it },
+                    label = { Text("Image URL (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    isSubmitting = true
+                    scope.launch(Dispatchers.IO) {
+                        val token = DataStoreManager(context).getBackendToken()
+                        if (token != null) {
+                            val response = if (existingReview == null) {
+                                // TWORZENIE
+                                val createDto = CreateReviewDto(
+                                    restaurantId = restaurantId,
+                                    rating = rating,
+                                    comment = comment,
+                                    pic = picUrl.ifBlank { null }
+                                )
+                                RetrofitClient.reviewsApi.createReview("Bearer $token", createDto)
+                            } else {
+                                // EDYCJA
+                                val updateDto = UpdateReviewDto(
+                                    rating = rating,
+                                    comment = comment,
+                                    pic = picUrl.ifBlank { null }
+                                )
+                                RetrofitClient.reviewsApi.updateReview("Bearer $token", existingReview.id!!, updateDto)
+                            }
+
+                            withContext(Dispatchers.Main) {
+                                isSubmitting = false
+                                if (response.isSuccessful) {
+                                    onSuccess()
+                                } else {
+                                    Toast.makeText(context, "Error: ${response.message()}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                },
+                enabled = !isSubmitting,
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                } else {
+                    Text(if (existingReview == null) "Submit" else "Update")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Gray)
+            }
+        }
+    )
 }
 
 @Composable
