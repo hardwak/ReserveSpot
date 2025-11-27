@@ -348,7 +348,7 @@ public class DataFillerConfig {
                     .table(table3_2)
                     .reservationDatetime(now.plusDays(5).withHour(18).withMinute(30))
                     .durationMinutes(150)
-                    .status(ReservationStatus.PENDING)
+                    .status(ReservationStatus.CONFIRMED)
                     .build());
 
             reservationRepository.save(Reservation.builder()
