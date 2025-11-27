@@ -22,6 +22,7 @@ import okhttp3.RequestBody
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import java.security.AuthProvider
 import java.util.concurrent.TimeUnit
@@ -230,7 +231,13 @@ data class AccountUserDto(
     val email: String?,
     val phoneNumber: String?,
     val role: String?,
+    val oauthProviderId: String?,
     val pictureId: Long?
+)
+
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String
 )
 
 
@@ -250,6 +257,11 @@ interface AuthApi {
     @POST("/api/auth/register")
     suspend fun restaurantRegister(@Body request: RestaurantRegisterRequest): Response<RegisterResponse>
 
+    @POST("/api/auth/change-password")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Body request: ChangePasswordRequest
+    ): Response<Unit>
 }
 
 
@@ -358,16 +370,17 @@ interface UserApi {
         @Path("id") userId: Long
     ): Response<UserSummaryDto>
 
-    @GET("/api/users/email/{email}")
-    suspend fun getUserByEmail(
-        @Header("Authorization") token: String,
-        @Path("email") email: String
-    ): Response<UserDto>
-    @PUT("/api/users/me")
+    @GET("/api/users/me")
+    suspend fun getMyDetails(
+        @Header("Authorization") token: String
+    ): Response<AccountUserDto>
+
+    @PUT("users/me")
     suspend fun updateProfile(
         @Header("Authorization") token: String,
-        @Body body: UpdateProfileDto
-    ): Response<UserDto>
+        @Body updateDto: UpdateProfileDto
+    ): Response<ResponseBody>
+
 }
 
 interface PicturesApi {

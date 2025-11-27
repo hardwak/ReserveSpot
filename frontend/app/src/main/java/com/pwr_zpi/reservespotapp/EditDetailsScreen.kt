@@ -78,35 +78,36 @@ fun EditDetailsScreen(navController: NavHostController) {
         return phone.length >= 9
     }
 
-    // --- POBIERANIE DANYCH ---
     LaunchedEffect(Unit) {
         val token = dataStore.getBackendToken()
         if (token != null) {
             try {
-                // 1. Dekodujemy email z tokena (funkcja pomocnicza na dole pliku)
-                val emailFromToken = getEmailFromTokenForEdit(token)
+                // ZAMIAST kombinować z e-mailem, używamy gotowego endpointu /me
+                // To naprawia błąd 'Unresolved reference: getUserByEmail'
+                val response = RetrofitClient.userApi.getMyDetails("Bearer $token")
 
-                if (emailFromToken != null) {
-                    // 2. Pobieramy dane używając endpointu /email/{email}
-                    val response = RetrofitClient.userApi.getUserByEmail("Bearer $token", emailFromToken)
+                if (response.isSuccessful) {
+                    val user = response.body()
+                    if (user != null) {
+                        // Tutaj 'user' to Twój AccountUserDto, więc pola .name i .email będą działać
 
-                    if (response.isSuccessful) {
-                        val user = response.body()
-                        if (user != null) {
-                            // Rozdzielamy "Imie Nazwisko" na dwa pola
-                            val fullName = user.name ?: ""
-                            val parts = fullName.trim().split(" ", limit = 2)
+                        // Rozdzielamy "Imie Nazwisko" na dwa pola
+                        val fullName = user.name ?: ""
+                        val parts = fullName.trim().split(" ", limit = 2)
 
-                            name = parts.getOrElse(0) { "" }
-                            surname = parts.getOrElse(1) { "" }
-                            email = user.email ?: ""
-                            phone = user.phoneNumber ?: ""
-                        }
-                    } else {
-                        Log.e("EditDetails", "Error fetching user: ${response.code()}")
+                        name = parts.getOrElse(0) { "" }
+                        surname = parts.getOrElse(1) { "" }
+
+                        // Przypisanie emaila i telefonu
+                        email = user.email ?: ""
+
+                        // Jeśli w DTO nie masz pola 'phoneNumber', sprawdź jak się ono nazywa
+                        // w AccountUserDto. Często backend zwraca to jako 'phoneNumber' lub po prostu 'phone'.
+                        // Zakładam, że w AccountUserDto masz pole phoneNumber:
+                        phone = user.phoneNumber ?: ""
                     }
                 } else {
-                    Log.e("EditDetails", "Could not extract email from token")
+                    Log.e("EditDetails", "Error fetching user: ${response.code()}")
                 }
             } catch (e: Exception) {
                 Log.e("EditDetails", "Exception", e)
@@ -228,7 +229,7 @@ fun EditDetailsScreen(navController: NavHostController) {
                                     )
 
                                     try {
-                                        // Tutaj używamy PUT /api/users/me (który masz na backendzie)
+
                                         val response = RetrofitClient.userApi.updateProfile("Bearer $token", updateDto)
 
                                         if (response.isSuccessful) {

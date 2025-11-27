@@ -112,7 +112,6 @@ suspend fun fetchRestaurantsAi(
                 return@withContext emptyList()
             }
 
-            // Tworzymy obiekt requestu
             val request = AiSearchRequest(query = query)
 
             val response = RetrofitClient.restaurantApi.searchRestaurantsAi(
@@ -186,7 +185,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     var availableCities by remember { mutableStateOf<List<String>>(emptyList()) }
     var isFiltersLoading by remember { mutableStateOf(true) }
 
-    // Stan do blokowania standardowego wyszukiwania, gdy używamy AI
+
     var isAiSearchActive by remember { mutableStateOf(false) }
 
 //    filter states
@@ -256,21 +255,21 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
         println("Gemini Search initiated with prompt: $prompt")
 
-        // Ustawiamy flagę, aby standardowy LaunchedEffect nie nadpisał wyników
+
         isAiSearchActive = true
         isGeminiSearchVisible = false
         isLoading = true
 
-        // Czyścimy pole
+
         geminiPrompt = TextFieldValue("")
-        // Opcjonalnie czyścimy standardowy pasek wyszukiwania
+
         searchQuery = TextFieldValue("")
 
         scope.launch {
-            // Wywołujemy backend
+
             val aiResults = fetchRestaurantsAi(context, prompt)
 
-            // Aktualizujemy listę restauracji
+
             restaurants = aiResults
             isLoading = false
         }
@@ -298,7 +297,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     value = searchQuery,
                     onValueChange = {
                         searchQuery = it
-                        // Jeśli użytkownik zaczyna pisać tutaj, wyłączamy tryb wyników AI
+
                         if (it.text.isNotEmpty()) isAiSearchActive = false
                     },
                     label = { Text("Search restaurants") },

@@ -1,10 +1,10 @@
 package com.pwr_zpi.reservespotapp
 
 import android.content.Context
-import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -25,66 +25,31 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
-// --- FUNKCJA POMOCNICZA DO DEKODOWANIA TOKENA ---
-fun getEmailFromToken(token: String): String? {
-    try {
-        // Token JWT składa się z 3 części oddzielonych kropkami. Druga część to Payload (dane).
-        val parts = token.split(".")
-        if (parts.size < 2) return null
 
-        // Dekodujemy Base64
-        val payload = String(Base64.decode(parts[1], Base64.URL_SAFE))
-        val jsonObject = JSONObject(payload)
-
-        // Próbujemy wyciągnąć email. W Spring Security zazwyczaj jest to "sub" (subject)
-        // Ale czasem może być też w polu "email". Sprawdzamy oba.
-        return if (jsonObject.has("sub")) {
-            jsonObject.getString("sub")
-        } else if (jsonObject.has("email")) {
-            jsonObject.getString("email")
-        } else {
-            null
-        }
-    } catch (e: Exception) {
-        Log.e("JWT_DECODE", "Błąd dekodowania tokena", e)
-        return null
-    }
-}
-
-// --- ZAKTUALIZOWANA FUNKCJA POBIERANIA DANYCH ---
 suspend fun fetchMyAccountDetails(context: Context): AccountUserDto? = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken()
         if (token == null) {
-            Log.e("Account", "Brak tokena!")
+            Log.e("Account", "Brak tokena w DataStore!")
             return@withContext null
         }
 
-        // 1. Wyciągamy email z tokena
-        val email = getEmailFromToken(token)
-        Log.d("Account", "Zdekodowany email z tokena: $email")
 
-        if (email == null) {
-            Log.e("Account", "Nie udało się wyciągnąć maila z tokena.")
-            return@withContext null
-        }
-
-        // 2. Pobieramy dane używając endpointu /email/{email}
-        val response = RetrofitClient.userApi.getUserByEmail("Bearer $token", email)
+        val response = RetrofitClient.userApi.getMyDetails("Bearer $token")
 
         if (response.isSuccessful) {
             response.body()
         } else {
             Log.e("Account", "Błąd API: Kod ${response.code()} - ${response.message()}")
+
             Log.e("Account", "Treść błędu: ${response.errorBody()?.string()}")
             null
         }
     } catch (e: Exception) {
-        Log.e("Account", "Wyjątek sieciowy", e)
+        Log.e("Account", "Wyjątek podczas pobierania danych konta", e)
         null
-    } as Nothing?
+    }
 }
 
 @Composable
@@ -93,11 +58,11 @@ fun AccountScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     val dataStore = DataStoreManager(context)
 
-    // Stan danych użytkownika
+
     var userData by remember { mutableStateOf<AccountUserDto?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Pobieranie danych przy starcie
+
     LaunchedEffect(Unit) {
         isLoading = true
         val user = fetchMyAccountDetails(context)
@@ -115,10 +80,17 @@ fun AccountScreen(navController: NavHostController) {
     ) {
 
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator(color = RSRed)
             }
         } else {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -133,14 +105,15 @@ fun AccountScreen(navController: NavHostController) {
                 )
                 Spacer(Modifier.width(16.dp))
                 Column {
-                    // Wyświetlamy dane pobrane z backendu
+
                     Text(
                         text = "Hi, ${userData?.name ?: "User"}!",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
+
                     Text(
-                        text = userData?.email ?: "Welcome back!",
+                        text = userData?.email ?: "",
                         fontSize = 16.sp,
                         color = Color.Gray
                     )
@@ -149,6 +122,7 @@ fun AccountScreen(navController: NavHostController) {
         }
 
         Spacer(Modifier.height(24.dp))
+
 
         AccountOptionRow(
             icon = Icons.Default.AccountCircle,
@@ -160,11 +134,12 @@ fun AccountScreen(navController: NavHostController) {
 
         AccountOptionRow(
             icon = Icons.Default.Settings,
-            text = "Settings",
-            onClick = { navController.navigate("settings") }
+            text = "Change Password",
+            onClick = { navController.navigate("changePassword") }
         )
 
         Spacer(modifier = Modifier.weight(1f))
+
 
         OutlinedButton(
             onClick = {
