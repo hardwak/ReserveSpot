@@ -309,6 +309,20 @@ interface PicturesApi {
     ): Response<PictureDto>
 }
 
+interface AiAnalysisApi {
+    @GET("/api/ai-analysis/restaurant/{restaurantId}")
+    suspend fun getAnalysis(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<AiAnalysisDto>
+
+    @POST("/api/ai-analysis/generate/restaurant/{restaurantId}")
+    suspend fun generateAnalysis(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<AiAnalysisDto>
+}
+
 
 //Restaurant and owners DTOs
 
@@ -392,7 +406,6 @@ object RetrofitClient {
 
     private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
         JsonDeserializer { json, _, _ ->
-            // Backend prawdopodobnie używa standardu ISO, np. "2025-11-24T22:30:00"
             LocalDateTime.parse(json.asString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         }
 
@@ -430,5 +443,9 @@ object RetrofitClient {
 
     val picturesApi: PicturesApi by lazy {
         retrofit.create(PicturesApi::class.java)
+    }
+
+    val aiAnalysisApi: AiAnalysisApi by lazy {
+        retrofit.create(AiAnalysisApi::class.java)
     }
 }
