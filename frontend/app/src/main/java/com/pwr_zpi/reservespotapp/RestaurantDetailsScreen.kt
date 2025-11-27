@@ -108,16 +108,13 @@ sealed class LoadState {
 suspend fun checkReviewEligibility(context: Context, restaurantId: Long): Boolean = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
-        // Zapytanie do backendu: Czy mogę dodać opinię?
         val response = RetrofitClient.reviewsApi.checkEligibility("Bearer $token", restaurantId)
         if (response.isSuccessful) {
-            // Backend zwraca true tylko jeśli była rezerwacja
             response.body()?.canReview ?: false
         } else {
             false
         }
     } catch (e: Exception) {
-        Log.e("Eligibility", "Error checking eligibility", e)
         false
     }
 }
@@ -126,27 +123,18 @@ suspend fun checkReviewEligibility(context: Context, restaurantId: Long): Boolea
 suspend fun fetchRestaurantDetails(context: Context, restaurantId: Long): LoadState = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken()
-
         if (token.isNullOrBlank()) {
             return@withContext LoadState.Error("Authorization error: No token")
         }
-
         val response = RetrofitClient.restaurantApi.getRestaurantDetails("Bearer $token", restaurantId)
-
         if (response.isSuccessful) {
             val dto = response.body()
-            if (dto != null) {
-                LoadState.Success(dto)
-            } else {
-                LoadState.Error("Empty data from server.")
-            }
+            if (dto != null) LoadState.Success(dto) else LoadState.Error("Empty data from server.")
         } else {
-            Log.e("Details", "Server error: ${response.code()} - ${response.message()}")
             LoadState.Error("Server error: ${response.code()}")
         }
     } catch (e: Exception) {
-        Log.e("Details", "Error fetching details", e)
-        LoadState.Error("Error connecting with server or parsing data.")
+        LoadState.Error("Error connecting with server.")
     }
 }
 
@@ -155,7 +143,6 @@ suspend fun fetchMyReviewForRestaurant(context: Context, restaurantId: Long): Re
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
         val response = RetrofitClient.reviewsApi.getMyReviews("Bearer $token")
         if (response.isSuccessful) {
-            // Searching for review id matching restaurant id
             response.body()?.find { it.restaurantId == restaurantId }
         } else {
             null
@@ -164,17 +151,12 @@ suspend fun fetchMyReviewForRestaurant(context: Context, restaurantId: Long): Re
         null
     }
 }
-
 suspend fun fetchReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-
-
         val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
-
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
     } catch (e: Exception) {
-        Log.e("Details", "Error fetching reviews: ${e.message}")
         emptyList()
     }
 }
@@ -185,7 +167,6 @@ suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): Lis
 
     if (reviews.isEmpty()) return@withContext emptyList()
 
-
     reviews.map { review ->
         val userName = if (review.userId != null) {
             try {
@@ -193,11 +174,10 @@ suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): Lis
                 if (userResponse.isSuccessful) {
                     userResponse.body()?.name ?: "User #${review.userId}"
                 } else {
-                    "Anonymous user (Error ${userResponse.code()})"
+                    "Anonymous"
                 }
             } catch (e: Exception) {
-                Log.e("Details", "Error downloading users name: ${e.message}")
-                "Anonymous user (Connection error)"
+                "User"
             }
         } else {
             "User"
@@ -206,26 +186,18 @@ suspend fun fetchReviewsWithUserNames(context: Context, restaurantId: Long): Lis
     }
 }
 
+
 suspend fun fetchPhotos(context: Context, restaurantId: Long): List<PictureDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-
         val response = RetrofitClient.picturesApi.getPictures("Bearer $token", restaurantId)
-
         if (response.isSuccessful) {
             val allPhotos = response.body() ?: emptyList()
-
-            val filteredPhotos = allPhotos.filter { picture ->
-                picture.restaurantIds.contains(restaurantId)
-            }
-
-            filteredPhotos
+            allPhotos.filter { it.restaurantIds.contains(restaurantId) }
         } else {
-            Log.e("Details", "Error fetching photos: ${response.code()} - ${response.message()}")
             emptyList()
         }
     } catch (e: Exception) {
-        Log.e("Details", "Exception fetching photos", e)
         emptyList()
     }
 }
@@ -234,16 +206,8 @@ suspend fun uploadImageToBackend(context: Context, uri: Uri): String? = withCont
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
         val imagePart = prepareImagePart(context, uri) ?: return@withContext null
-
         val response = RetrofitClient.picturesApi.uploadPicture("Bearer $token", imagePart)
-
-        if (response.isSuccessful) {
-            // Zwracamy URL utworzonego zdjęcia
-            response.body()?.url
-        } else {
-            Log.e("Upload", "Upload failed: ${response.code()}")
-            null
-        }
+        if (response.isSuccessful) response.body()?.url else null
     } catch (e: Exception) {
         Log.e("Upload", "Upload exception", e)
         null
@@ -268,7 +232,7 @@ fun RestaurantDetailsScreen(
 
 
     var myReview by remember { mutableStateOf<ReviewDto?>(null) }
-    var canCreateReview by remember { mutableStateOf(false) }
+    var canCreateReview by remember { mutableStateOf(false) } // Czy użytkownik może dodać opinię?
     var isReviewDialogVisible by remember { mutableStateOf(false) }
 
 
@@ -281,6 +245,8 @@ fun RestaurantDetailsScreen(
             reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
             myReview = fetchMyReviewForRestaurant(context, restaurantId)
             canCreateReview = checkReviewEligibility(context, restaurantId)
+            // Odświeżamy też zdjęcia, jeśli dodano nowe w recenzji
+            photos = fetchPhotos(context, restaurantId)
         }
     }
 
@@ -356,15 +322,11 @@ fun RestaurantDetailsScreen(
 
     val detailsData = when (uiState) {
         is LoadState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             return
         }
         is LoadState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Error: ${(uiState as LoadState.Error).message}", color = Color.Red)
-            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Error: ${(uiState as LoadState.Error).message}", color = Color.Red) }
             return
         }
         is LoadState.Success -> (uiState as LoadState.Success).data
@@ -372,7 +334,6 @@ fun RestaurantDetailsScreen(
 
     val displayRating = detailsData.averageRating?.toFloat() ?: 0.0f
     val showBackButton by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
-
 
     Scaffold(
         bottomBar = {
@@ -384,21 +345,14 @@ fun RestaurantDetailsScreen(
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Text(
-                    "BOOK NOW",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Text("BOOK NOW", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         },
-
         floatingActionButton = {
-            // Pokaż FAB tylko w zakładce opinii
             if (selectedTabIndex == 1) {
-                // Logika: Pokaż "+" TYLKO jeśli:
-                // 1. Nie mam jeszcze własnej opinii (myReview == null)
-                // 2. ORAZ mam prawo do jej wystawienia (canCreateReview == true) - czyli mam rezerwację
+                // LOGIKA: Pokaż "+" tylko jeśli:
+                // 1. Nie mam jeszcze opinii.
+                // 2. Mam prawo do wystawienia (rezerwacja zakończona).
                 if (myReview == null && canCreateReview) {
                     FloatingActionButton(
                         onClick = { isReviewDialogVisible = true },
@@ -417,7 +371,7 @@ fun RestaurantDetailsScreen(
                 .padding(paddingValues)
                 .offset(y = (-40).dp)
         ) {
-            // Zdjęcie główne
+            // Obrazek główny
             Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
                 val imageUrl = detailsData.pic
                 if (imageUrl.isNullOrBlank()) {
@@ -427,210 +381,73 @@ fun RestaurantDetailsScreen(
                 }
             }
 
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = listState
-            ) {
-
-
-                //Info panel
+            LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                // Info Panel
                 item {
-
                     Box(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 240.dp)
-                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                            .background(Color.White)
-                    ) {
-                        // Spacer under logo
-                        Spacer(modifier = Modifier.height(16.dp))
-
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalAlignment = Alignment.Start
+                                .padding(top = 240.dp)
+                                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                .background(Color.White)
                         ) {
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp)
-                                    .align(Alignment.CenterHorizontally),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = detailsData.name,
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.weight(1f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis // Add 3 dots if does not fit
-                                )
-
-                                Spacer(Modifier.width(8.dp))
-
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                    Icon(
-                                        imageVector = Icons.Default.Star,
-                                        contentDescription = "Rating",
-                                        tint = Color(0xFFFFC107),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        text = String.format("%.1f", displayRating),
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(start = 4.dp)
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = detailsData.address,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-
-                            Text(
-                                text = detailsData.description,
-                                color = Color.DarkGray,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "Opening hours:",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-
-                            val orderedDaysMap = listOf(
-                                "monday" to "Monday",
-                                "tuesday" to "Tuesday",
-                                "wednesday" to "Wednesday",
-                                "thursday" to "Thursday",
-                                "friday" to "Friday",
-                                "saturday" to "Saturday",
-                                "sunday" to "Sunday"
-                            )
-
-                            Column(modifier = Modifier.padding(start = 4.dp)) {
-                                orderedDaysMap.forEach { (backendKey, englishName) ->
-
-
-                                    val hours = detailsData.openingHours[backendKey] ?: "Closed"
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = englishName,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.DarkGray
-                                        )
-                                        Text(
-                                            text = hours,
-                                            color = Color.Gray,
-                                            fontWeight = FontWeight.Normal
-                                        )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.Start) {
+                                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp).align(Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = detailsData.name, fontSize = 32.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.width(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(imageVector = Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(24.dp))
+                                        Text(text = String.format("%.1f", displayRating), fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
                                     }
                                 }
+                                Text(text = detailsData.address, color = Color.Gray, modifier = Modifier.padding(vertical = 4.dp))
+                                Text(text = detailsData.description, color = Color.DarkGray, modifier = Modifier.padding(bottom = 8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Opening hours:", fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+                                val orderedDaysMap = listOf("monday" to "Monday", "tuesday" to "Tuesday", "wednesday" to "Wednesday", "thursday" to "Thursday", "friday" to "Friday", "saturday" to "Saturday", "sunday" to "Sunday")
+                                Column(modifier = Modifier.padding(start = 4.dp)) {
+                                    orderedDaysMap.forEach { (backendKey, englishName) ->
+                                        val hours = detailsData.openingHours[backendKey] ?: "Closed"
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(text = englishName, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+                                            Text(text = hours, color = Color.Gray, fontWeight = FontWeight.Normal)
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                    }
-                        IconButton(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier
-                                .align(Alignment.TopStart) // Pozycjonujemy go na górze tego Boxa
-                                .padding(16.dp) // Odstęp od krawędzi
-                                .padding(top = 40.dp) // Dodatkowy odstęp, aby nie był za wysoko względem zdjęcia
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(RSRed)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White,
-                            )
+                        // Przycisk wstecz - wewnątrz LazyColumn, aby znikał przy przewijaniu
+                        IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.align(Alignment.TopStart).padding(16.dp).padding(top = 40.dp).size(48.dp).clip(CircleShape).background(RSRed)) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                     }
                 }
 
-
-                // Sticky Header
                 stickyHeader {
-                    TabRow(
-                        selectedTabIndex = selectedTabIndex,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White),
-                        containerColor = Color.Transparent,
-
-                        indicator = { tabPositions ->
-                            TabRowDefaults.Indicator(
-                                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                color = RSRed
-                            )
-                        }
-                    ) {
+                    TabRow(selectedTabIndex = selectedTabIndex, modifier = Modifier.fillMaxWidth().background(Color.White), containerColor = Color.Transparent, indicator = { tabPositions -> TabRowDefaults.Indicator(Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]), color = RSRed) }) {
                         tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index },
-                                text = {
-                                    Text(
-                                        title,
-                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                selectedContentColor = RSRed,
-                                unselectedContentColor = Color.Gray
-                            )
-
-
+                            Tab(selected = selectedTabIndex == index, onClick = { selectedTabIndex = index }, text = { Text(title, fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal) }, selectedContentColor = RSRed, unselectedContentColor = Color.Gray)
                         }
-
                     }
-
                 }
-
-
-
 
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 1.dp)
-                            .background(Color.White)
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().heightIn(min = 1.dp).background(Color.White)) {
                         when (selectedTabIndex) {
-
-
                             0 -> PhotosTabContent(photos = photos)
                             1 -> ReviewsTabContent(
                                 reviewsWithUser = reviewsWithUser,
-                                myReviewId = myReview?.id,
+                                myReviewId = myReview?.id, // ID MOJEJ recenzji
                                 onEditClick = { isReviewDialogVisible = true },
                                 onDeleteClick = { deleteMyReview() }
                             )
-
                         }
                     }
                 }
-
             }
-
-
         }
     }
 }
@@ -650,33 +467,90 @@ fun ReviewsTabContent(
         Column(modifier = Modifier.padding(top = 8.dp)) {
             reviewsWithUser.forEach { item ->
                 val review = item.review
+                // Sprawdzamy, czy to moja recenzja, porównując ID
                 val isMyReview = review.id == myReviewId
 
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp, horizontal = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = if(isMyReview) Color(0xFFFFF8F8) else Color.White),
                     border = if (isMyReview) BorderStroke(1.dp, RSRed) else null
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(if(isMyReview) "You" else item.userName, fontWeight = FontWeight.Bold, color = if(isMyReview) RSRed else Color.Black)
+                            Text(
+                                if(isMyReview) "You" else item.userName,
+                                fontWeight = FontWeight.Bold,
+                                color = if(isMyReview) RSRed else Color.Black
+                            )
                             Spacer(Modifier.width(8.dp))
+
                             review.rating?.let { rating ->
                                 Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
                                 Text(" ${rating}/5", color = Color.Gray)
                             }
+
                             Spacer(Modifier.weight(1f))
+
+                            // Przyciski edycji/usuwania widoczne TYLKO dla mojej recenzji (isMyReview == true)
                             if (isMyReview) {
-                                IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray) }
+                                IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray)
+                                }
                                 Spacer(Modifier.width(8.dp))
-                                IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red) }
+                                IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                                }
                             }
                         }
+
                         Text(review.comment ?: "No comment.", modifier = Modifier.padding(top = 4.dp))
+
+//                        if (!review.pic.isNullOrBlank()) {
+//                            AsyncImage(
+//                                model = ImageRequest.Builder(LocalContext.current).data(review.pic).crossfade(true).build(),
+//                                contentDescription = "Review photo",
+//                                modifier = Modifier
+//                                    .padding(top = 8.dp)
+//                                    .height(150.dp)
+//                                    .clip(RoundedCornerShape(8.dp)),
+//                                contentScale = ContentScale.Crop
+//                            )
+//                        }
+
                         if (!review.pic.isNullOrBlank()) {
-                            AsyncImage(model = ImageRequest.Builder(LocalContext.current).data(review.pic).crossfade(true).build(), contentDescription = "Review photo", modifier = Modifier.padding(top = 8.dp).height(150.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+                            // Sprawdzamy czy URL jest pełny, czy względny (zależy jak backend zapisuje)
+                            // Jeśli backend zwraca np. "/images/...", musimy dodać BASE_URL
+                            val finalImageUrl = if (review.pic.startsWith("http")) {
+                                review.pic
+                            } else {
+                                // UWAGA: Upewnij się, że ten adres jest poprawny dla Twojego emulatora
+                                "http://10.0.2.2:8080" + review.pic
+                            }
+
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(finalImageUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Review photo",
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .fillMaxWidth() // <--- WAŻNE: Rozciągnij zdjęcie na szerokość
+                                    .height(200.dp) // Zwiększyłem nieco wysokość dla lepszej widoczności
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.LightGray), // Tło, żeby widzieć obszar zdjęcia, jeśli się nie załaduje
+                                contentScale = ContentScale.Crop,
+                                // Dodajemy placeholdery, żeby widzieć stan ładowania/błędu
+                                placeholder = painterResource(id = R.drawable.loading_placeholder), // Upewnij się, że masz tę ikonę lub użyj food_placeholder
+                                error = painterResource(id = R.drawable.food_placeholder)
+                            )
                         }
-                        review.createdAt?.let { Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray, modifier = Modifier.padding(top = 8.dp)) }
+
+                        review.createdAt?.let {
+                            Text(it.toString().take(10), fontSize = 12.sp, color = Color.LightGray, modifier = Modifier.padding(top = 8.dp))
+                        }
                     }
                 }
             }
@@ -698,23 +572,23 @@ fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
         }
     }
 }
-
 @Composable
 fun AddEditReviewDialog(
     restaurantId: Long,
-    existingReview: ReviewDto?,  //if null we add, not null we edit
+    existingReview: ReviewDto?,
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Stany formularza
     var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
     var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
+    // Stan dla wybranego lokalnie zdjęcia
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var picUrl by remember { mutableStateOf(existingReview?.pic ?: "") }
+    // Stan dla istniejącego zdjęcia (przy edycji)
     var existingPicUrl by remember { mutableStateOf(existingReview?.pic) }
+
     var isSubmitting by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -722,7 +596,7 @@ fun AddEditReviewDialog(
         onResult = { uri ->
             if (uri != null) {
                 selectedImageUri = uri
-                existingPicUrl = null
+                existingPicUrl = null // Nowe zdjęcie zastępuje stare
             }
         }
     )
@@ -751,7 +625,6 @@ fun AddEditReviewDialog(
                     Text(text = "Select Photo from Gallery")
                 }
 
-                // Podgląd zdjęcia
                 if (selectedImageUri != null) {
                     Box(modifier = Modifier.padding(top = 8.dp)) {
                         AsyncImage(model = selectedImageUri, contentDescription = "Selected Image", modifier = Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
@@ -774,7 +647,6 @@ fun AddEditReviewDialog(
                         if (token != null) {
                             var finalPicUrl: String? = existingPicUrl
 
-                            // Upload nowego zdjęcia
                             if (selectedImageUri != null) {
                                 val uploadedUrl = uploadImageToBackend(context, selectedImageUri!!)
                                 if (uploadedUrl != null) {
@@ -847,24 +719,16 @@ fun PhotosTabContent(photos: List<PictureDto>) {
 fun prepareImagePart(context: Context, uri: Uri): MultipartBody.Part? {
     return try {
         val contentResolver = context.contentResolver
-        // Pobieramy typ pliku (np. jpeg, png)
         val type = contentResolver.getType(uri)
-        val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(type)
-
-        // Tworzymy plik tymczasowy w cache aplikacji
+        val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(type) ?: "jpg"
         val file = File(context.cacheDir, "upload_image.$extension")
 
-        // Kopiujemy dane ze strumienia do pliku
         contentResolver.openInputStream(uri)?.use { inputStream ->
             FileOutputStream(file).use { outputStream ->
                 inputStream.copyTo(outputStream)
             }
         }
-
-        // Tworzymy RequestBody
         val requestFile = file.asRequestBody(type?.toMediaTypeOrNull())
-
-        // Tworzymy MultipartBody.Part ("file" musi pasować do @RequestParam("file") w Springu)
         MultipartBody.Part.createFormData("file", file.name, requestFile)
     } catch (e: Exception) {
         Log.e("Upload", "Error preparing image", e)
