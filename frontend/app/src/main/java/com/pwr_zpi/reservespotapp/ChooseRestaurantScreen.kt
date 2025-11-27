@@ -98,6 +98,41 @@ suspend fun fetchRestaurants(
     }
 }
 
+suspend fun fetchRestaurantsAi(
+    context: Context,
+    query: String
+): List<RestaurantDto> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val dataStoreManager = DataStoreManager(context)
+            val token = dataStoreManager.getBackendToken()
+
+            if (token.isNullOrEmpty()) {
+                Log.e("fetchRestaurantsAi", "No authentication token found")
+                return@withContext emptyList()
+            }
+
+            // Tworzymy obiekt requestu
+            val request = AiSearchRequest(query = query)
+
+            val response = RetrofitClient.restaurantApi.searchRestaurantsAi(
+                "Bearer $token",
+                request
+            )
+
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                Log.e("fetchRestaurantsAi", "Error: ${response.code()} - ${response.message()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("fetchRestaurantsAi", "Exception while fetching restaurants via AI", e)
+            emptyList()
+        }
+    }
+}
+
 suspend fun fetchAvailableTags(context: Context): List<TagDto> {
     return withContext(Dispatchers.IO) {
         try {
@@ -118,14 +153,12 @@ suspend fun fetchAvailableCities(context: Context): List<String> {
             val dataStoreManager = DataStoreManager(context)
             val token = dataStoreManager.getBackendToken() ?: return@withContext emptyList()
 
-
             val response = RetrofitClient.restaurantApi.getAllRestaurants("Bearer $token")
 
             if (response.isSuccessful) {
-
                 response.body()
                     ?.map { it.city }
-                    ?.distinct()      // Distinct to prevent the duplication
+                    ?.distinct()
                     ?: emptyList()
             } else {
                 Log.e("fetchCities", "Error: ${response.code()} - ${response.message()}")
@@ -145,15 +178,16 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var isGeminiSearchVisible by remember { mutableStateOf(false) }
-    // field for putting prompt in it
     var geminiPrompt by remember { mutableStateOf(TextFieldValue("")) }
 
-
     var isLoading by remember { mutableStateOf(false) }
-    var restaurants by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) } // List of API results
-    var availableCuisines by remember { mutableStateOf<List<TagDto>>(emptyList()) } // Contains ID and names
-    var availableCities by remember { mutableStateOf<List<String>>(emptyList()) } // Contains city names
+    var restaurants by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) }
+    var availableCuisines by remember { mutableStateOf<List<TagDto>>(emptyList()) }
+    var availableCities by remember { mutableStateOf<List<String>>(emptyList()) }
     var isFiltersLoading by remember { mutableStateOf(true) }
+
+    // Stan do blokowania standardowego wyszukiwania, gdy używamy AI
+    var isAiSearchActive by remember { mutableStateOf(false) }
 
 //    filter states
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -182,38 +216,64 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         selectedCity,
         selectedCuisines,
         selectedRatingRange,
-        isFiltersLoading
+        isFiltersLoading,
+        isAiSearchActive
     ) {
         if (isFiltersLoading) return@LaunchedEffect
 
-        delay(300)
-        isLoading = true
+        if (isAiSearchActive && searchQuery.text.isEmpty()) {
 
-        // Mapowanie wybranych nazw kuchni na ich ID (konieczne dla API)
-        val selectedTagIds = availableCuisines
-            .filter { selectedCuisines.contains(it.name) }
-            .map { it.id }
-            .toSet()
+        }
 
+        if(searchQuery.text.isNotEmpty()) {
+            isAiSearchActive = false
+        }
 
-        val searchCriteria = RestaurantSearchDto(
-            query = searchQuery.text.ifBlank { null },
-            city = selectedCity,
-            tagIds = if (selectedTagIds.isEmpty()) null else selectedTagIds,
-            minRating = selectedRatingRange.start.toDouble(),
-            maxRating = selectedRatingRange.endInclusive.toDouble()
-        )
+        if(!isAiSearchActive) {
+            delay(300)
+            isLoading = true
 
-        restaurants = fetchRestaurants(context, searchCriteria)
-        isLoading = false
+            val selectedTagIds = availableCuisines
+                .filter { selectedCuisines.contains(it.name) }
+                .map { it.id }
+                .toSet()
+
+            val searchCriteria = RestaurantSearchDto(
+                query = searchQuery.text.ifBlank { null },
+                city = selectedCity,
+                tagIds = if (selectedTagIds.isEmpty()) null else selectedTagIds,
+                minRating = selectedRatingRange.start.toDouble(),
+                maxRating = selectedRatingRange.endInclusive.toDouble()
+            )
+
+            restaurants = fetchRestaurants(context, searchCriteria)
+            isLoading = false
+        }
     }
 
     fun searchWithGemini(prompt: String) {
+        if (prompt.isBlank()) return
+
         println("Gemini Search initiated with prompt: $prompt")
 
+        // Ustawiamy flagę, aby standardowy LaunchedEffect nie nadpisał wyników
+        isAiSearchActive = true
         isGeminiSearchVisible = false
-//      clearing field
+        isLoading = true
+
+        // Czyścimy pole
         geminiPrompt = TextFieldValue("")
+        // Opcjonalnie czyścimy standardowy pasek wyszukiwania
+        searchQuery = TextFieldValue("")
+
+        scope.launch {
+            // Wywołujemy backend
+            val aiResults = fetchRestaurantsAi(context, prompt)
+
+            // Aktualizujemy listę restauracji
+            restaurants = aiResults
+            isLoading = false
+        }
     }
 
     Scaffold(
@@ -224,8 +284,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp)
-
-
         ) {
             // Search bar
             Row(
@@ -238,7 +296,11 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    onValueChange = {
+                        searchQuery = it
+                        // Jeśli użytkownik zaczyna pisać tutaj, wyłączamy tryb wyników AI
+                        if (it.text.isNotEmpty()) isAiSearchActive = false
+                    },
                     label = { Text("Search restaurants") },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
@@ -250,9 +312,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     )
                 )
 
-
                 Spacer(modifier = Modifier.width(8.dp))
-
 
                 IconButton(
                     onClick = { showFilterSheet = true },
@@ -266,7 +326,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                         contentDescription = "Filters"
                     )
                 }
-
             }
 
             Button(
@@ -290,15 +349,11 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 Text(if (isGeminiSearchVisible) "Hide AI prompt" else "Search with Gemini AI")
             }
 
-
-
-
             if (isGeminiSearchVisible) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    // alignment of elements
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
@@ -324,7 +379,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                         colors = ButtonDefaults.buttonColors(
                             containerColor = RSRed
                         ),
-
                         modifier = Modifier.height(56.dp)
                     ) {
                         Text("Send")
@@ -341,10 +395,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 ) {
                     CircularProgressIndicator(color = RSRed)
                 }
-
                 return@Column
             }
-
 
             if (isLoading) {
                 Box(
@@ -367,14 +419,12 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             } else {
                 LazyColumn {
                     items(restaurants) { restaurant ->
-
                         RestaurantInfoCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(250.dp)
                                 .padding(vertical = 8.dp, horizontal = 4.dp)
                                 .clickable {
-
                                     val restaurantIdToNavigate = restaurant.id
                                     navController.navigate("restaurantDetails/$restaurantIdToNavigate")
                                 },
@@ -384,6 +434,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 }
             }
         }
+
+
 
 
         @OptIn(ExperimentalMaterial3Api::class)
@@ -509,26 +561,31 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 onDismissRequest = { showFilterSheet = false },
                 sheetState = sheetState
             ) {
-                // Passing states and functions to filters panel
                 FilterBottomSheetContent(
                     selectedCity = selectedCity,
                     selectedCuisines = selectedCuisines,
                     selectedRatingRange = selectedRatingRange,
-                    onCityChange = { selectedCity = it },
+                    onCityChange = {
+                        selectedCity = it
+                        isAiSearchActive = false // Zmiana filtra resetuje AI
+                    },
                     onCuisineToggle = { cuisine ->
-                        // Checkbox logic
                         selectedCuisines = if (selectedCuisines.contains(cuisine)) {
                             selectedCuisines - cuisine
                         } else {
                             selectedCuisines + cuisine
                         }
+                        isAiSearchActive = false
                     },
-                    onRatingChange = { selectedRatingRange = it },
-
+                    onRatingChange = {
+                        selectedRatingRange = it
+                        isAiSearchActive = false
+                    },
                     onResetFilters = {
                         selectedCity = "New York"
                         selectedCuisines = emptySet()
                         selectedRatingRange = 1.0f..5.0f
+                        isAiSearchActive = false
                     },
                     onApply = {
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -543,8 +600,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             }
         }
     }
-
-
 }
 
 

@@ -519,15 +519,50 @@ fun ReviewsTabContent(
 //                            )
 //                        }
 
+//                        if (!review.pic.isNullOrBlank()) {
+//                            // Sprawdzamy czy URL jest pełny, czy względny (zależy jak backend zapisuje)
+//                            // Jeśli backend zwraca np. "/images/...", musimy dodać BASE_URL
+//                            val finalImageUrl = if (review.pic.startsWith("http")) {
+//                                review.pic
+//                            } else {
+//                                // UWAGA: Upewnij się, że ten adres jest poprawny dla Twojego emulatora
+//                                "http://10.0.2.2:8080" + review.pic
+//                            }
+//
+//                            AsyncImage(
+//                                model = ImageRequest.Builder(LocalContext.current)
+//                                    .data(finalImageUrl)
+//                                    .crossfade(true)
+//                                    .build(),
+//                                contentDescription = "Review photo",
+//                                modifier = Modifier
+//                                    .padding(top = 8.dp)
+//                                    .fillMaxWidth() // <--- WAŻNE: Rozciągnij zdjęcie na szerokość
+//                                    .height(200.dp) // Zwiększyłem nieco wysokość dla lepszej widoczności
+//                                    .clip(RoundedCornerShape(8.dp))
+//                                    .background(Color.LightGray), // Tło, żeby widzieć obszar zdjęcia, jeśli się nie załaduje
+//                                contentScale = ContentScale.Crop,
+//                                // Dodajemy placeholdery, żeby widzieć stan ładowania/błędu
+//                                placeholder = painterResource(id = R.drawable.loading_placeholder), // Upewnij się, że masz tę ikonę lub użyj food_placeholder
+//                                error = painterResource(id = R.drawable.food_placeholder)
+//                            )
+//                        }
+
                         if (!review.pic.isNullOrBlank()) {
-                            // Sprawdzamy czy URL jest pełny, czy względny (zależy jak backend zapisuje)
-                            // Jeśli backend zwraca np. "/images/...", musimy dodać BASE_URL
-                            val finalImageUrl = if (review.pic.startsWith("http")) {
-                                review.pic
-                            } else {
-                                // UWAGA: Upewnij się, że ten adres jest poprawny dla Twojego emulatora
-                                "http://10.0.2.2:8080" + review.pic
+                            val rawUrl = review.pic
+
+                            // LOGIKA NAPRAWIANIA ADRESU URL DLA EMULATORA
+                            val finalImageUrl = when {
+                                // 1. Jeśli adres zawiera localhost, zamień na 10.0.2.2 (dla emulatora)
+                                rawUrl.contains("localhost") -> rawUrl.replace("localhost", "10.0.2.2")
+                                // 2. Jeśli to ścieżka względna (np. /images/1.jpg), dodaj pełny adres serwera
+                                !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + rawUrl
+                                // 3. W innym przypadku użyj oryginału
+                                else -> rawUrl
                             }
+
+                            // Dodaj logowanie, abyś widział w Logcat jaki adres próbuje otworzyć
+                            Log.d("DEBUG_IMAGE", "Original: $rawUrl -> Final: $finalImageUrl")
 
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
@@ -537,13 +572,12 @@ fun ReviewsTabContent(
                                 contentDescription = "Review photo",
                                 modifier = Modifier
                                     .padding(top = 8.dp)
-                                    .fillMaxWidth() // <--- WAŻNE: Rozciągnij zdjęcie na szerokość
-                                    .height(200.dp) // Zwiększyłem nieco wysokość dla lepszej widoczności
+                                    .fillMaxWidth()
+                                    .height(200.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.LightGray), // Tło, żeby widzieć obszar zdjęcia, jeśli się nie załaduje
+                                    .background(Color.LightGray),
                                 contentScale = ContentScale.Crop,
-                                // Dodajemy placeholdery, żeby widzieć stan ładowania/błędu
-                                placeholder = painterResource(id = R.drawable.loading_placeholder), // Upewnij się, że masz tę ikonę lub użyj food_placeholder
+                                placeholder = painterResource(id = R.drawable.food_placeholder), // Użyj food_placeholder jeśli nie masz loading
                                 error = painterResource(id = R.drawable.food_placeholder)
                             )
                         }

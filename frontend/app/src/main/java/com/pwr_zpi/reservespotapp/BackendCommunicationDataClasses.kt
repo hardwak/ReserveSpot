@@ -21,6 +21,7 @@ import okhttp3.RequestBody
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 
+
 data class GoogleTokenRequest(
     val googleToken: String
 )
@@ -168,6 +169,18 @@ data class ReviewEligibilityResponse(
     val message: String?
 )
 
+data class AiSearchRequest(
+    val query: String
+)
+
+data class AiAnalysisDto(
+    val id: Long,
+    val restaurantId: Long,
+    val summaryText: String?,
+    val sentimentScore: Double?,
+    val lastUpdated: LocalDateTime?
+)
+
 
 interface AuthApi {
     @POST("/api/auth/google")
@@ -200,7 +213,7 @@ interface ReservationApi {
 }
 
 interface RestaurantApi {
-    @GET("/api/") // TODO set favourites endpoint
+    @GET("/api/")
     suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 
     @GET("/api/restaurants/recommendations")
@@ -211,6 +224,12 @@ interface RestaurantApi {
     suspend fun searchRestaurants(
         @Header("Authorization") token: String,
         @Body searchDto: RestaurantSearchDto
+    ): Response<List<RestaurantDto>>
+
+    @POST("/api/restaurants/search/ai")
+    suspend fun searchRestaurantsAi(
+        @Header("Authorization") token: String,
+        @Body request: AiSearchRequest
     ): Response<List<RestaurantDto>>
 
     @GET("/api/tags")
