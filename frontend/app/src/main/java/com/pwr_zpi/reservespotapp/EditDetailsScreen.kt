@@ -1,17 +1,8 @@
 package com.pwr_zpi.reservespotapp
 
-import android.util.Base64
-import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,23 +10,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,7 +23,7 @@ import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.launch
-import org.json.JSONObject
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +43,7 @@ fun EditDetailsScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
 
+
     var isEmailError by remember { mutableStateOf(false) }
     var isPhoneError by remember { mutableStateOf(false) }
 
@@ -78,40 +55,37 @@ fun EditDetailsScreen(navController: NavHostController) {
         return phone.length >= 9
     }
 
+
     LaunchedEffect(Unit) {
         val token = dataStore.getBackendToken()
         if (token != null) {
             try {
-                // ZAMIAST kombinować z e-mailem, używamy gotowego endpointu /me
-                // To naprawia błąd 'Unresolved reference: getUserByEmail'
+
                 val response = RetrofitClient.userApi.getMyDetails("Bearer $token")
 
                 if (response.isSuccessful) {
                     val user = response.body()
                     if (user != null) {
-                        // Tutaj 'user' to Twój AccountUserDto, więc pola .name i .email będą działać
 
-                        // Rozdzielamy "Imie Nazwisko" na dwa pola
                         val fullName = user.name ?: ""
                         val parts = fullName.trim().split(" ", limit = 2)
 
                         name = parts.getOrElse(0) { "" }
                         surname = parts.getOrElse(1) { "" }
 
-                        // Przypisanie emaila i telefonu
                         email = user.email ?: ""
-
-                        // Jeśli w DTO nie masz pola 'phoneNumber', sprawdź jak się ono nazywa
-                        // w AccountUserDto. Często backend zwraca to jako 'phoneNumber' lub po prostu 'phone'.
-                        // Zakładam, że w AccountUserDto masz pole phoneNumber:
                         phone = user.phoneNumber ?: ""
                     }
                 } else {
-                    Log.e("EditDetails", "Error fetching user: ${response.code()}")
+
+                    Toast.makeText(
+                        context,
+                        "Error fetching data: ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } catch (e: Exception) {
-                Log.e("EditDetails", "Exception", e)
-                Toast.makeText(context, "Failed to load data", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
             }
         }
         isLoading = false
@@ -156,6 +130,7 @@ fun EditDetailsScreen(navController: NavHostController) {
                         .padding(bottom = 16.dp)
                 )
 
+
                 EditDetailTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -168,6 +143,7 @@ fun EditDetailsScreen(navController: NavHostController) {
                     label = "Surname",
                     icon = Icons.Default.Person
                 )
+
                 EditDetailTextField(
                     value = email,
                     onValueChange = {
@@ -183,7 +159,9 @@ fun EditDetailsScreen(navController: NavHostController) {
                         "Enter correct email address.",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp)
                     )
                 }
 
@@ -202,13 +180,15 @@ fun EditDetailsScreen(navController: NavHostController) {
                         "Number must have at least 9 characters.",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp)
                     )
                 }
 
                 Spacer(Modifier.height(24.dp))
 
-                // --- ZAPISYWANIE DANYCH ---
+
                 Button(
                     onClick = {
                         isEmailError = !isEmailValid(email)
@@ -219,8 +199,9 @@ fun EditDetailsScreen(navController: NavHostController) {
                             scope.launch {
                                 val token = dataStore.getBackendToken()
                                 if (token != null) {
-                                    // Łączymy imię i nazwisko z powrotem w jeden ciąg
+
                                     val fullNameToSend = "$name $surname".trim()
+
 
                                     val updateDto = UpdateProfileDto(
                                         name = fullNameToSend,
@@ -230,53 +211,58 @@ fun EditDetailsScreen(navController: NavHostController) {
 
                                     try {
 
-                                        val response = RetrofitClient.userApi.updateProfile("Bearer $token", updateDto)
+                                        val response = RetrofitClient.userApi.updateProfile(
+                                            "Bearer $token",
+                                            updateDto
+                                        )
 
                                         if (response.isSuccessful) {
-                                            Toast.makeText(context, "Data saved!", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "Data saved!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+
                                             navController.popBackStack()
                                         } else {
-                                            val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                                            Toast.makeText(context, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                                            val errorMsg =
+                                                response.errorBody()?.string() ?: "Unknown error"
+                                            Toast.makeText(
+                                                context,
+                                                "Error saving: $errorMsg",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Network error", Toast.LENGTH_SHORT)
+                                            .show()
+                                        e.printStackTrace()
                                     }
                                 }
                                 isSaving = false
                             }
                         } else {
-                            Toast.makeText(context, "Please enter correct data", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Please enter correct data", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = RSRed),
                     enabled = !isSaving
                 ) {
                     if (isSaving) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
                     } else {
                         Text("Save", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
-    }
-}
-
-// Funkcja pomocnicza do dekodowania tokena (kopia tej z AccountScreen, aby plik był niezależny)
-fun getEmailFromTokenForEdit(token: String): String? {
-    return try {
-        val parts = token.split(".")
-        if (parts.size < 2) return null
-        val payload = String(Base64.decode(parts[1], Base64.URL_SAFE))
-        val jsonObject = JSONObject(payload)
-        var email = jsonObject.optString("sub")
-        if (email.isNullOrEmpty()) {
-            email = jsonObject.optString("email")
-        }
-        email.ifEmpty { null }
-    } catch (e: Exception) {
-        null
     }
 }

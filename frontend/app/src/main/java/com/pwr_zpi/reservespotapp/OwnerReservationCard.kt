@@ -12,7 +12,7 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 @Composable
 fun OwnerReservationCard(
     reservation: OwnerReservationDto,
-    onCancel: (Long) -> Unit, // Callback do anulowania rezerwacji
+    onCancel: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(

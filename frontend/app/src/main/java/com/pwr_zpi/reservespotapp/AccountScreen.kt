@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,14 +37,12 @@ suspend fun fetchMyAccountDetails(context: Context): AccountUserDto? = withConte
             return@withContext null
         }
 
-
         val response = RetrofitClient.userApi.getMyDetails("Bearer $token")
 
         if (response.isSuccessful) {
             response.body()
         } else {
             Log.e("Account", "Błąd API: Kod ${response.code()} - ${response.message()}")
-
             Log.e("Account", "Treść błędu: ${response.errorBody()?.string()}")
             null
         }
@@ -58,12 +58,11 @@ fun AccountScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     val dataStore = DataStoreManager(context)
 
-
     var userData by remember { mutableStateOf<AccountUserDto?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(navController.currentBackStackEntry) {
         isLoading = true
         val user = fetchMyAccountDetails(context)
         if (user != null) {
@@ -80,7 +79,6 @@ fun AccountScreen(navController: NavHostController) {
     ) {
 
         if (isLoading) {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,6 +102,8 @@ fun AccountScreen(navController: NavHostController) {
                     tint = RSRed
                 )
                 Spacer(Modifier.width(16.dp))
+
+
                 Column {
 
                     Text(
@@ -112,11 +112,42 @@ fun AccountScreen(navController: NavHostController) {
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(
-                        text = userData?.email ?: "",
-                        fontSize = 16.sp,
-                        color = Color.Gray
-                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = userData?.email ?: "",
+                            fontSize = 15.sp,
+                            color = Color.Gray
+                        )
+                    }
+
+
+                    if (!userData?.phoneNumber.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = null,
+                                tint = Color.Gray,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = userData?.phoneNumber ?: "",
+                                fontSize = 15.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -134,7 +165,7 @@ fun AccountScreen(navController: NavHostController) {
 
         AccountOptionRow(
             icon = Icons.Default.Settings,
-            text = "Change Password",
+            text = "Change password",
             onClick = { navController.navigate("changePassword") }
         )
 

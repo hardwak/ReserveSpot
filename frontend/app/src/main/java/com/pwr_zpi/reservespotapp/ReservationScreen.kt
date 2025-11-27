@@ -62,7 +62,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationScreen(
@@ -304,24 +305,30 @@ fun ReservationScreen(
                         return@Button
                     }
 
-                    // Znajdź tableId dla wybranej godziny
-                    // Bierzemy pierwszy pasujący slot (backend może zwrócić kilka stolików na tę samą godzinę)
                     val chosenSlot = filteredSlots.firstOrNull { extractTime(it.start) == selectedTime }
 
                     if (chosenSlot != null) {
                         val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                        // Przekazujemy pełny DateTime w formacie ISO do podsumowania, bo API tego wymaga
                         val fullIsoDateTime = chosenSlot.start
 
-                        val route = "reservationSummary/${restaurantName}?" +
-                                "tableId=${chosenSlot.tableId}&" + // Przekazujemy ID stolika!
-                                "fullDateTime=${fullIsoDateTime}&" + // Pełna data ISO
-                                "dateDisplay=$dateString&" + // Tylko do wyświetlania
-                                "timeDisplay=$selectedTime&" + // Tylko do wyświetlania
+                        // --- POPRAWKA: KODOWANIE URL ---
+                        // Musimy zakodować znaki specjalne (spacje, dwukropki itp.), aby nie psuły nawigacji
+
+                        val encodedRestaurantName = URLEncoder.encode(restaurantName, StandardCharsets.UTF_8.toString())
+                        val encodedLocation = URLEncoder.encode(selectedLocation, StandardCharsets.UTF_8.toString())
+                        // Kodujemy datę, bo zawiera dwukropki (np. 18:00:00 -> 18%3A00%3A00)
+                        val encodedFullDate = URLEncoder.encode(fullIsoDateTime, StandardCharsets.UTF_8.toString())
+
+                        // Formatujemy trasę używając zakodowanych wartości
+                        val route = "reservationSummary/$encodedRestaurantName?" +
+                                "tableId=${chosenSlot.tableId}&" +
+                                "fullDateTime=$encodedFullDate&" +
+                                "dateDisplay=$dateString&" +
+                                "timeDisplay=$selectedTime&" +
                                 "guests=$selectedGuests&" +
-                                "durationMinutes=${durationMap[selectedDurationLabel]}&" + // Minuty jako int
+                                "durationMinutes=${durationMap[selectedDurationLabel]}&" +
                                 "durationDisplay=$selectedDurationLabel&" +
-                                "location=$selectedLocation"
+                                "location=$encodedLocation"
 
                         navController.navigate(route)
                     } else {
