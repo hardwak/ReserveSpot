@@ -43,18 +43,15 @@ fun Controller(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
-    val hideBottomBar =
-        currentRoute in listOf("login") // List of screens where NavBar should be hidden
+    val hideTopBar = currentRoute in listOf("login", "register")
+    val hideBottomBar = currentRoute in listOf("login", "register", "restaurant_register")
 
     Scaffold(
         topBar = {
             if (!hideTopBar) {
                 TopAppBar(
                     title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
                                 painter = painterResource(id = R.drawable.logo_red_outside_small),
                                 contentDescription = "App Logo",
@@ -62,7 +59,6 @@ fun Controller(navController: NavHostController) {
                                     .size(44.dp)
                                     .padding(end = 12.dp)
                             )
-
                             Text(
                                 text = "ReserveSpot",
                                 fontSize = 32.sp,
@@ -75,9 +71,7 @@ fun Controller(navController: NavHostController) {
         },
         bottomBar = {
             if (!hideBottomBar) {
-                NavigationBar(
-                    containerColor = RSRed
-                ) {
+                NavigationBar(containerColor = RSRed) {
                     val navBarItems =
                         listOf("home", "restaurants", "reservations", "favourites", "account")
                     navBarItems.forEach { item ->
@@ -127,37 +121,53 @@ fun Controller(navController: NavHostController) {
             navController = navController,
             startDestination = "login",
             modifier = Modifier.padding(innerPadding)
-//            Routes below
         ) {
+            composable("login") { LoginScreen(navController) }
             composable("home") { MainMenuScreen(navController) }
-
+            composable("restaurants") { ChooseRestaurantScreen(navController) }
+            composable("reservations") { ReservationsScreen(navController) }
+            composable("account") { AccountScreen(navController) }
             composable(
                 route = "restaurantDetails/{restaurantId}",
                 arguments = listOf(
-                    // Wymagane, aby to działało poprawnie
-                    navArgument("restaurantId") {
-                        type = NavType.LongType;
-                        defaultValue = 0L // Opcjonalnie, ale bezpieczniej
-                    }
+                    navArgument("restaurantId") { type = NavType.LongType; defaultValue = 0L }
                 )
             ) { backStackEntry ->
-                // Teraz używamy getLong, co jest zgodne z NavType.LongType
                 val id = backStackEntry.arguments?.getLong("restaurantId") ?: 0L
-
-                // Walidacja ID, aby uniknąć problemów
-                if (id == 0L) {
-                    // Jeśli ID jest 0, możemy wrócić lub wyświetlić błąd
-                    // Log.e("Nav", "Nieprawidłowe Restaurant ID przekazane: 0")
-                    // navController.popBackStack()
-                    Text("Błąd: Nie znaleziono ID restauracji.") // Tymczasowe wyświetlanie błędu
-                    return@composable
+                if (id != 0L) {
+                    RestaurantDetailsScreen(navController, id)
                 }
-//                val rating = backStackEntry.arguments?.getDouble("rating") ?: 0.0
-
-
-                RestaurantDetailsScreen(navController, id)
-
             }
+
+
+//            composable(
+//                route = "restaurantDetails/{restaurantId}",
+//                arguments = listOf(
+//                    // Wymagane, aby to działało poprawnie
+//                    navArgument("restaurantId") {
+//                        type = NavType.LongType;
+//                        defaultValue = 0L // Opcjonalnie, ale bezpieczniej
+//                    }
+//                )
+//            ) { backStackEntry ->
+//                // Teraz używamy getLong, co jest zgodne z NavType.LongType
+//                val id = backStackEntry.arguments?.getLong("restaurantId") ?: 0L
+//
+//                // Walidacja ID, aby uniknąć problemów
+//                if (id == 0L) {
+//                    // Jeśli ID jest 0, możemy wrócić lub wyświetlić błąd
+//                    // Log.e("Nav", "Nieprawidłowe Restaurant ID przekazane: 0")
+//                    // navController.popBackStack()
+//                    Text("Błąd: Nie znaleziono ID restauracji.") // Tymczasowe wyświetlanie błędu
+//                    return@composable
+//                }
+////                val rating = backStackEntry.arguments?.getDouble("rating") ?: 0.0
+//
+//
+//                RestaurantDetailsScreen(navController, id)
+//
+//            }
+
 
             composable(
                 route = "pickLocation?lat={lat}&lng={lng}",
@@ -181,21 +191,33 @@ fun Controller(navController: NavHostController) {
             }
 
             composable(
-
-                route = "reservation/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
+                route = "reservation/{restaurantId}/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
                 arguments = listOf(
+                    navArgument("restaurantId") {
+                        type = NavType.LongType
+                    },
                     navArgument("restaurantName") { type = NavType.StringType },
 
-                    navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("time") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("guests") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("duration") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    navArgument("date") {
+                        type = NavType.StringType; nullable = true; defaultValue = null
+                    },
+                    navArgument("time") {
+                        type = NavType.StringType; nullable = true; defaultValue = null
+                    },
+                    navArgument("guests") {
+                        type = NavType.StringType; nullable = true; defaultValue = null
+                    },
+                    navArgument("duration") {
+                        type = NavType.StringType; nullable = true; defaultValue = null
+                    },
+                    navArgument("location") {
+                        type = NavType.StringType; nullable = true; defaultValue = null
+                    }
                 )
             ) { backStackEntry ->
-                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown Restaurant"
+                val id = backStackEntry.arguments?.getLong("restaurantId") ?: 0L
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Restaurant"
 
-                // getting parameters
                 val date = backStackEntry.arguments?.getString("date")
                 val time = backStackEntry.arguments?.getString("time")
                 val guests = backStackEntry.arguments?.getString("guests")
@@ -204,8 +226,9 @@ fun Controller(navController: NavHostController) {
 
 
                 ReservationScreen(
-                    navController,
-                    name,
+                    navController = navController,
+                    restaurantId = id,
+                    restaurantName = name,
                     initialDate = date,
                     initialTime = time,
                     initialGuests = guests,
@@ -236,32 +259,51 @@ fun Controller(navController: NavHostController) {
 //             composable("favourites") { FavouritesScreen(navController) }
 
             composable(
-                route = "reservationSummary/{restaurantName}?date={date}&time={time}&guests={guests}&duration={duration}&location={location}",
+                route = "reservationSummary/{restaurantName}?tableId={tableId}&fullDateTime={fullDateTime}&durationMinutes={durationMinutes}&dateDisplay={dateDisplay}&timeDisplay={timeDisplay}&guests={guests}&durationDisplay={durationDisplay}&location={location}",
                 arguments = listOf(
                     navArgument("restaurantName") { type = NavType.StringType },
-                    navArgument("date") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("time") { type = NavType.StringType; defaultValue = "" },
+                    // Parametry backendowe
+                    navArgument("tableId") { type = NavType.LongType },
+                    navArgument("fullDateTime") { type = NavType.StringType }, // ISO String
+                    navArgument("durationMinutes") { type = NavType.IntType },
+                    // Parametry UI (do wyświetlenia)
+                    navArgument("dateDisplay") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("timeDisplay") { type = NavType.StringType; defaultValue = "" },
                     navArgument("guests") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("duration") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("durationDisplay") { type = NavType.StringType; defaultValue = "" },
                     navArgument("location") { type = NavType.StringType; defaultValue = "Any" }
                 )
             ) { backStackEntry ->
-                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown"
                 ReservationSummaryScreen(
                     navController = navController,
-                    restaurantName = name,
-                    date = backStackEntry.arguments?.getString("date") ?: "No data",
-                    time = backStackEntry.arguments?.getString("time") ?: "No hours",
-                    guests = backStackEntry.arguments?.getString("guests") ?: "0",
-                    duration = backStackEntry.arguments?.getString("duration") ?: "No duration",
+                    restaurantName = backStackEntry.arguments?.getString("restaurantName")
+                        ?: "Unknown",
+                    tableId = backStackEntry.arguments?.getLong("tableId") ?: 0L,
+                    fullDateTime = backStackEntry.arguments?.getString("fullDateTime") ?: "",
+                    durationMinutes = backStackEntry.arguments?.getInt("durationMinutes") ?: 60,
+                    dateDisplay = backStackEntry.arguments?.getString("dateDisplay") ?: "",
+                    timeDisplay = backStackEntry.arguments?.getString("timeDisplay") ?: "",
+                    guests = backStackEntry.arguments?.getString("guests") ?: "2",
+                    durationDisplay = backStackEntry.arguments?.getString("durationDisplay") ?: "",
                     location = backStackEntry.arguments?.getString("location") ?: "Any"
                 )
             }
-        }
 
-//            composable("login") { LoginScreen(navController) }
-//            composable("reservations") { ReservationsScreen(navController) }
-//            composable("favourites") { FavouritesScreen(navController) }
+
+            composable(
+                route = "pickLocation?lat={lat}&lng={lng}",
+                arguments = listOf(
+                    navArgument("lat") { type = NavType.FloatType; defaultValue = 0f },
+                    navArgument("lng") { type = NavType.FloatType; defaultValue = 0f }
+                )
+            ) { backStackEntry ->
+                val lat = backStackEntry.arguments?.getFloat("lat")?.toDouble()
+                val lng = backStackEntry.arguments?.getFloat("lng")?.toDouble()
+                val finalLat = if (lat != 0.0) lat else null
+                val finalLng = if (lng != 0.0) lng else null
+                LocationPickerScreen(navController, finalLat, finalLng)
+            }
+        }
 
 
     }

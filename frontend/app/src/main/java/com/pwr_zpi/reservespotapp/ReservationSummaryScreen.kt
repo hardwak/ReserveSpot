@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,11 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,14 +32,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -44,22 +52,30 @@ import java.time.format.DateTimeFormatter
 fun ReservationSummaryScreen(
     navController: NavHostController,
     restaurantName: String,
-    date: String,
-    time: String,
+    tableId: Long,
+    fullDateTime: String,
+    durationMinutes: Int,
+    dateDisplay: String,
+    timeDisplay: String,
     guests: String,
-    duration: String,
+    durationDisplay: String,
     location: String
 
 ) {
 
-    val formattedDate = try {
-        LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
-            .format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
-    } catch (e: Exception) {
-        date
-    }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var showConfirmationDialog by remember { mutableStateOf(false) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    // Formatowanie daty do wyświetlenia
+    val formattedDateDisplay = try {
+        LocalDate.parse(dateDisplay, DateTimeFormatter.ISO_LOCAL_DATE)
+            .format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+    } catch (e: Exception) {
+        dateDisplay
+    }
 
 
     Scaffold(
@@ -80,7 +96,7 @@ fun ReservationSummaryScreen(
                 .padding(paddingValues)
                 .background(Color.White)
         ) {
-            // Details and summary
+            // Zakładki
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,7 +107,6 @@ fun ReservationSummaryScreen(
                 ReservationTab("Summary", true)
             }
 
-            // Header and info in summary
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -104,26 +119,17 @@ fun ReservationSummaryScreen(
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
 
-                SummaryDetail("Date and time:", "$formattedDate o $time")
+                SummaryDetail("Date and time:", "$formattedDateDisplay at $timeDisplay")
                 SummaryDetail("Guests number:", guests)
-                SummaryDetail("Duration:", duration)
+                SummaryDetail("Duration:", durationDisplay)
                 SummaryDetail("Table location", location)
 
                 Spacer(modifier = Modifier.height(40.dp))
 
                 OutlinedButton(
                     onClick = {
-                        val route = "reservation/${restaurantName}?" +
-                                "date=$date&" +
-                                "time=$time&" +
-                                "guests=$guests&" +
-                                "duration=$duration&" +
-                                "location=$location"
 
-
-                        navController.navigate(route) {
-                            popUpTo("reservation/{restaurantName}") { inclusive = true }
-                        }
+                        navController.popBackStack()
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
@@ -133,50 +139,81 @@ fun ReservationSummaryScreen(
                 }
             }
 
-            // Confirm reservation button
             Button(
-                // TODO add saving reservation to DB
-                onClick = { showConfirmationDialog = true },
+                onClick = {
+                    isSubmitting = true
+                    scope.launch {
+                        try {
+                            val token = DataStoreManager(context).getBackendToken()
+                            Log.d("ReservationSummary", "Token: $token")
+
+                            if (token != null) {
+                                // Logujemy dane, które próbujemy wysłać
+                                Log.d("ReservationSummary", "Sending Data: TableId=$tableId, Date=$fullDateTime, Duration=$durationMinutes")
+
+                                val createDto = CreateReservationDto(
+                                    tableId = tableId,
+                                    reservationDatetime = fullDateTime, // Upewnij się, że to format ISO (np. "2023-11-27T18:00:00")
+                                    durationMinutes = durationMinutes
+                                )
+
+                                val response = RetrofitClient.reservationApi.createReservation("Bearer $token", createDto)
+
+                                if (response.isSuccessful) {
+                                    Log.d("ReservationSummary", "Success: ${response.body()}")
+                                    showConfirmationDialog = true
+                                } else {
+                                    val errorBody = response.errorBody()?.string()
+                                    Log.e("ReservationSummary", "Error Code: ${response.code()}")
+                                    Log.e("ReservationSummary", "Error Body: $errorBody")
+                                    Toast.makeText(context, "Server Error: ${response.code()}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // To tutaj łapie "Network Error"
+                            Log.e("ReservationSummary", "EXCEPTION", e)
+                            Toast.makeText(context, "Exception: ${e.message}", Toast.LENGTH_LONG).show()
+                        } finally {
+                            isSubmitting = false
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed),
+                enabled = !isSubmitting
             ) {
-                Text(
-                    "CONFIRM RESERVATION",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color.White
-                )
+                if (isSubmitting) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        "CONFIRM RESERVATION",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
 
     if (showConfirmationDialog) {
-
-
         val navigateBackToDetails: () -> Unit = {
             showConfirmationDialog = false
-            navController.popBackStack("restaurantDetails/{restaurantName}/{rating}", inclusive = false)
+            navController.popBackStack()
+            navController.popBackStack()
         }
 
         AlertDialog(
             onDismissRequest = navigateBackToDetails,
-
-            title = {
-                Text("Reservation confirmed!", color = Color.Black)
-            },
+            title = { Text("Reservation confirmed!", color = Color.Black) },
             text = {
-                Text(
-                    "Your table reservation in $restaurantName has been placed.",
-                    color = Color.Black
-                )
+                Text("Your table reservation in $restaurantName has been placed.", color = Color.Black)
             },
             confirmButton = {
-                TextButton(
-                    onClick = navigateBackToDetails
-                ) {
+                TextButton(onClick = navigateBackToDetails) {
                     Text("OK", color = Color.Black)
                 }
             }

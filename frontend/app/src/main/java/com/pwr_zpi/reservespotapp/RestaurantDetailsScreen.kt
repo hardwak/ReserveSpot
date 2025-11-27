@@ -387,7 +387,7 @@ fun RestaurantDetailsScreen(
     Scaffold(
         bottomBar = {
             Button(
-                onClick = { navController.navigate("reservation/${detailsData.name}") },
+                onClick = { navController.navigate("reservation/$restaurantId/${detailsData.name}") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp)

@@ -44,7 +44,7 @@ fun SettingsScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // TODO options for settings
+
 
             Spacer(Modifier.height(16.dp))
 

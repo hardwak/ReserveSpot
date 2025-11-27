@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.compose.ui.semantics.Role
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -20,6 +21,10 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Multipart
 import retrofit2.http.Part
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import java.security.AuthProvider
+import java.util.concurrent.TimeUnit
 
 
 data class GoogleTokenRequest(
@@ -81,6 +86,19 @@ data class ReservationDto(
     val restaurantRating: Double
 )
 
+data class AvailableReservationSlotDto(
+    val tableId: Long,
+    val tableCapacity: Int,
+    val start: String, // LocalDateTime as String (ISO)
+    val end: String,
+    val locationInRestaurant: String?
+)
+
+data class CreateReservationDto(
+    val tableId: Long,
+    val reservationDatetime: String, // LocalDateTime in ISO-8601
+    val durationMinutes: Int
+)
 
 data class ReviewDto(
     val id: Long?,
@@ -181,6 +199,31 @@ data class AiAnalysisDto(
     val lastUpdated: LocalDateTime?
 )
 
+data class UserDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val email: String? = null,
+    val phoneNumber: String? = null,
+    val role: Role? = null,
+    val oauthProviderId: String? = null,
+    val provider: AuthProvider? = null,
+    val pictureId: Long? = null,
+    val restaurants: List<RestaurantSummary>? = null,
+    val reservationIds: List<Long>? = null,
+    val reviewIds: List<Long>? = null
+) {
+    data class RestaurantSummary(
+        val id: Long? = null,
+        val name: String? = null
+    )
+}
+
+data class UpdateProfileDto(
+    val name: String,
+    val email: String,
+    val phoneNumber: String?
+)
+
 
 interface AuthApi {
     @POST("/api/auth/google")
@@ -205,11 +248,25 @@ interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
     suspend fun getMyUpcomingReservations(@Header("Authorization") token: String): Response<List<ReservationDto>>
 
-    @DELETE("api/reservations/{id}")
+    @DELETE("/api/reservations/{id}")
     suspend fun cancelReservation(
         @Header("Authorization") token: String,
         @Path("id") reservationId: Long
     ): Response<Unit>
+
+    @GET("/api/reservations/availability")
+    suspend fun getAvailability(
+        @Header("Authorization") token: String,
+        @Query("restaurantId") restaurantId: Long,
+        @Query("date") date: String, // yyyy-MM-dd
+        @Query("durationMinutes") durationMinutes: Int
+    ): Response<List<AvailableReservationSlotDto>>
+
+    @POST("/api/reservations")
+    suspend fun createReservation(
+        @Header("Authorization") token: String,
+        @Body createDto: CreateReservationDto
+    ): Response<ReservationDto>
 }
 
 interface RestaurantApi {
@@ -291,6 +348,20 @@ interface UserApi {
         @Header("Authorization") token: String,
         @Path("id") userId: Long
     ): Response<UserSummaryDto>
+
+    @GET("/api/users/email/{email}")
+    suspend fun getUserByEmail(
+        @Header("Authorization") token: String,
+        @Path("email") email: String
+    ): Response<UserDto>
+
+
+
+    @PUT("/api/users/me")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body body: UpdateProfileDto
+    ): Response<UserDto>
 }
 
 interface PicturesApi {
@@ -402,7 +473,15 @@ data class OwnerReservationDto(
 object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
 
+    private val logging = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
 
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(logging)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
 
     private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
         JsonDeserializer { json, _, _ ->
@@ -416,7 +495,6 @@ object RetrofitClient {
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            // Używamy naszej skonfigurowanej instancji Gson
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }

@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
@@ -30,42 +32,56 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationScreen(
-    navController: NavHostController, restaurantName: String, initialDate: String? = null,
+    navController: NavHostController,
+    restaurantId: Long,
+    restaurantName: String,
+    initialDate: String? = null,
     initialTime: String? = null,
     initialGuests: String? = null,
     initialDuration: String? = null,
     initialLocation: String? = null
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val dataStore = DataStoreManager(context)
 
+    // Parsowanie daty początkowej
     val parsedDate = remember(initialDate) {
-        if (initialDate != null && initialDate.isNotEmpty()) {
+        if (!initialDate.isNullOrEmpty()) {
             try {
                 LocalDate.parse(initialDate, DateTimeFormatter.ISO_LOCAL_DATE)
             } catch (e: Exception) {
@@ -75,34 +91,109 @@ fun ReservationScreen(
             LocalDate.now()
         }
     }
-    // Reservation form states
-//  TODO  need to change selected time to data from backend
-    var selectedTime by remember { mutableStateOf(initialTime ?: "12:00") }
+
+
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(parsedDate) }
+
+    var selectedTime by remember { mutableStateOf(initialTime) }
     var selectedGuests by remember { mutableStateOf(initialGuests?.toIntOrNull() ?: 2) }
-    var selectedDuration by remember { mutableStateOf(initialDuration ?: "1 hour") }
+    var selectedDurationLabel by remember { mutableStateOf(initialDuration ?: "1 hour") }
     var selectedLocation by remember { mutableStateOf(initialLocation ?: "Any") }
+    var availableSlots by remember { mutableStateOf<List<AvailableReservationSlotDto>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    val durationMap = mapOf("1 hour" to 60, "1.5 hours" to 90, "2 hours" to 120)
+    val guestsOptions = (1..10).map { it.toString() }
+    val durationOptions = durationMap.keys.toList()
+    val locationOptions = listOf("Any", "Window", "Garden", "Inside") // Dopasuj do backendu jeśli masz enum
 
-    val guestsOptions = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-    val durationOptions = listOf("1 hour", "1.5 hours", "2 hours")
-    val locationOptions = listOf("Any", "By the window")
 
-//    generating time slots
-    val timeOptions = remember {
-        val times = mutableListOf<String>()
-        var hour = 12
-        while (hour <= 21) {
-            times.add(String.format("%02d:00", hour))
-            times.add(String.format("%02d:30", hour))
-            hour++
+    fun fetchAvailability() {
+        scope.launch {
+            isLoading = true
+            try {
+                val token = dataStore.getBackendToken()
+                // Logowanie tokena (sprawdź w Logcat czy nie jest null/pusty)
+                Log.d("ReservationDebug", "Token: $token")
+                Log.d("ReservationDebug", "Restaurant ID: $restaurantId")
+
+                if (token != null) {
+                    val durationMinutes = durationMap[selectedDurationLabel] ?: 60
+                    val dateStr = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+
+                    Log.d("ReservationDebug", "Requesting: date=$dateStr, duration=$durationMinutes")
+
+                    val response = RetrofitClient.reservationApi.getAvailability(
+                        "Bearer $token",
+                        restaurantId,
+                        dateStr,
+                        durationMinutes
+                    )
+
+                    if (response.isSuccessful) {
+                        availableSlots = response.body() ?: emptyList()
+                        Log.d("ReservationDebug", "Success! Slots: ${availableSlots.size}")
+
+                        if (availableSlots.none { extractTime(it.start) == selectedTime }) {
+                            selectedTime = null
+                        }
+                    } else {
+                        // KLUCZOWE: Logowanie błędu z serwera
+                        val errorBody = response.errorBody()?.string()
+                        Log.e("ReservationDebug", "Error Code: ${response.code()}")
+                        Log.e("ReservationDebug", "Error Body: $errorBody")
+
+                        Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Log.e("ReservationDebug", "Token is null!")
+                    Toast.makeText(context, "Please login again", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("ReservationDebug", "Exception", e)
+                Toast.makeText(context, "Connection error: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                isLoading = false
+            }
         }
-        times.add("22:00")
-        times
+    }
+
+    LaunchedEffect(selectedDate, selectedDurationLabel) {
+        fetchAvailability()
+    }
+
+    val filteredSlots = remember(availableSlots, selectedGuests, selectedLocation) {
+        availableSlots.filter { slot ->
+            val capacityOk = slot.tableCapacity >= selectedGuests
+            val locationOk = selectedLocation == "Any" ||
+                    (slot.locationInRestaurant?.equals(selectedLocation, ignoreCase = true) == true)
+            capacityOk && locationOk
+        }
+    }
+
+    val timeOptions = remember(filteredSlots) {
+        filteredSlots
+            .map { extractTime(it.start) }
+            .distinct()
+            .sorted()
     }
 
     val scrollState = rememberScrollState()
 
+////    generating time slots
+//    val timeOptions = remember {
+//        val times = mutableListOf<String>()
+//        var hour = 12
+//        while (hour <= 21) {
+//            times.add(String.format("%02d:00", hour))
+//            times.add(String.format("%02d:30", hour))
+//            hour++
+//        }
+//        times.add("22:00")
+//        times
+//    }
+//
+//    val scrollState = rememberScrollState()
 
 
 
@@ -124,7 +215,7 @@ fun ReservationScreen(
                 .padding(paddingValues)
                 .background(Color.White)
         ) {
-            // Details and summary
+            // Zakładki
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -135,7 +226,7 @@ fun ReservationScreen(
                 ReservationTab("Summary", false)
             }
 
-            // Header table reservation
+            // Nagłówek
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,13 +241,8 @@ fun ReservationScreen(
                     tint = RSRed,
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                Text(
-                    "Table reservation",
-                    fontWeight = FontWeight.Bold,
-                    color = RSRed
-                )
+                Text("Table reservation", fontWeight = FontWeight.Bold, color = RSRed)
             }
-
 
             Column(
                 modifier = Modifier
@@ -164,8 +250,7 @@ fun ReservationScreen(
                     .padding(horizontal = 16.dp)
                     .verticalScroll(scrollState)
             ) {
-
-                // Data section
+                // Data
                 FormSectionTitle("Data")
                 DateSelector(
                     selectedDate = selectedDate,
@@ -173,76 +258,104 @@ fun ReservationScreen(
                     onOpenCalendar = { showDatePicker = true }
                 )
 
-                // Hour section
-                FormSectionTitle("Hour")
-                HorizontalSelector(
-                    options = timeOptions,
-                    selectedValue = selectedTime,
-                    onSelect = { selectedTime = it }
-                )
-
-                // Guests number section
+                // Goście
                 FormSectionTitle("Guests number")
                 HorizontalSelector(
-                    options = guestsOptions.map { it.toString() },
+                    options = guestsOptions,
                     selectedValue = selectedGuests.toString(),
                     onSelect = { selectedGuests = it.toIntOrNull() ?: 2 }
                 )
 
-                // Reservation duration section
+                // Czas trwania
                 FormSectionTitle("Duration")
                 HorizontalSelector(
                     options = durationOptions,
-                    selectedValue = selectedDuration,
-                    onSelect = { selectedDuration = it }
+                    selectedValue = selectedDurationLabel,
+                    onSelect = { selectedDurationLabel = it }
                 )
 
-
+                // Lokalizacja
                 FormSectionTitle("Table location")
                 HorizontalSelector(
                     options = locationOptions,
                     selectedValue = selectedLocation,
                     onSelect = { selectedLocation = it }
                 )
-            }
 
+                // Godzina (wyświetlana na końcu, bo zależy od powyższych)
+                FormSectionTitle("Available Hours")
+                if (isLoading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = RSRed)
+                } else if (timeOptions.isEmpty()) {
+                    Text("No tables available for selected criteria.", color = Color.Gray)
+                } else {
+                    HorizontalSelector(
+                        options = timeOptions,
+                        selectedValue = selectedTime ?: "",
+                        onSelect = { selectedTime = it }
+                    )
+                }
+            }
 
             Button(
                 onClick = {
-                    val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                    if (selectedTime == null) {
+                        Toast.makeText(context, "Please select a time", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
 
-                    // Creating route with parameters
-                    val route = "reservationSummary/${restaurantName}?" +
-                            "date=$dateString&" +
-                            "time=$selectedTime&" +
-                            "guests=$selectedGuests&" +
-                            "duration=$selectedDuration&" +
-                            "location=$selectedLocation"
+                    // Znajdź tableId dla wybranej godziny
+                    // Bierzemy pierwszy pasujący slot (backend może zwrócić kilka stolików na tę samą godzinę)
+                    val chosenSlot = filteredSlots.firstOrNull { extractTime(it.start) == selectedTime }
 
-                    navController.navigate(route)
+                    if (chosenSlot != null) {
+                        val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        // Przekazujemy pełny DateTime w formacie ISO do podsumowania, bo API tego wymaga
+                        val fullIsoDateTime = chosenSlot.start
+
+                        val route = "reservationSummary/${restaurantName}?" +
+                                "tableId=${chosenSlot.tableId}&" + // Przekazujemy ID stolika!
+                                "fullDateTime=${fullIsoDateTime}&" + // Pełna data ISO
+                                "dateDisplay=$dateString&" + // Tylko do wyświetlania
+                                "timeDisplay=$selectedTime&" + // Tylko do wyświetlania
+                                "guests=$selectedGuests&" +
+                                "durationMinutes=${durationMap[selectedDurationLabel]}&" + // Minuty jako int
+                                "durationDisplay=$selectedDurationLabel&" +
+                                "location=$selectedLocation"
+
+                        navController.navigate(route)
+                    } else {
+                        Toast.makeText(context, "Slot selection error", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed),
+                enabled = selectedTime != null && !isLoading
             ) {
                 Text("Next", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
             }
         }
     }
+
     if (showDatePicker) {
         ReservationDatePicker(
             initialDate = selectedDate,
-            onDateSelected = {
-                selectedDate = it
-                showDatePicker = false
-            },
+            onDateSelected = { selectedDate = it; showDatePicker = false },
             onDismiss = { showDatePicker = false }
         )
     }
 }
 
+fun extractTime(isoDateTime: String): String {
+    return try {
+        LocalDateTime.parse(isoDateTime).format(DateTimeFormatter.ofPattern("HH:mm"))
+    } catch (e: Exception) {
+        isoDateTime.substringAfter("T").take(5)
+    }
+}
 
 @Composable
 fun ReservationTab(title: String, isSelected: Boolean) {
