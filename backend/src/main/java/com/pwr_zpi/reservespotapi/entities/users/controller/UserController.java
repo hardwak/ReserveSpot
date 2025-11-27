@@ -2,6 +2,7 @@ package com.pwr_zpi.reservespotapi.entities.users.controller;
 
 import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
+import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.dto.CreateUserDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateProfileDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateUserDto;
@@ -103,6 +104,14 @@ public class UserController {
     public ResponseEntity<Boolean> emailExists(@PathVariable String email) {
         boolean exists = userService.existsByEmail(email);
         return ResponseEntity.ok(exists);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(HttpServletRequest request) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        Optional<UserDto> user = userService.getUserById(userId);
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/me")
