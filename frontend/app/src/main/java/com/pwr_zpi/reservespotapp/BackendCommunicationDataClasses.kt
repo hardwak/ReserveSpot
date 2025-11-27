@@ -224,6 +224,15 @@ data class UpdateProfileDto(
     val phoneNumber: String?
 )
 
+data class AccountUserDto(
+    val id: Long?,
+    val name: String?,
+    val email: String?,
+    val phoneNumber: String?,
+    val role: String?,
+    val pictureId: Long?
+)
+
 
 interface AuthApi {
     @POST("/api/auth/google")
@@ -354,9 +363,6 @@ interface UserApi {
         @Header("Authorization") token: String,
         @Path("email") email: String
     ): Response<UserDto>
-
-
-
     @PUT("/api/users/me")
     suspend fun updateProfile(
         @Header("Authorization") token: String,
