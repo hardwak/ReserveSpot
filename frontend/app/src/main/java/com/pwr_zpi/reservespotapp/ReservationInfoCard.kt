@@ -44,13 +44,6 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-//data class ReservationDto (
-//    val restaurantName: String,
-//    val dateTime: LocalDateTime,
-//    val numOfPeople: Int,
-//    val durationM: Float,
-//    val restaurantRating: Float
-//)
 
 @Composable
 fun ReservationInfoCard(

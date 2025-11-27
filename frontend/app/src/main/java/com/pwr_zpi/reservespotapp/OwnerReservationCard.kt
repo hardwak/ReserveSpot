@@ -24,22 +24,20 @@ fun OwnerReservationCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Rezerwacja #${reservation.id}", fontWeight = FontWeight.Bold)
-                // TODO: Użyj funkcji formatowania daty, a nie replace
+                Text("Reservation #${reservation.id}", fontWeight = FontWeight.Bold)
                 Text(reservation.reservationDatetime.replace("T", " "), color = RSRed, fontWeight = FontWeight.Bold)
             }
-            Text("Stolik ID: ${reservation.tableId}")
-            Text("Czas: ${reservation.durationMinutes} min")
-            // Użyj koloru statusu
+            Text("Table ID: ${reservation.tableId}")
+            Text("Time: ${reservation.durationMinutes} min")
             val statusColor = if (reservation.status == "CONFIRMED") Color(0xFF4CAF50) else Color.Gray
-            Text("Status: ${reservation.status}", color = statusColor, fontWeight = FontWeight.SemiBold)
+            Text("Status: ${reservation.status}", color = statusColor, fontWeight = FontWeight.SemiBold) // Zmiana
 
             Button(
-                onClick = { onCancel(reservation.id) }, // Wywołaj przekazany callback
+                onClick = { onCancel(reservation.id) },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
-                Text("Anuluj / Usuń")
+                Text("Cancel / Delete")
             }
         }
     }

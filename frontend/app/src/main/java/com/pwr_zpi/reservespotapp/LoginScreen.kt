@@ -369,7 +369,7 @@ fun sendLoginRequest(
 
                 Log.d("Login", "Roles: $roles")
 
-                // Navigate based on roles
+
                 CoroutineScope(Dispatchers.Main).launch {
                     if (roles.contains("ROLE_CLIENT") || roles.contains("CLIENT")) {
                         onSuccess("CLIENT")

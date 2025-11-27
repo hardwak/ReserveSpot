@@ -71,10 +71,10 @@ fun AddRestaurantScreen(navController: NavHostController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dodaj nową restaurację") },
+                title = { Text("Add New Restaurant") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -88,35 +88,49 @@ fun AddRestaurantScreen(navController: NavHostController) {
                 .verticalScroll(rememberScrollState())
         ) {
 
-            Text("Podstawowe informacje", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
+            Text("Basic Information", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nazwa restauracji") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Restaurant Name") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Ulica i numer") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Street and Number") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Miasto") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("City") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Opis") },
+                label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
             )
 
             Spacer(Modifier.height(24.dp))
-            Text("Lokalizacja", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
+            Text("Location", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
+            Text("Coordinates are needed for map display.", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Gray)
 
-
+//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+//                OutlinedTextField(
+//                    value = latitude,
+//                    onValueChange = { latitude = it },
+//                    label = { Text("Latitude (Lat)") },
+//                    modifier = Modifier.weight(1f)
+//                )
+//                OutlinedTextField(
+//                    value = longitude,
+//                    onValueChange = { longitude = it },
+//                    label = { Text("Longitude (Lng)") },
+//                    modifier = Modifier.weight(1f)
+//                )
+//            }
 
             Spacer(Modifier.height(8.dp))
 
-            // NOWY PRZYCISK – otwiera mapę
+            // NEW BUTTON – opens map
             Button(
                 onClick = {
                     val lat = latitude.toFloatOrNull() ?: 0f
@@ -126,11 +140,11 @@ fun AddRestaurantScreen(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Text("Wybierz na mapie")
+                Text("Select on Map")
             }
 
             Spacer(Modifier.height(24.dp))
-            Text("Godziny otwarcia", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
+            Text("Opening Hours", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
             Spacer(Modifier.height(8.dp))
 
             days.forEach { day ->
@@ -144,7 +158,7 @@ fun AddRestaurantScreen(navController: NavHostController) {
             Button(
                 onClick = {
                     if (name.isBlank() || address.isBlank() || city.isBlank()) {
-                        Toast.makeText(context, "Uzupełnij nazwę, adres i miasto", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Fill in the name, address, and city", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
@@ -170,10 +184,10 @@ fun AddRestaurantScreen(navController: NavHostController) {
                         isSaving = false
 
                         if (success) {
-                            Toast.makeText(context, "Restauracja utworzona!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Restaurant created!", Toast.LENGTH_SHORT).show()
                             navController.popBackStack()
                         } else {
-                            Toast.makeText(context, "Błąd tworzenia restauracji", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Error creating restaurant", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -184,13 +198,13 @@ fun AddRestaurantScreen(navController: NavHostController) {
                 if (isSaving) {
                     CircularProgressIndicator(color = androidx.compose.ui.graphics.Color.White)
                 } else {
-                    Text("Utwórz restaurację", fontWeight = FontWeight.Bold)
+                    Text("Create Restaurant", fontWeight = FontWeight.Bold)
                 }
             }
 
             Spacer(Modifier.height(16.dp))
             Text(
-                "Uwaga: Zdjęcia będziesz mógł dodać w szczegółach restauracji po jej utworzeniu.",
+                "Note: You will be able to add photos in the restaurant details after creation.",
                 fontSize = 12.sp,
                 color = androidx.compose.ui.graphics.Color.Gray,
                 modifier = Modifier.align(Alignment.CenterHorizontally)

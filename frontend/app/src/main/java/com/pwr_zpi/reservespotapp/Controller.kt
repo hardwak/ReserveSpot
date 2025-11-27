@@ -44,13 +44,20 @@ fun Controller(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hideTopBar = currentRoute in listOf("login", "register")
-    val hideBottomBar = currentRoute in listOf(
-        "login",
-        "register",
-        "restaurant_register",
-        "ownerDashboard",
-        "OwnerRestaurantDetailsScreen"
-    )
+//    val hideBottomBar = currentRoute in listOf(
+//        "login",
+//        "register",
+//        "restaurant_register",
+//        "ownerDashboard",
+//        "OwnerRestaurantDetailsScreen",
+//        "ownerAddRestaurant",
+//        "ownerEditRestaurant/{id}",
+//        "ownerTables/{id}"
+//    )
+
+    val hideBottomBar = currentRoute in listOf("login", "register", "restaurant_register") ||
+            currentRoute?.contains("owner") == true
+
 
     Scaffold(
         topBar = {
@@ -248,11 +255,11 @@ fun Controller(navController: NavHostController) {
                     route = "reservationSummary/{restaurantName}?tableId={tableId}&fullDateTime={fullDateTime}&durationMinutes={durationMinutes}&dateDisplay={dateDisplay}&timeDisplay={timeDisplay}&guests={guests}&durationDisplay={durationDisplay}&location={location}",
                     arguments = listOf(
                         navArgument("restaurantName") { type = NavType.StringType },
-                        // Parametry backendowe
+
                         navArgument("tableId") { type = NavType.LongType },
                         navArgument("fullDateTime") { type = NavType.StringType }, // ISO String
                         navArgument("durationMinutes") { type = NavType.IntType },
-                        // Parametry UI (do wyświetlenia)
+
                         navArgument("dateDisplay") { type = NavType.StringType; defaultValue = "" },
                         navArgument("timeDisplay") { type = NavType.StringType; defaultValue = "" },
                         navArgument("guests") { type = NavType.StringType; defaultValue = "" },

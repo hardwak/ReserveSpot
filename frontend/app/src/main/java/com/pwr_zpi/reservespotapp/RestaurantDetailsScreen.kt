@@ -175,13 +175,11 @@ suspend fun fetchAiAnalysis(context: Context, restaurantId: Long): AiAnalysisDto
         try {
             val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
 
-            // 1. Próba pobrania istniejącej analizy
             val response = RetrofitClient.aiAnalysisApi.getAnalysis("Bearer $token", restaurantId)
 
             if (response.isSuccessful && response.body() != null) {
                 return@withContext response.body()
             } else if (response.code() == 404) {
-                // 2. Jeśli nie ma (404), zlecamy generowanie
                 Log.d("AI_ANALYSIS", "Analysis not found, generating new one...")
                 val genResponse =
                     RetrofitClient.aiAnalysisApi.generateAnalysis("Bearer $token", restaurantId)
@@ -272,7 +270,7 @@ fun RestaurantDetailsScreen(
 
     var aiAnalysis by remember { mutableStateOf<AiAnalysisDto?>(null) }
     var myReview by remember { mutableStateOf<ReviewDto?>(null) }
-    var canCreateReview by remember { mutableStateOf(false) } // Czy użytkownik może dodać opinię?
+    var canCreateReview by remember { mutableStateOf(false) }
     var isReviewDialogVisible by remember { mutableStateOf(false) }
 
 
@@ -285,7 +283,6 @@ fun RestaurantDetailsScreen(
             reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
             myReview = fetchMyReviewForRestaurant(context, restaurantId)
             canCreateReview = checkReviewEligibility(context, restaurantId)
-            // Odświeżamy też zdjęcia, jeśli dodano nowe w recenzji
             photos = fetchPhotos(context, restaurantId)
         }
     }
@@ -316,7 +313,7 @@ fun RestaurantDetailsScreen(
     LaunchedEffect(restaurantId) {
         uiState = LoadState.Loading
         uiState = fetchRestaurantDetails(context, restaurantId)
-        // Pobierz moją recenzję od razu, aby wiedzieć czy pokazać przycisk "Dodaj" czy "Edytuj"
+
         myReview = fetchMyReviewForRestaurant(context, restaurantId)
     }
 
@@ -404,9 +401,6 @@ fun RestaurantDetailsScreen(
         },
         floatingActionButton = {
             if (selectedTabIndex == 1) {
-                // LOGIKA: Pokaż "+" tylko jeśli:
-                // 1. Nie mam jeszcze opinii.
-                // 2. Mam prawo do wystawienia (rezerwacja zakończona).
                 if (myReview == null && canCreateReview) {
                     FloatingActionButton(
                         onClick = { isReviewDialogVisible = true },
@@ -425,7 +419,6 @@ fun RestaurantDetailsScreen(
                 .padding(paddingValues)
                 .offset(y = (-40).dp)
         ) {
-            // Obrazek główny
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp)) {
@@ -451,7 +444,6 @@ fun RestaurantDetailsScreen(
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-                // Info Panel
                 item {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -548,7 +540,6 @@ fun RestaurantDetailsScreen(
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
-                        // Przycisk wstecz - wewnątrz LazyColumn, aby znikał przy przewijaniu
                         IconButton(
                             onClick = { navController.popBackStack() },
                             modifier = Modifier
@@ -684,7 +675,6 @@ fun ReviewsTabContent(
 
                             Spacer(Modifier.weight(1f))
 
-                            // Przyciski edycji/usuwania widoczne TYLKO dla mojej recenzji (isMyReview == true)
                             if (isMyReview) {
                                 IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
                                     Icon(
@@ -717,20 +707,15 @@ fun ReviewsTabContent(
                         if (!review.pic.isNullOrBlank()) {
                             val rawUrl = review.pic
 
-                            // LOGIKA NAPRAWIANIA ADRESU URL DLA EMULATORA
                             val finalImageUrl = when {
-                                // 1. Jeśli adres zawiera localhost, zamień na 10.0.2.2 (dla emulatora)
                                 rawUrl.contains("localhost") -> rawUrl.replace(
                                     "localhost",
                                     "10.0.2.2"
                                 )
-                                // 2. Jeśli to ścieżka względna (np. /images/1.jpg), dodaj pełny adres serwera
                                 !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + rawUrl
-                                // 3. W innym przypadku użyj oryginału
                                 else -> rawUrl
                             }
 
-                            // Dodaj logowanie, abyś widział w Logcat jaki adres próbuje otworzyć
                             Log.d("DEBUG_IMAGE", "Original: $rawUrl -> Final: $finalImageUrl")
 
                             AsyncImage(
@@ -746,7 +731,7 @@ fun ReviewsTabContent(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Color.LightGray),
                                 contentScale = ContentScale.Crop,
-                                placeholder = painterResource(id = R.drawable.food_placeholder), // Użyj food_placeholder jeśli nie masz loading
+                                placeholder = painterResource(id = R.drawable.food_placeholder),
                                 error = painterResource(id = R.drawable.food_placeholder)
                             )
                         }
@@ -764,336 +749,331 @@ fun ReviewsTabContent(
             }
             Spacer(Modifier.height(80.dp))
         }
+    }
+}
+
+@Composable
+fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
+    Row {
+        for (i in 1..5) {
+            Icon(
+                imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.Star,
+                contentDescription = null,
+                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable { onRatingChanged(i) }
+                    .padding(4.dp)
+            )
         }
     }
+}
 
-    @Composable
-    fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
-        Row {
-            for (i in 1..5) {
-                Icon(
-                    imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.Star,
-                    contentDescription = null,
-                    tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+
+@Composable
+fun PhotosTabContent(photos: List<PictureDto>) {
+    if (photos.isEmpty()) {
+        Text("No photos available.", color = Color.Gray, modifier = Modifier.padding(16.dp))
+    } else {
+        Column(modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)) {
+            photos.chunked(2).forEach { rowPhotos ->
+                Row(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clickable { onRatingChanged(i) }
-                        .padding(4.dp)
-                )
-            }
-        }
-    }
-
-
-    @Composable
-    fun PhotosTabContent(photos: List<PictureDto>) {
-        if (photos.isEmpty()) {
-            Text("No photos available.", color = Color.Gray, modifier = Modifier.padding(16.dp))
-        } else {
-            Column(modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)) {
-                photos.chunked(2).forEach { rowPhotos ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        rowPhotos.forEach { photo ->
-                            val url = photo.url
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                if (url != null) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current).data(url)
-                                            .crossfade(true).build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize(),
-                                        placeholder = painterResource(id = R.drawable.food_placeholder),
-                                        error = painterResource(id = R.drawable.food_placeholder)
-                                    )
-                                } else {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.food_placeholder),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowPhotos.forEach { photo ->
+                        val url = photo.url
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            if (url != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current).data(url)
+                                        .crossfade(true).build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize(),
+                                    placeholder = painterResource(id = R.drawable.food_placeholder),
+                                    error = painterResource(id = R.drawable.food_placeholder)
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = R.drawable.food_placeholder),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
                         }
-                        if (rowPhotos.size == 1) Spacer(modifier = Modifier.weight(1f))
                     }
+                    if (rowPhotos.size == 1) Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
     }
+}
 
 
-    @Composable
-    fun AiSummaryCard(analysis: AiAnalysisDto) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF0F7FF), // Delikatny niebieski tło
-                contentColor = Color.Black
-            ),
-            border = BorderStroke(1.dp, Color(0xFF2196F3)) // Niebieska ramka
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome, // Ikona "AI" / Gwiazdki
-                        contentDescription = "AI Summary",
-                        tint = Color(0xFF2196F3)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Gemini Review Summary",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color(0xFF2196F3)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = analysis.summaryText ?: "Analysis available, but text is missing.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    lineHeight = 20.sp
-                )
-
-                // Opcjonalnie: Wyświetlenie sentymentu
-                analysis.sentimentScore?.let { score ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Sentiment Score: ",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
-                        )
-                        // Konwersja wyniku -1.0 do 1.0 na gwiazdki lub procenty, tu prosto tekst:
-                        Text(text = String.format("%.2f", score), fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
-
-
-    @Composable
-    fun AddEditReviewDialog(
-        restaurantId: Long,
-        existingReview: ReviewDto?,
-        onDismiss: () -> Unit,
-        onSuccess: () -> Unit
+@Composable
+fun AiSummaryCard(analysis: AiAnalysisDto) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF0F7FF),
+            contentColor = Color.Black
+        ),
+        border = BorderStroke(1.dp, Color(0xFF2196F3))
     ) {
-        val context = LocalContext.current
-        val scope = rememberCoroutineScope()
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "AI Summary",
+                    tint = Color(0xFF2196F3)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Gemini Review Summary",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF2196F3)
+                )
+            }
 
-        var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
-        var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
-        // Stan dla wybranego lokalnie zdjęcia
-        var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-        // Stan dla istniejącego zdjęcia (przy edycji)
-        var existingPicUrl by remember { mutableStateOf(existingReview?.pic) }
+            Spacer(modifier = Modifier.height(8.dp))
 
-        var isSubmitting by remember { mutableStateOf(false) }
+            Text(
+                text = analysis.summaryText ?: "Analysis available, but text is missing.",
+                style = MaterialTheme.typography.bodyMedium,
+                lineHeight = 20.sp
+            )
 
-        val photoPickerLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia(),
-            onResult = { uri ->
-                if (uri != null) {
-                    selectedImageUri = uri
-                    existingPicUrl = null // Nowe zdjęcie zastępuje stare
+            analysis.sentimentScore?.let { score ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Sentiment Score: ",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+                    Text(text = String.format("%.2f", score), fontSize = 12.sp)
                 }
             }
-        )
+        }
+    }
+}
 
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(text = if (existingReview == null) "Add Review" else "Edit Review") },
-            text = {
-                Column {
-                    Text("Rating:")
-                    StarRatingBar(rating = rating, onRatingChanged = { rating = it })
 
-                    Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun AddEditReviewDialog(
+    restaurantId: Long,
+    existingReview: ReviewDto?,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-                    OutlinedTextField(
-                        value = comment,
-                        onValueChange = { comment = it },
-                        label = { Text("Comment") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 4
-                    )
+    var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
+    var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var existingPicUrl by remember { mutableStateOf(existingReview?.pic) }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+    var isSubmitting by remember { mutableStateOf(false) }
 
-                    Button(
-                        onClick = {
-                            photoPickerLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.LightGray,
-                            contentColor = Color.Black
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = "Select Photo from Gallery")
-                    }
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                selectedImageUri = uri
+                existingPicUrl = null
+            }
+        }
+    )
 
-                    if (selectedImageUri != null) {
-                        Box(modifier = Modifier.padding(top = 8.dp)) {
-                            AsyncImage(
-                                model = selectedImageUri,
-                                contentDescription = "Selected Image",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            IconButton(
-                                onClick = { selectedImageUri = null },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    tint = Color.Red
-                                )
-                            }
-                        }
-                    } else if (!existingPicUrl.isNullOrBlank()) {
-                        Box(modifier = Modifier.padding(top = 8.dp)) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context).data(existingPicUrl).build(),
-                                contentDescription = "Existing Image",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            IconButton(
-                                onClick = { existingPicUrl = null },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    tint = Color.Red
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = if (existingReview == null) "Add Review" else "Edit Review") },
+        text = {
+            Column {
+                Text("Rating:")
+                StarRatingBar(rating = rating, onRatingChanged = { rating = it })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Comment") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 4
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Button(
                     onClick = {
-                        isSubmitting = true
-                        scope.launch(Dispatchers.IO) {
-                            val token = DataStoreManager(context).getBackendToken()
-                            if (token != null) {
-                                var finalPicUrl: String? = existingPicUrl
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.LightGray,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = "Select Photo from Gallery")
+                }
 
-                                if (selectedImageUri != null) {
-                                    val uploadedUrl =
-                                        uploadImageToBackend(context, selectedImageUri!!)
-                                    if (uploadedUrl != null) {
-                                        finalPicUrl = uploadedUrl
-                                    } else {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(
-                                                context,
-                                                "Failed to upload image",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            isSubmitting = false
-                                        }
-                                        return@launch
-                                    }
-                                }
+                if (selectedImageUri != null) {
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Selected Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                } else if (!existingPicUrl.isNullOrBlank()) {
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context).data(existingPicUrl).build(),
+                            contentDescription = "Existing Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = { existingPicUrl = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    isSubmitting = true
+                    scope.launch(Dispatchers.IO) {
+                        val token = DataStoreManager(context).getBackendToken()
+                        if (token != null) {
+                            var finalPicUrl: String? = existingPicUrl
 
-                                val response = if (existingReview == null) {
-                                    val createDto = CreateReviewDto(
-                                        restaurantId = restaurantId,
-                                        rating = rating,
-                                        comment = comment,
-                                        pic = finalPicUrl
-                                    )
-                                    RetrofitClient.reviewsApi.createReview(
-                                        "Bearer $token",
-                                        createDto
-                                    )
+                            if (selectedImageUri != null) {
+                                val uploadedUrl =
+                                    uploadImageToBackend(context, selectedImageUri!!)
+                                if (uploadedUrl != null) {
+                                    finalPicUrl = uploadedUrl
                                 } else {
-                                    val updateDto = UpdateReviewDto(
-                                        rating = rating,
-                                        comment = comment,
-                                        pic = finalPicUrl
-                                    )
-                                    RetrofitClient.reviewsApi.updateReview(
-                                        "Bearer $token",
-                                        existingReview.id!!,
-                                        updateDto
-                                    )
-                                }
-
-                                withContext(Dispatchers.Main) {
-                                    isSubmitting = false
-                                    if (response.isSuccessful) {
-                                        onSuccess()
-                                    } else {
+                                    withContext(Dispatchers.Main) {
                                         Toast.makeText(
                                             context,
-                                            "Error: ${response.message()}",
+                                            "Failed to upload image",
                                             Toast.LENGTH_SHORT
                                         ).show()
+                                        isSubmitting = false
                                     }
+                                    return@launch
+                                }
+                            }
+
+                            val response = if (existingReview == null) {
+                                val createDto = CreateReviewDto(
+                                    restaurantId = restaurantId,
+                                    rating = rating,
+                                    comment = comment,
+                                    pic = finalPicUrl
+                                )
+                                RetrofitClient.reviewsApi.createReview(
+                                    "Bearer $token",
+                                    createDto
+                                )
+                            } else {
+                                val updateDto = UpdateReviewDto(
+                                    rating = rating,
+                                    comment = comment,
+                                    pic = finalPicUrl
+                                )
+                                RetrofitClient.reviewsApi.updateReview(
+                                    "Bearer $token",
+                                    existingReview.id!!,
+                                    updateDto
+                                )
+                            }
+
+                            withContext(Dispatchers.Main) {
+                                isSubmitting = false
+                                if (response.isSuccessful) {
+                                    onSuccess()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error: ${response.message()}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         }
-                    },
-                    enabled = !isSubmitting,
-                    colors = ButtonDefaults.buttonColors(containerColor = RSRed)
-                ) {
-                    if (isSubmitting) CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = Color.White
-                    )
-                    else Text(if (existingReview == null) "Submit" else "Update")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(
-                        "Cancel",
-                        color = Color.Gray
-                    )
-                }
+                    }
+                },
+                enabled = !isSubmitting,
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            ) {
+                if (isSubmitting) CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White
+                )
+                else Text(if (existingReview == null) "Submit" else "Update")
             }
-        )
-    }
-
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Cancel",
+                    color = Color.Gray
+                )
+            }
+        }
+    )
+}

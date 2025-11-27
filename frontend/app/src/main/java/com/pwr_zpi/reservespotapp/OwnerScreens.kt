@@ -55,7 +55,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Calendar
 
-// --- 1. EKRAN LISTY RESTAURACJI WŁAŚCICIELA ---
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerRestaurantListScreen(navController: NavHostController) {
@@ -80,7 +80,7 @@ fun OwnerRestaurantListScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Moje Restauracje", fontWeight = FontWeight.Bold) })
+            TopAppBar(title = { Text("My Restaurants", fontWeight = FontWeight.Bold) })
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -98,7 +98,7 @@ fun OwnerRestaurantListScreen(navController: NavHostController) {
             }
         } else if (restaurants.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                Text("Nie masz jeszcze żadnych restauracji.", color = Color.Gray)
+                Text("You don't have any restaurants yet.", color = Color.Gray)
             }
         } else {
             LazyColumn(modifier = Modifier.padding(paddingValues).padding(16.dp)) {
@@ -146,7 +146,7 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
     var isLoading by remember { mutableStateOf(true) }
 
     var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Edycja", "Stoliki", "Rezerwacje", "Opinie", "Zdjęcia")
+    val tabs = listOf("Edit", "Tables", "Reservations", "Reviews", "Photos")
 
     LaunchedEffect(restaurantId) {
         isLoading = true
@@ -160,7 +160,7 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
     }
 
     if (restaurant == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Błąd pobierania danych.") }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Error fetching data.") }
         return
     }
 
@@ -170,7 +170,7 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
                 title = { Text(restaurant!!.name) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -217,7 +217,6 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
     }
 }
 
-// --- TAB 1: EDYCJA DANYCH ---
 @Composable
 fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, onUpdateSuccess: (RestaurantDto) -> Unit) {
     val scope = rememberCoroutineScope()
@@ -229,14 +228,14 @@ fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, onUpdateSucce
     val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-        Text("Dane podstawowe", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text("Basic data", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nazwa") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Adres") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Miasto") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Opis") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("City") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
         Spacer(Modifier.height(24.dp))
-        Text("Godziny otwarcia", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text("Opening hours", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         days.forEach { day ->
             OpeningHoursRow(day, openingHours[day] ?: "Closed") { newHours -> openingHours[day] = newHours }
         }
@@ -254,14 +253,14 @@ fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, onUpdateSucce
                     val updatedRestaurant = updateRestaurant(context, restaurant.id, updateDto)
                     if (updatedRestaurant != null) {
                         onUpdateSuccess(updatedRestaurant)
-                        Toast.makeText(context, "Zapisano zmiany!", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(context, "Błąd zapisu.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Changes saved!", Toast.LENGTH_SHORT).show()
+                    } else Toast.makeText(context, "Save error.", Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             colors = ButtonDefaults.buttonColors(containerColor = RSRed)
         ) {
-            Text("Zapisz zmiany")
+            Text("Save changes")
         }
     }
 }
@@ -291,7 +290,6 @@ fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) 
     }
 }
 
-// --- TAB 2: ZARZĄDZANIE STOLIKAMI ---
 @Composable
 fun ManageTablesTab(restaurantId: Long, context: Context) {
     var tables by remember { mutableStateOf<List<RestaurantTableDto>>(emptyList()) }
@@ -302,11 +300,11 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
     LaunchedEffect(restaurantId) { tables = fetchTables(context, restaurantId) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Dodaj stolik", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text("Add table", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-            OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Liczba osób") }, modifier = Modifier.weight(1f))
+            OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Number of people") }, modifier = Modifier.weight(1f))
             Spacer(Modifier.width(8.dp))
-            OutlinedTextField(value = newLocation, onValueChange = { newLocation = it }, label = { Text("Lokalizacja") }, modifier = Modifier.weight(2f))
+            OutlinedTextField(value = newLocation, onValueChange = { newLocation = it }, label = { Text("Location") }, modifier = Modifier.weight(2f))
         }
         Button(
             onClick = {
@@ -315,25 +313,24 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
                     addTable(context, dto)
                     tables = fetchTables(context, restaurantId)
                     newCapacity = ""; newLocation = ""
-                    Toast.makeText(context, "Stolik dodany!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Table added!", Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = RSRed)
-        ) { Text("Dodaj stolik") }
+        ) { Text("Add table") }
         Spacer(Modifier.height(16.dp)); Divider(); Spacer(Modifier.height(16.dp))
-        Text("Twoje stoliki", fontWeight = FontWeight.Bold)
+        Text("Your tables", fontWeight = FontWeight.Bold)
         LazyColumn {
             items(tables) { table ->
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)).padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column { Text("ID: ${table.id} | Nr: ${table.tableNumber ?: "?"}"); Text("Miejsc: ${table.capacity} | ${table.locationInRestaurant}") }
-                    IconButton(onClick = { scope.launch { deleteTable(context, table.id); tables = fetchTables(context, restaurantId) } }) { Icon(Icons.Default.Delete, "Usuń", tint = Color.Gray) }
+                    IconButton(onClick = { scope.launch { deleteTable(context, table.id); tables = fetchTables(context, restaurantId) } }) { Icon(Icons.Default.Delete, "Delete", tint = Color.Gray) }
                 }
             }
         }
     }
 }
 
-// --- TAB 3: ZARZĄDZANIE REZERWACJAMI ---
 @Composable
 fun OwnerReservationsTab(context: Context) {
     var reservations by remember { mutableStateOf<List<OwnerReservationDto>>(emptyList()) }
@@ -345,17 +342,16 @@ fun OwnerReservationsTab(context: Context) {
     if (isLoading) {
         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
     } else if (reservations.isEmpty()) {
-        Text("Brak nadchodzących rezerwacji.", modifier = Modifier.padding(16.dp))
+        Text("No upcoming reservations.", modifier = Modifier.padding(16.dp))
     } else {
         LazyColumn(modifier = Modifier.padding(16.dp)) {
             items(reservations) { res ->
-                OwnerReservationCard(reservation = res, onCancel = { id -> scope.launch { cancelOwnerReservation(context, id); reservations = fetchOwnerReservations(context); Toast.makeText(context, "Anulowano.", Toast.LENGTH_SHORT).show() } })
+                OwnerReservationCard(reservation = res, onCancel = { id -> scope.launch { cancelOwnerReservation(context, id); reservations = fetchOwnerReservations(context); Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show() } })
             }
         }
     }
 }
 
-// --- TAB 4: OPINIE ---
 @Composable
 fun OwnerReviewsTab(restaurantId: Long, context: Context) {
     var reviews by remember { mutableStateOf<List<ReviewDto>>(emptyList()) }
@@ -370,7 +366,7 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
     if (isLoading) {
         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
     } else if (reviews.isEmpty()) {
-        Text("Ta restauracja nie ma jeszcze opinii.", modifier = Modifier.padding(16.dp), color = Color.Gray)
+        Text("This restaurant has no reviews yet.", modifier = Modifier.padding(16.dp), color = Color.Gray)
     } else {
         LazyColumn(modifier = Modifier.padding(16.dp)) {
             items(reviews) { review ->
@@ -399,7 +395,7 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
                         if (!review.comment.isNullOrEmpty()) {
                             Text(text = review.comment, fontSize = 14.sp)
                         } else {
-                            Text(text = "Brak komentarza", fontSize = 14.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color.Gray)
+                            Text(text = "No comment", fontSize = 14.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color.Gray)
                         }
                     }
                 }
@@ -408,7 +404,6 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
     }
 }
 
-// --- TAB 5: ZDJĘCIA (Z POPRAWKAMI) ---
 @Composable
 fun OwnerPhotosTab(restaurantId: Long, context: Context) {
     var pictures by remember { mutableStateOf<List<PictureDto>>(emptyList()) }
@@ -419,7 +414,6 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
     fun refreshPictures() {
         scope.launch {
             isLoading = true
-            // Pobieramy zdjęcia (z filtrowaniem)
             pictures = fetchRestaurantPictures(context, restaurantId)
             isLoading = false
         }
@@ -437,10 +431,10 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
                 isUploading = true
                 val success = uploadRestaurantPicture(context, uri)
                 if (success) {
-                    Toast.makeText(context, "Zdjęcie dodane! (Odśwież lub sprawdź czy przypisane)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Photo added! (Refresh or check if assigned)", Toast.LENGTH_SHORT).show()
                     refreshPictures()
                 } else {
-                    Toast.makeText(context, "Błąd wysyłania zdjęcia.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error sending photo.", Toast.LENGTH_SHORT).show()
                 }
                 isUploading = false
             }
@@ -457,11 +451,11 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
             if (isUploading) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
                 Spacer(Modifier.width(8.dp))
-                Text("Wysyłanie...")
+                Text("Uploading...")
             } else {
                 Icon(Icons.Default.AddPhotoAlternate, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Dodaj zdjęcie z galerii")
+                Text("Add photo from gallery")
             }
         }
 
@@ -470,7 +464,7 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
         if (isLoading) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
         } else if (pictures.isEmpty()) {
-            Text("Brak zdjęć w galerii dla tej restauracji.", color = Color.Gray)
+            Text("No photos in the gallery for this restaurant.", color = Color.Gray)
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -478,14 +472,13 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(pictures) { pic ->
-                    // NAPRAWA BIAŁYCH PÓL: Dodanie BASE_URL jeśli link jest względny
                     val imageUrl = pic.url?.let {
                         if (it.startsWith("http")) it else "${RetrofitClient.BASE_URL}$it"
                     }
 
                     AsyncImage(
                         model = imageUrl,
-                        contentDescription = "Zdjęcie restauracji",
+                        contentDescription = "Restaurant photo",
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clip(RoundedCornerShape(8.dp))
@@ -498,8 +491,6 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
     }
 }
 
-// --- API Helper Functions ---
-
 suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<RestaurantDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
@@ -511,7 +502,6 @@ suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<Restaur
     }
 }
 
-// UNIKALNA NAZWA FUNKCJI
 suspend fun fetchOwnerRestaurantDetails(context: Context, id: Long): RestaurantDto? = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
@@ -583,14 +573,12 @@ suspend fun fetchRestaurantPictures(context: Context, restaurantId: Long): List<
 
         if (response.isSuccessful) {
             val allPictures = response.body() ?: emptyList()
-            // FILTROWANIE PO STRONIE KLIENTA
-            // Zwracamy tylko te zdjęcia, których lista restaurantIds zawiera ID naszej restauracji
             allPictures.filter { it.restaurantIds.contains(restaurantId) }
         } else {
             emptyList()
         }
     } catch (e: Exception) {
-        Log.e("API", "Błąd pobierania zdjęć", e)
+        Log.e("API", "Error downloading photos", e)
         emptyList()
     }
 }

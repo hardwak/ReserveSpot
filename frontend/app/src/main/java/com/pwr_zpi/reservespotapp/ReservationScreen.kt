@@ -80,7 +80,7 @@ fun ReservationScreen(
     val scope = rememberCoroutineScope()
     val dataStore = DataStoreManager(context)
 
-    // Parsowanie daty początkowej
+
     val parsedDate = remember(initialDate) {
         if (!initialDate.isNullOrEmpty()) {
             try {
@@ -106,15 +106,14 @@ fun ReservationScreen(
     val durationMap = mapOf("1 hour" to 60, "1.5 hours" to 90, "2 hours" to 120)
     val guestsOptions = (1..10).map { it.toString() }
     val durationOptions = durationMap.keys.toList()
-    val locationOptions = listOf("Any", "Window", "Garden", "Inside") // Dopasuj do backendu jeśli masz enum
-
+    val locationOptions = listOf("Any", "Window", "Garden", "Inside")
 
     fun fetchAvailability() {
         scope.launch {
             isLoading = true
             try {
                 val token = dataStore.getBackendToken()
-                // Logowanie tokena (sprawdź w Logcat czy nie jest null/pusty)
+
                 Log.d("ReservationDebug", "Token: $token")
                 Log.d("ReservationDebug", "Restaurant ID: $restaurantId")
 
@@ -139,7 +138,7 @@ fun ReservationScreen(
                             selectedTime = null
                         }
                     } else {
-                        // KLUCZOWE: Logowanie błędu z serwera
+
                         val errorBody = response.errorBody()?.string()
                         Log.e("ReservationDebug", "Error Code: ${response.code()}")
                         Log.e("ReservationDebug", "Error Body: $errorBody")
@@ -181,20 +180,7 @@ fun ReservationScreen(
 
     val scrollState = rememberScrollState()
 
-////    generating time slots
-//    val timeOptions = remember {
-//        val times = mutableListOf<String>()
-//        var hour = 12
-//        while (hour <= 21) {
-//            times.add(String.format("%02d:00", hour))
-//            times.add(String.format("%02d:30", hour))
-//            hour++
-//        }
-//        times.add("22:00")
-//        times
-//    }
-//
-//    val scrollState = rememberScrollState()
+
 
 
 
@@ -216,7 +202,7 @@ fun ReservationScreen(
                 .padding(paddingValues)
                 .background(Color.White)
         ) {
-            // Zakładki
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -227,7 +213,7 @@ fun ReservationScreen(
                 ReservationTab("Summary", false)
             }
 
-            // Nagłówek
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -251,7 +237,7 @@ fun ReservationScreen(
                     .padding(horizontal = 16.dp)
                     .verticalScroll(scrollState)
             ) {
-                // Data
+
                 FormSectionTitle("Data")
                 DateSelector(
                     selectedDate = selectedDate,
@@ -259,7 +245,7 @@ fun ReservationScreen(
                     onOpenCalendar = { showDatePicker = true }
                 )
 
-                // Goście
+
                 FormSectionTitle("Guests number")
                 HorizontalSelector(
                     options = guestsOptions,
@@ -267,7 +253,7 @@ fun ReservationScreen(
                     onSelect = { selectedGuests = it.toIntOrNull() ?: 2 }
                 )
 
-                // Czas trwania
+
                 FormSectionTitle("Duration")
                 HorizontalSelector(
                     options = durationOptions,
@@ -275,7 +261,7 @@ fun ReservationScreen(
                     onSelect = { selectedDurationLabel = it }
                 )
 
-                // Lokalizacja
+
                 FormSectionTitle("Table location")
                 HorizontalSelector(
                     options = locationOptions,
@@ -283,7 +269,7 @@ fun ReservationScreen(
                     onSelect = { selectedLocation = it }
                 )
 
-                // Godzina (wyświetlana na końcu, bo zależy od powyższych)
+
                 FormSectionTitle("Available Hours")
                 if (isLoading) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = RSRed)
@@ -311,15 +297,14 @@ fun ReservationScreen(
                         val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
                         val fullIsoDateTime = chosenSlot.start
 
-                        // --- POPRAWKA: KODOWANIE URL ---
-                        // Musimy zakodować znaki specjalne (spacje, dwukropki itp.), aby nie psuły nawigacji
+
 
                         val encodedRestaurantName = URLEncoder.encode(restaurantName, StandardCharsets.UTF_8.toString())
                         val encodedLocation = URLEncoder.encode(selectedLocation, StandardCharsets.UTF_8.toString())
-                        // Kodujemy datę, bo zawiera dwukropki (np. 18:00:00 -> 18%3A00%3A00)
+
                         val encodedFullDate = URLEncoder.encode(fullIsoDateTime, StandardCharsets.UTF_8.toString())
 
-                        // Formatujemy trasę używając zakodowanych wartości
+
                         val route = "reservationSummary/$encodedRestaurantName?" +
                                 "tableId=${chosenSlot.tableId}&" +
                                 "fullDateTime=$encodedFullDate&" +
@@ -490,7 +475,7 @@ fun ReservationDatePicker(
         object : SelectableDates {
 
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                // Allow dates >= today's date
+
                 return utcTimeMillis >= todayMillis
             }
 

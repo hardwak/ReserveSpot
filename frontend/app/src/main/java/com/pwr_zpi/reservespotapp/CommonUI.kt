@@ -48,7 +48,7 @@ fun EditDetailTextField(
 }
 
 /**
- * Sahred componenent for screens Account and Settings.
+ * Shared componenent for screens Account and Settings.
  */
 @Composable
 fun AccountOptionRow(icon: ImageVector, text: String, onClick: () -> Unit) {
