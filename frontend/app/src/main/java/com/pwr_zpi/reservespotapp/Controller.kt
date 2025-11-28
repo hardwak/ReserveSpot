@@ -45,7 +45,11 @@ fun Controller(navController: NavHostController) {
 
     val hideTopBar = currentRoute in listOf("") // List of screens where top bar should be hidden
     val hideBottomBar =
-        currentRoute in listOf("login") // List of screens where NavBar should be hidden
+        currentRoute in listOf("login", "register", "restaurant_register") // List of screens where NavBar should be hidden
+
+//    navController.addOnDestinationChangedListener { _, dest, _ ->
+//        Log.d("NAV", "Navigated to ${dest.route}")
+//    }
 
     Scaffold(
         topBar = {
@@ -129,15 +133,20 @@ fun Controller(navController: NavHostController) {
             modifier = Modifier.padding(innerPadding)
 //            Routes below
         ) {
+
+
             composable("home") { MainMenuScreen(navController) }
 
-            composable("restaurantDetails/{restaurantId}/{rating}") { backStackEntry ->
+            composable(
+                "restaurantDetails/{restaurantId}",
+                arguments = listOf(
+                    navArgument("restaurantId") { type = NavType.LongType }
+                )
+            ) { backStackEntry ->
 
-                val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
-                val rating = backStackEntry.arguments?.getFloat("rating") ?: 0.0f
+                val id = backStackEntry.arguments?.getLong("restaurantId") ?: 0L
 
-
-                RestaurantDetailsScreen(navController, id, rating)
+                RestaurantDetailsScreen(navController, id)
 
             }
 
@@ -156,11 +165,11 @@ fun Controller(navController: NavHostController) {
                 LocationPickerScreen(navController, finalLat, finalLng)
             }
 
-            composable("owner") { OwnerRestaurantListScreen(navController) } // Ekran z listą restauracji
-            composable("owner/restaurant/{restaurantId}") { backStackEntry ->
-                val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
-                OwnerRestaurantDetailsScreen(navController, id) // Ekran zarządzania rezerwacjami/opiniami/edycją
-            }
+//            composable("owner") { OwnerRestaurantListScreen(navController) } // Ekran z listą restauracji
+//            composable("owner/restaurant/{restaurantId}") { backStackEntry ->
+//                val id = backStackEntry.arguments?.getString("restaurantId")?.toLongOrNull() ?: 0L
+//                OwnerRestaurantDetailsScreen(navController, id) // Ekran zarządzania rezerwacjami/opiniami/edycją
+//            }
 
             composable(
 
@@ -204,17 +213,17 @@ fun Controller(navController: NavHostController) {
             composable("register") { RegisterScreen(navController) }
             composable("restaurant_register") { RestaurantRegisterScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
-            composable("ownerDashboard") { OwnerDashboardScreen(navController) }
-            composable("ownerReservations") { OwnerReservationsScreen(navController) }
+//            composable("ownerDashboard") { OwnerDashboardScreen(navController) }
+//            composable("ownerReservations") { OwnerReservationsScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
-            composable("ownerEditRestaurant/{id}") { backStackEntry ->
-                val id = backStackEntry.arguments?.getString("id") ?: "new"
-                OwnerEditRestaurantScreen(navController, id)
-            }
-            composable("ownerTables/{id}") { backStackEntry ->
-                val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
-                OwnerTablesScreen(navController, id)
-            }
+//            composable("ownerEditRestaurant/{id}") { backStackEntry ->
+//                val id = backStackEntry.arguments?.getString("id") ?: "new"
+//                OwnerEditRestaurantScreen(navController, id)
+//            }
+//            composable("ownerTables/{id}") { backStackEntry ->
+//                val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
+//                OwnerTablesScreen(navController, id)
+//            }
              composable("favourites") { FavouritesScreen(navController) }
 
             composable(

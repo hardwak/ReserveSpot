@@ -65,14 +65,15 @@ fun MainMenuScreen(navController: NavHostController) {
 
             var recNum = 0
             while (recommendations.size - recNum >= 3) {
+                val num = recNum
                 RestaurantInfoCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(300.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .align(Alignment.CenterHorizontally)
-                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
-                    recommendations[recNum]
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num].id}")}),
+                    info = recommendations[recNum]
                 )
                 recNum += 1
 
@@ -86,7 +87,7 @@ fun MainMenuScreen(navController: NavHostController) {
                         modifier = Modifier
                             .weight(1f)
                             .height(300.dp) // fixed width
-                            .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
+                            .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num+1].id}")}),
                         info = recommendations[recNum]
                     )
                     recNum += 1
@@ -97,21 +98,22 @@ fun MainMenuScreen(navController: NavHostController) {
                         modifier = Modifier
                             .weight(1f) // dividing space in row
                             .height(300.dp) // fixed width
-                            .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
-                        recommendations[recNum]
+                            .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num+2].id}")}),
+                        info = recommendations[recNum]
                     )
                     recNum += 1
                 }
             }
 
             while (recommendations.size - recNum > 0) {
+                val num = recNum
                 RestaurantInfoCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(300.dp)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .align(Alignment.CenterHorizontally)
-                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[recNum].id}")}),
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num].id}")}),
                     recommendations[recNum]
                 )
                 recNum += 1

@@ -90,7 +90,7 @@ fun RegisterScreen(navController: NavHostController) {
                         "CLIENT" -> navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }
-                        "RESTAURANT" -> navController.navigate("restauranthome") {
+                        "RESTAURANT" -> navController.navigate("ownerDashboard") {
                             popUpTo("login") { inclusive = true }
                         }
                         "ADMIN" -> {
