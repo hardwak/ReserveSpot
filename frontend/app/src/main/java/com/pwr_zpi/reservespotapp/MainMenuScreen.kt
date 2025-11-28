@@ -64,14 +64,14 @@ fun MainMenuScreen(navController: NavHostController) {
             )
 
         var recNum = 0
-        while (recommendedList.size - recNum >= 3) {
+        while (recommendations.size - recNum >= 3) {
             RestaurantInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .align(Alignment.CenterHorizontally),
-                recommendedList[recNum]
+                recommendations[recNum]
             )
             recNum += 1
 
@@ -85,7 +85,7 @@ fun MainMenuScreen(navController: NavHostController) {
                     modifier = Modifier
                         .weight(1f)
                         .height(300.dp), // fixed width
-                    recommendedList[recNum]
+                    recommendations[recNum]
                 )
                 recNum += 1
 
@@ -95,20 +95,20 @@ fun MainMenuScreen(navController: NavHostController) {
                     modifier = Modifier
                         .weight(1f) // dividing space in row
                         .height(300.dp), // fixed width
-                    recommendedList[recNum]
+                    recommendations[recNum]
                 )
                 recNum += 1
             }
         }
 
-        while (recommendedList.size - recNum > 0) {
+        while (recommendations.size - recNum > 0) {
             RestaurantInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .align(Alignment.CenterHorizontally),
-                recommendedList[recNum]
+                recommendations[recNum]
             )
             recNum += 1
         }

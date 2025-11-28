@@ -1,6 +1,9 @@
 package com.pwr_zpi.reservespotapp
 
 import androidx.compose.ui.semantics.Role
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -8,24 +11,14 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.time.LocalDateTime
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializer
 import retrofit2.http.PUT
-import java.time.format.DateTimeFormatter
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import retrofit2.http.Multipart
 import retrofit2.http.Part
-import okhttp3.OkHttpClient
-import okhttp3.ResponseBody
-import okhttp3.logging.HttpLoggingInterceptor
 import java.security.AuthProvider
-import java.util.concurrent.TimeUnit
 
 
 data class GoogleTokenRequest(
@@ -109,8 +102,9 @@ data class ReviewDto(
     val rating: Int?,
     val comment: String?,
     val pic: String?,
-    val createdAt: LocalDateTime?,
-    val pictureIds: Set<Long>?
+    val createdAt: String?,
+    val pictureIds: Set<Long>?,
+    val date: String
 )
 
 data class RestaurantDto(
@@ -285,6 +279,22 @@ data class RestaurantTableDto(
     val reservationIds: Set<Long>?
 )
 
+interface PicturesApi {
+    @GET("/api/pictures")
+    suspend fun getPictures(
+        @Header("Authorization") token: String,
+        @Query("restaurantId") restaurantId: Long
+    ): Response<List<PictureDto>>
+
+    @Multipart
+    @POST("/api/pictures/file")
+    suspend fun uploadPicture(
+        @Header("Authorization") token: String,
+        @Part file: MultipartBody.Part,
+        @Part("description") description: RequestBody? = null
+    ): Response<PictureDto>
+}
+
 interface AuthApi {
     @POST("/api/auth/google")
     suspend fun googleLogin(@Body request: GoogleTokenRequest): Response<AuthResponse>
@@ -330,8 +340,8 @@ interface ReservationApi {
 }
 
 interface RestaurantApi {
-    @GET("/api/users/me/favorites")
-    suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
+//    @GET("/api/users/me/favorites")
+//    suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 
     @GET("/api/restaurants/recommendations")
     suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>
@@ -360,6 +370,30 @@ interface RestaurantApi {
         @Header("Authorization") token: String,
         @Path("id") id: Long
     ): Response<RestaurantDto>
+
+    @GET("/api/users/me/favorites")
+    suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
+
+    @POST("api/users/me/favorites/{restaurantId}")
+    suspend fun addFavourite(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<Unit>
+
+    @DELETE("api/users/me/favorites/{restaurantId}")
+    suspend fun removeFavourite(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<Unit>
+
+    @GET("api/users/me/favorites/{restaurantId}/check")
+    suspend fun checkFavourite(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<Boolean>
+
+
+
 }
 
 interface ReviewsApi {
@@ -399,28 +433,32 @@ interface ReviewsApi {
         @Header("Authorization") token: String,
         @Path("id") reviewId: Long
     ): Response<Unit>
+}
 
-    @POST("api/users/me/favorites/{restaurantId}")
-    suspend fun addFavourite(
+interface UserApi {
+    @GET("/api/users/{id}")
+    suspend fun getUserDetails(
         @Header("Authorization") token: String,
-        @Path("restaurantId") restaurantId: Long
+        @Path("id") userId: Long
+    ): Response<UserSummaryDto>
+
+    @GET("/api/users/me")
+    suspend fun getMyDetails(
+        @Header("Authorization") token: String
+    ): Response<AccountUserDto>
+
+    @PUT("/api/users/me")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body updateDto: UpdateProfileDto
+    ): Response<ResponseBody>
+
+    @POST("/api/auth/change-password")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Body request: ChangePasswordDto
     ): Response<Unit>
 
-    @DELETE("api/users/me/favorites/{restaurantId}")
-    suspend fun removeFavourite(
-        @Header("Authorization") token: String,
-        @Path("restaurantId") restaurantId: Long
-    ): Response<Unit>
-
-    @GET("api/users/me/favorites/{restaurantId}/check")
-    suspend fun checkFavourite(
-        @Header("Authorization") token: String,
-        @Path("restaurantId") restaurantId: Long
-    ): Response<Boolean>
-
-
-    @GET("/api/restaurants/recommendations")
-    suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 }
 
 //Restaurant and owners DTOs
@@ -458,45 +496,74 @@ data class OwnerReservationDto(
     val status: String // PENDING, CONFIRMED etc.
 )
 
-// API Interface for owner
-interface OwnerApi {
-    // Restaurant
+interface OwnerApi{
+
     @GET("/api/restaurants/owner/{ownerId}")
-    suspend fun getMyRestaurants(@Header("Authorization") token: String, @retrofit2.http.Path("ownerId") ownerId: Long): Response<List<OwnerRestaurantDto>>
+    suspend fun getMyRestaurants(
+        @Header("Authorization") token: String,
+        @Path("ownerId") ownerId: Long
+    ): Response<List<RestaurantDto>>
 
     @POST("/api/restaurants")
-    suspend fun addRestaurant(@Header("Authorization") token: String, @Body restaurant: OwnerRestaurantDto): Response<OwnerRestaurantDto>
+    suspend fun createRestaurant(
+        @Header("Authorization") token: String,
+        @Body restaurant: CreateRestaurantDto
+    ): Response<RestaurantDto>
 
-    @retrofit2.http.PUT("/api/restaurants/{id}")
-    suspend fun updateRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long, @Body restaurant: OwnerRestaurantDto): Response<OwnerRestaurantDto>
+    @PUT("/api/restaurants/{id}")
+    suspend fun updateRestaurant(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long,
+        @Body restaurant: UpdateRestaurantDto
+    ): Response<RestaurantDto>
 
-    @retrofit2.http.DELETE("/api/restaurants/{id}")
-    suspend fun deleteRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
-
-    @GET("/api/reviews/restaurant/{restaurantId}")
-    suspend fun getRestaurantReviews(@Header("Authorization") token: String, @retrofit2.http.Path("restaurantId") restaurantId: Long): Response<List<ReviewDto>>
-
-    // Tables
-    @GET("/api/tables/restaurant/{restaurantId}") // endpoint for getting tables (nned to check if it ex.)
-    suspend fun getTablesByRestaurant(@Header("Authorization") token: String, @retrofit2.http.Path("restaurantId") restaurantId: Long): Response<List<TableDto>>
+    @GET("/api/tables/restaurant/{restaurantId}")
+    suspend fun getTablesByRestaurant(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<List<RestaurantTableDto>>
 
     @POST("/api/tables")
-    suspend fun addTable(@Header("Authorization") token: String, @Body table: TableDto): Response<TableDto>
+    suspend fun addTable(
+        @Header("Authorization") token: String,
+        @Body table: CreateRestaurantTableDto
+    ): Response<RestaurantTableDto>
 
-    @retrofit2.http.DELETE("/api/tables/{id}")
-    suspend fun deleteTable(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
+    @DELETE("/api/tables/{id}")
+    suspend fun deleteTable(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): Response<Unit>
 
-    // Reservations
     @GET("/api/reservations/owner/upcoming")
-    suspend fun getOwnerUpcomingReservations(@Header("Authorization") token: String): Response<List<OwnerReservationDto>>
+    suspend fun getOwnerUpcomingReservations(
+        @Header("Authorization") token: String
+    ): Response<List<OwnerReservationDto>>
 
-    @retrofit2.http.DELETE("/api/reservations/{id}")
-    suspend fun cancelReservation(@Header("Authorization") token: String, @retrofit2.http.Path("id") id: Long): Response<Unit>
+    @DELETE("/api/reservations/{id}")
+    suspend fun cancelReservation(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long
+    ): Response<Unit>
+}
+
+interface AiAnalysisApi {
+    @GET("/api/ai-analysis/restaurant/{restaurantId}")
+    suspend fun getAnalysis(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<AiAnalysisDto>
+
+    @POST("/api/ai-analysis/generate/restaurant/{restaurantId}")
+    suspend fun generateAnalysis(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<AiAnalysisDto>
 }
 
 
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:8080"
+    const val BASE_URL = "http://10.0.2.2:8080"
 
 
 //    private val gson = GsonBuilder()
@@ -525,5 +592,21 @@ object RetrofitClient {
 
     val ownerApi: OwnerApi by lazy {
         retrofit.create(OwnerApi::class.java)
+    }
+
+    val userApi: UserApi by lazy {
+        retrofit.create(UserApi::class.java)
+    }
+
+    val reviewsApi: ReviewsApi by lazy {
+        retrofit.create(ReviewsApi::class.java)
+    }
+
+    val picturesApi: PicturesApi by lazy {
+        retrofit.create(PicturesApi::class.java)
+    }
+
+    val aiAnalysisApi: AiAnalysisApi by lazy {
+        retrofit.create(AiAnalysisApi::class.java)
     }
 }

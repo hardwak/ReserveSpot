@@ -55,7 +55,9 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Calendar
-import kotlin.collections.emptyList
+import com.pwr_zpi.reservespotapp.RetrofitClient // Umożliwia dostęp do RetrofitClient.userApi
+import com.pwr_zpi.reservespotapp.AccountUserDto // Umożliwia dostęp do userResponse.body()
+import com.pwr_zpi.reservespotapp.RestaurantDto
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -525,8 +527,10 @@ suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<Restaur
     } catch (e: Exception) {
         Log.e("API", "Błąd pobierania restauracji", e)
         emptyList()
-
+    }
 }
+
+
 
 suspend fun fetchOwnerRestaurantDetails(context: Context, id: Long): RestaurantDto? = withContext(Dispatchers.IO) {
     try {
@@ -541,15 +545,16 @@ suspend fun updateRestaurant(context: Context, id: Long, dto: UpdateRestaurantDt
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
         val response = RetrofitClient.ownerApi.updateRestaurant("Bearer $token", id, dto)
         if (response.isSuccessful) response.body() else null
-    } catch (e: Exception) { null } as Nothing?
+    } catch (e: Exception) { null }
 }
-suspend fun fetchTables(context: Context, restaurantId: Long): List<TableDto> = withContext(Dispatchers.IO) {
-        try {
-            val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-            val response = RetrofitClient.ownerApi.getTablesByRestaurant("Bearer $token", restaurantId)
-            if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-        } catch (e: Exception) { emptyList() }
-    }
+
+suspend fun fetchTables(context: Context, restaurantId: Long): List<RestaurantTableDto> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+        val response = RetrofitClient.ownerApi.getTablesByRestaurant("Bearer $token", restaurantId)
+        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+    } catch (e: Exception) { emptyList() }
+}
 
 suspend fun addTable(context: Context, dto: CreateRestaurantTableDto) = withContext(Dispatchers.IO) {
     try {
@@ -580,16 +585,16 @@ suspend fun cancelOwnerReservation(context: Context, id: Long) = withContext(Dis
     } catch (e: Exception) { Log.e("API", "Błąd anulowania", e) }
 }
 
-    suspend fun fetchRestaurantReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
-        try {
-            val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-            val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
-            if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-        } catch (e: Exception) {
-            Log.e("API", "Błąd pobierania opinii", e)
-            emptyList()
-        }
+suspend fun fetchRestaurantReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+        val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
+        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+    } catch (e: Exception) {
+        Log.e("API", "Błąd pobierania opinii", e)
+        emptyList()
     }
+}
 
 suspend fun fetchRestaurantPictures(context: Context, restaurantId: Long): List<PictureDto> = withContext(Dispatchers.IO) {
     try {

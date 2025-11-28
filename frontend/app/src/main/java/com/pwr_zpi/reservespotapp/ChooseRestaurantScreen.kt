@@ -195,7 +195,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     var selectedCity by remember { mutableStateOf("New York") }
     var selectedCuisines by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var selectedRatingRange by remember { mutableStateOf(1.0f..5.0f) }
+    var selectedRatingRange by remember { mutableStateOf(0.0f..5.0f) }
 
     LaunchedEffect(Unit) {
         isFiltersLoading = true
@@ -339,7 +339,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y=(-20).dp)
+                    .offset(y = (-20).dp)
                     .padding(bottom = 2.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = RSRed
@@ -440,173 +440,173 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 }
             }
         }
-}
+    }
 
 
 
 
-        @OptIn(ExperimentalMaterial3Api::class)
-        @Composable
-        fun FilterBottomSheetContent(
-            selectedCity: String,
-            selectedCuisines: Set<String>,
-            selectedRatingRange: ClosedFloatingPointRange<Float>,
-            onCityChange: (String) -> Unit,
-            onCuisineToggle: (String) -> Unit,
-            onRatingChange: (ClosedFloatingPointRange<Float>) -> Unit,
-            onApply: () -> Unit,
-            onResetFilters: () -> Unit,
-            availableCities: List<String>,
-            availableCuisines: List<String>
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun FilterBottomSheetContent(
+        selectedCity: String,
+        selectedCuisines: Set<String>,
+        selectedRatingRange: ClosedFloatingPointRange<Float>,
+        onCityChange: (String) -> Unit,
+        onCuisineToggle: (String) -> Unit,
+        onRatingChange: (ClosedFloatingPointRange<Float>) -> Unit,
+        onApply: () -> Unit,
+        onResetFilters: () -> Unit,
+        availableCities: List<String>,
+        availableCuisines: List<String>
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
+            Text(
+                "Filters",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
-            Column(
+            OutlinedButton(
+                onClick = onResetFilters, //calling reset function
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
+                    .height(56.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
+                border = BorderStroke(1.dp, RSRed)
             ) {
-                Text(
-                    "Filters",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Text("Reset filters")
+            }
 
-                OutlinedButton(
-                    onClick = onResetFilters, //calling reset function
+            Spacer(Modifier.height(15.dp))
+
+            // City filter
+            Text("Choose a city", style = MaterialTheme.typography.titleMedium)
+            availableCities.forEach { city ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
-                    border = BorderStroke(1.dp, RSRed)
+                        .clickable { onCityChange(city) }
+                        .padding(vertical = 4.dp)
                 ) {
-                    Text("Reset filters")
-                }
-
-                Spacer(Modifier.height(15.dp))
-
-                // City filter
-                Text("Choose a city", style = MaterialTheme.typography.titleMedium)
-                availableCities.forEach { city ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onCityChange(city) }
-                            .padding(vertical = 4.dp)
-                    ) {
-                        RadioButton(
-                            selected = (city == selectedCity),
-                            onClick = { onCityChange(city) },
-                            colors = RadioButtonDefaults.colors(selectedColor = RSRed)
-                        )
-                        Spacer(Modifier.padding(start = 15.dp))
-                        Text(city)
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // Cuisine filter
-                Text("Choose filter", style = MaterialTheme.typography.titleMedium)
-                availableCuisines.forEach { cuisine ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onCuisineToggle(cuisine) }
-                            .padding(vertical = 4.dp)
-                    ) {
-                        Checkbox(
-                            checked = selectedCuisines.contains(cuisine),
-                            onCheckedChange = { onCuisineToggle(cuisine) },
-                            colors = CheckboxDefaults.colors(checkedColor = RSRed)
-                        )
-                        Spacer(Modifier.padding(start = 8.dp))
-                        Text(cuisine)
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // Rating filter
-                Text(
-                    "Rating: od ${
-                        String.format("%.1f", selectedRatingRange.start)
-                    } do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                RangeSlider(
-                    value = selectedRatingRange,
-                    onValueChange = onRatingChange, // passing new value
-                    valueRange = 1.0f..5.0f,
-                    steps = 8, // filter steps (5-1) / 0.5 = 8
-                    colors = SliderDefaults.colors(
-                        thumbColor = RSRed,
-                        activeTrackColor = RSRed
+                    RadioButton(
+                        selected = (city == selectedCity),
+                        onClick = { onCityChange(city) },
+                        colors = RadioButtonDefaults.colors(selectedColor = RSRed)
                     )
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                Button(
-                    onClick = onApply,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RSRed)
-
-
-                ) {
-                    Text("Apply filters")
+                    Spacer(Modifier.padding(start = 15.dp))
+                    Text(city)
                 }
             }
-        }
 
-        if (showFilterSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showFilterSheet = false },
-                sheetState = sheetState
-            ) {
-                FilterBottomSheetContent(
-                    selectedCity = selectedCity,
-                    selectedCuisines = selectedCuisines,
-                    selectedRatingRange = selectedRatingRange,
-                    onCityChange = {
-                        selectedCity = it
-                        isAiSearchActive = false // Zmiana filtra resetuje AI
-                    },
-                    onCuisineToggle = { cuisine ->
-                        selectedCuisines = if (selectedCuisines.contains(cuisine)) {
-                            selectedCuisines - cuisine
-                        } else {
-                            selectedCuisines + cuisine
-                        }
-                        isAiSearchActive = false
-                    },
-                    onRatingChange = {
-                        selectedRatingRange = it
-                        isAiSearchActive = false
-                    },
-                    onResetFilters = {
-                        selectedCity = "New York"
-                        selectedCuisines = emptySet()
-                        selectedRatingRange = 1.0f..5.0f
-                        isAiSearchActive = false
-                    },
-                    onApply = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showFilterSheet = false
-                            }
-                        }
-                    },
-                    availableCities = availableCities,
-                    availableCuisines = availableCuisines.map { it.name }
+            Spacer(Modifier.height(16.dp))
+
+            // Cuisine filter
+            Text("Choose filter", style = MaterialTheme.typography.titleMedium)
+            availableCuisines.forEach { cuisine ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCuisineToggle(cuisine) }
+                        .padding(vertical = 4.dp)
+                ) {
+                    Checkbox(
+                        checked = selectedCuisines.contains(cuisine),
+                        onCheckedChange = { onCuisineToggle(cuisine) },
+                        colors = CheckboxDefaults.colors(checkedColor = RSRed)
+                    )
+                    Spacer(Modifier.padding(start = 8.dp))
+                    Text(cuisine)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Rating filter
+            Text(
+                "Rating: od ${
+                    String.format("%.1f", selectedRatingRange.start)
+                } do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
+                style = MaterialTheme.typography.titleMedium
+            )
+            RangeSlider(
+                value = selectedRatingRange,
+                onValueChange = onRatingChange, // passing new value
+                valueRange = 1.0f..5.0f,
+                steps = 8, // filter steps (5-1) / 0.5 = 8
+                colors = SliderDefaults.colors(
+                    thumbColor = RSRed,
+                    activeTrackColor = RSRed
                 )
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = onApply,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+
+
+            ) {
+                Text("Apply filters")
             }
         }
     }
+
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            sheetState = sheetState
+        ) {
+            FilterBottomSheetContent(
+                selectedCity = selectedCity,
+                selectedCuisines = selectedCuisines,
+                selectedRatingRange = selectedRatingRange,
+                onCityChange = {
+                    selectedCity = it
+                    isAiSearchActive = false // Zmiana filtra resetuje AI
+                },
+                onCuisineToggle = { cuisine ->
+                    selectedCuisines = if (selectedCuisines.contains(cuisine)) {
+                        selectedCuisines - cuisine
+                    } else {
+                        selectedCuisines + cuisine
+                    }
+                    isAiSearchActive = false
+                },
+                onRatingChange = {
+                    selectedRatingRange = it
+                    isAiSearchActive = false
+                },
+                onResetFilters = {
+                    selectedCity = "New York"
+                    selectedCuisines = emptySet()
+                    selectedRatingRange = 1.0f..5.0f
+                    isAiSearchActive = false
+                },
+                onApply = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            showFilterSheet = false
+                        }
+                    }
+                },
+                availableCities = availableCities,
+                availableCuisines = availableCuisines.map { it.name }
+            )
+        }
+    }
+}
 
 
 

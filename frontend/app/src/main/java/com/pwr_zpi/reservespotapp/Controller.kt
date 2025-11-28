@@ -248,7 +248,7 @@ fun Controller(navController: NavHostController) {
             composable("ownerAddRestaurant") { AddRestaurantScreen(navController) }
             composable("ownerEditRestaurant/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id") ?: "new" }
             composable("ownerTables/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L }
-//             composable("favourites") { FavouritesScreen(navController) }
+            composable("favourites") { FavouritesScreen(navController) }
 
             composable(
                 route = "reservationSummary/{restaurantName}?" +
