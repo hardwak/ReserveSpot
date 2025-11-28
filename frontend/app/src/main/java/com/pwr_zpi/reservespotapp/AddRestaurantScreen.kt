@@ -168,7 +168,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
 
             val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
             days.forEach { day ->
-                // Używamy mapy z ViewModelu
+
                 OpeningHoursRow(day, viewModel.openingHours[day] ?: "Closed") { newHours ->
                     viewModel.openingHours[day] = newHours
                 }
@@ -185,9 +185,9 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
 
                     isSaving = true
                     scope.launch {
-                        val gson = Gson()
-                        // Pobieramy dane z ViewModelu
-                        val openingHoursJson = gson.toJson(viewModel.openingHours.toMap())
+//                        val gson = Gson()
+
+//                        val openingHoursJson = gson.toJson(viewModel.openingHours.toMap())
                         val lat = viewModel.latitude.value.toDoubleOrNull()
                         val lng = viewModel.longitude.value.toDoubleOrNull()
 
@@ -196,7 +196,9 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
                             address = viewModel.address.value,
                             city = viewModel.city.value,
                             description = viewModel.description.value,
-                            openingHours = openingHoursJson,
+//                            openingHours = openingHoursJson,
+                            openingHours = openingHours.toMap(),
+
                             latitude = lat,
                             longitude = lng
                         )
@@ -206,7 +208,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
 
                         if (success) {
                             Toast.makeText(context, "Restaurant created!", Toast.LENGTH_SHORT).show()
-                            viewModel.clear() // Czyścimy formularz po sukcesie
+                            viewModel.clear()
                             navController.popBackStack()
                         } else {
                             Toast.makeText(context, "Error creating restaurant", Toast.LENGTH_SHORT).show()

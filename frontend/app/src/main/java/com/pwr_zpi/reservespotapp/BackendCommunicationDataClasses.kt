@@ -269,7 +269,8 @@ data class CreateRestaurantDto(
     val address: String,
     val city: String,
     val description: String,
-    val openingHours: String, // JSON String
+//    val openingHours: String, // JSON String
+    val openingHours: Map<String, String>,
     val latitude: Double?,
     val longitude: Double?
 

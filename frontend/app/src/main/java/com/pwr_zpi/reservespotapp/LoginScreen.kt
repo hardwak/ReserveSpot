@@ -99,10 +99,18 @@ fun LoginScreen(navController: NavHostController) {
 
 
     LaunchedEffect(Unit) {
-        val valid = checkBackendToken(dataStoreManager, RetrofitClient.authApi)
-        if (valid) {
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
+        val roles = checkBackendToken(dataStoreManager, RetrofitClient.authApi)
+        if (!roles.isEmpty()) {
+            when {
+                roles.contains("ROLE_CLIENT") || roles.contains("CLIENT") ->
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+
+                roles.contains("ROLE_RESTAURANT") || roles.contains("RESTAURANT") ->
+                    navController.navigate("ownerDashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
             }
         }
     }
@@ -118,7 +126,8 @@ fun LoginScreen(navController: NavHostController) {
 
     Column (
 
-    ) {
+    )
+    {
         Text(
             text = "Login",
             fontSize = 28.sp,
@@ -290,20 +299,20 @@ fun LoginScreen(navController: NavHostController) {
 suspend fun checkBackendToken(
     dataStoreManager: DataStoreManager,
     authApi: AuthApi
-): Boolean {
-    val token = dataStoreManager.getBackendToken() ?: return false
+): List<String> {
+    val token = dataStoreManager.getBackendToken() ?: return emptyList()
 
     return try {
         val response = authApi.validateToken("Bearer $token")
         if (response.isSuccessful) {
-            true
+            extractRolesFromJwt(token)
         } else {
             dataStoreManager.clearBackendToken()
-            false
+            emptyList()
         }
     } catch (e: Exception) {
         dataStoreManager.clearBackendToken()
-        false
+        emptyList()
     }
 }
 
