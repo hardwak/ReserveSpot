@@ -113,20 +113,6 @@ fun AddRestaurantScreen(navController: NavHostController) {
             Text("Location", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
             Text("Coordinates are needed for map display.", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Gray)
 
-//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-//                OutlinedTextField(
-//                    value = latitude,
-//                    onValueChange = { latitude = it },
-//                    label = { Text("Latitude (Lat)") },
-//                    modifier = Modifier.weight(1f)
-//                )
-//                OutlinedTextField(
-//                    value = longitude,
-//                    onValueChange = { longitude = it },
-//                    label = { Text("Longitude (Lng)") },
-//                    modifier = Modifier.weight(1f)
-//                )
-//            }
 
             Spacer(Modifier.height(8.dp))
 
