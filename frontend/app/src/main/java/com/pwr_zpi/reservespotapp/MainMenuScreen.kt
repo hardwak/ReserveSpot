@@ -2,6 +2,7 @@ package com.pwr_zpi.reservespotapp
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -62,17 +63,17 @@ fun MainMenuScreen(navController: NavHostController) {
                     .padding(top = 16.dp)
             )
 
-            var recNum = 0
-            while (recommendations.size - recNum >= 3) {
-                RestaurantInfoCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .align(Alignment.CenterHorizontally),
-                    recommendations[recNum]
-                )
-                recNum += 1
+        var recNum = 0
+        while (recommendedList.size - recNum >= 3) {
+            RestaurantInfoCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.CenterHorizontally),
+                recommendedList[recNum]
+            )
+            recNum += 1
 
                 Row(
                     modifier = Modifier
@@ -80,37 +81,37 @@ fun MainMenuScreen(navController: NavHostController) {
                         .padding(horizontal = 16.dp) // padding for section
                 ) {
 
-                    RestaurantInfoCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(300.dp), // fixed width
-                        recommendations[recNum]
-                    )
-                    recNum += 1
+                RestaurantInfoCard(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(300.dp), // fixed width
+                    recommendedList[recNum]
+                )
+                recNum += 1
 
                     Spacer(modifier = Modifier.padding(4.dp))
 
-                    RestaurantInfoCard(
-                        modifier = Modifier
-                            .weight(1f) // dividing space in row
-                            .height(300.dp), // fixed width
-                        recommendations[recNum]
-                    )
-                    recNum += 1
-                }
-            }
-
-            while (recommendations.size - recNum > 0) {
                 RestaurantInfoCard(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .align(Alignment.CenterHorizontally),
-                    recommendations[recNum]
+                        .weight(1f) // dividing space in row
+                        .height(300.dp), // fixed width
+                    recommendedList[recNum]
                 )
                 recNum += 1
             }
+        }
+
+        while (recommendedList.size - recNum > 0) {
+            RestaurantInfoCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.CenterHorizontally),
+                recommendedList[recNum]
+            )
+            recNum += 1
+        }
 
         }
     }

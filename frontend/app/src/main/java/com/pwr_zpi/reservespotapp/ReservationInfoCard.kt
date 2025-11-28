@@ -48,7 +48,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ReservationInfoCard(
     modifier: Modifier,
-    onCancel: () -> Unit,
+    onCancel: () -> Unit = {},
     info: ReservationDto
 ) {
     val id = info.id

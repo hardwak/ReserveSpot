@@ -1,8 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
 
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -32,9 +30,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,7 +64,9 @@ fun Controller(navController: NavHostController) {
             if (!hideTopBar) {
                 TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Image(
                                 painter = painterResource(id = R.drawable.logo_red_outside_small),
                                 contentDescription = "App Logo",
@@ -72,6 +74,7 @@ fun Controller(navController: NavHostController) {
                                     .size(44.dp)
                                     .padding(end = 12.dp)
                             )
+
                             Text(
                                 text = "ReserveSpot",
                                 fontSize = 32.sp,
@@ -84,7 +87,9 @@ fun Controller(navController: NavHostController) {
         },
         bottomBar = {
             if (!hideBottomBar) {
-                NavigationBar(containerColor = RSRed) {
+                NavigationBar(
+                    containerColor = RSRed
+                ) {
                     val navBarItems =
                         listOf("home", "restaurants", "reservations", "favourites", "account")
                     navBarItems.forEach { item ->
@@ -135,7 +140,7 @@ fun Controller(navController: NavHostController) {
             startDestination = "login",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("login") { LoginScreen(navController) }
+
             composable("home") { MainMenuScreen(navController) }
             composable("restaurants") { ChooseRestaurantScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
@@ -292,12 +297,14 @@ fun Controller(navController: NavHostController) {
                     location = location
                 )
             }
-
-
-
         }
+
+//            composable("login") { LoginScreen(navController) }
+//            composable("reservations") { ReservationsScreen(navController) }
+//            composable("favourites") { FavouritesScreen(navController) }
+
+
     }
 }
-
 
 

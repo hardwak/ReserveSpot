@@ -177,6 +177,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var isGeminiSearchVisible by remember { mutableStateOf(false) }
+    // field for putting prompt in it
     var geminiPrompt by remember { mutableStateOf(TextFieldValue("")) }
 
     var isLoading by remember { mutableStateOf(false) }
@@ -263,6 +264,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
 
         geminiPrompt = TextFieldValue("")
 
+
         searchQuery = TextFieldValue("")
 
         scope.launch {
@@ -275,7 +277,9 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         }
     }
 
+
     Scaffold(
+
 
     ) { padding ->
         Column(
@@ -283,6 +287,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp)
+
+
         ) {
             // Search bar
             Row(
@@ -378,6 +384,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                         colors = ButtonDefaults.buttonColors(
                             containerColor = RSRed
                         ),
+
                         modifier = Modifier.height(56.dp)
                     ) {
                         Text("Send")
@@ -433,6 +440,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 }
             }
         }
+}
 
 
 
@@ -599,7 +607,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             }
         }
     }
-}
+
 
 
 
