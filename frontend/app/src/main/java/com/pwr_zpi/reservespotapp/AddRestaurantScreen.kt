@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,11 +28,13 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddRestaurantScreen(navController: NavHostController) {
+fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantFormViewModel = viewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val dataStore = DataStoreManager(context)
 
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = currentBackStackEntry?.savedStateHandle
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
@@ -40,18 +44,32 @@ fun AddRestaurantScreen(navController: NavHostController) {
     var latitude by remember { mutableStateOf("") }
     var longitude by remember { mutableStateOf("") }
 
-    // odbiór lokalizacji z LocationPicker
-    LaunchedEffect(Unit) {
-        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Double>("picked_lat")
-            ?.observeForever { lat ->
-                latitude = lat.toString()
-            }
+    val pickedLat = savedStateHandle?.getLiveData<Double>("picked_lat")?.observeAsState()
+    val pickedLng = savedStateHandle?.getLiveData<Double>("picked_lng")?.observeAsState()
 
-        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Double>("picked_lng")
-            ?.observeForever { lng ->
-                longitude = lng.toString()
-            }
+    LaunchedEffect(pickedLat?.value, pickedLng?.value) {
+        if (pickedLat?.value != null && pickedLng?.value != null) {
+            viewModel.updateLocation(pickedLat.value!!, pickedLng.value!!)
+            // Ważne: Wyczyść wynik, aby nie nadpisywał przy kolejnych zmianach
+            savedStateHandle?.remove<Double>("picked_lat")
+            savedStateHandle?.remove<Double>("picked_lng")
+        }
     }
+
+
+
+//    // odbiór lokalizacji z LocationPicker
+//    LaunchedEffect(Unit) {
+//        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Double>("picked_lat")
+//            ?.observeForever { lat ->
+//                latitude = lat.toString()
+//            }
+//
+//        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Double>("picked_lng")
+//            ?.observeForever { lng ->
+//                longitude = lng.toString()
+//            }
+//    }
 
     val openingHours = remember {
         mutableStateMapOf(
@@ -91,18 +109,34 @@ fun AddRestaurantScreen(navController: NavHostController) {
             Text("Basic Information", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Restaurant Name") }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Street and Number") }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("City") }, modifier = Modifier.fillMaxWidth())
+            // UŻYWAMY VIEWMODELU ZAMIAST LOKALNYCH ZMIENNYCH
+            OutlinedTextField(
+                value = viewModel.name.value,
+                onValueChange = { viewModel.name.value = it },
+                label = { Text("Restaurant Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
+                value = viewModel.address.value,
+                onValueChange = { viewModel.address.value = it },
+                label = { Text("Street and Number") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = viewModel.city.value,
+                onValueChange = { viewModel.city.value = it },
+                label = { Text("City") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = viewModel.description.value,
+                onValueChange = { viewModel.description.value = it },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
@@ -110,17 +144,17 @@ fun AddRestaurantScreen(navController: NavHostController) {
             )
 
             Spacer(Modifier.height(24.dp))
-            Text("Location", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
-            Text("Coordinates are needed for map display.", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color.Gray)
-
+            if (viewModel.latitude.value.isNotEmpty()) {
+                Text("Selected: ${viewModel.latitude.value}, ${viewModel.longitude.value}", fontSize = 14.sp)
+            }
 
             Spacer(Modifier.height(8.dp))
 
             // NEW BUTTON – opens map
             Button(
                 onClick = {
-                    val lat = latitude.toFloatOrNull() ?: 0f
-                    val lng = longitude.toFloatOrNull() ?: 0f
+                    val lat = viewModel.latitude.value.toFloatOrNull() ?: 0f
+                    val lng = viewModel.longitude.value.toFloatOrNull() ?: 0f
                     navController.navigate("pickLocation?lat=$lat&lng=$lng")
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -131,11 +165,12 @@ fun AddRestaurantScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(24.dp))
             Text("Opening Hours", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
-            Spacer(Modifier.height(8.dp))
 
+            val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
             days.forEach { day ->
-                OpeningHoursRow(day, openingHours[day] ?: "Closed") { newHours ->
-                    openingHours[day] = newHours
+                // Używamy mapy z ViewModelu
+                OpeningHoursRow(day, viewModel.openingHours[day] ?: "Closed") { newHours ->
+                    viewModel.openingHours[day] = newHours
                 }
             }
 
@@ -143,7 +178,7 @@ fun AddRestaurantScreen(navController: NavHostController) {
 
             Button(
                 onClick = {
-                    if (name.isBlank() || address.isBlank() || city.isBlank()) {
+                    if (viewModel.name.value.isBlank() || viewModel.address.value.isBlank() || viewModel.city.value.isBlank()) {
                         Toast.makeText(context, "Fill in the name, address, and city", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
@@ -151,16 +186,16 @@ fun AddRestaurantScreen(navController: NavHostController) {
                     isSaving = true
                     scope.launch {
                         val gson = Gson()
-                        val openingHoursJson = gson.toJson(openingHours.toMap())
-
-                        val lat = latitude.toDoubleOrNull()
-                        val lng = longitude.toDoubleOrNull()
+                        // Pobieramy dane z ViewModelu
+                        val openingHoursJson = gson.toJson(viewModel.openingHours.toMap())
+                        val lat = viewModel.latitude.value.toDoubleOrNull()
+                        val lng = viewModel.longitude.value.toDoubleOrNull()
 
                         val dto = CreateRestaurantDto(
-                            name = name,
-                            address = address,
-                            city = city,
-                            description = description,
+                            name = viewModel.name.value,
+                            address = viewModel.address.value,
+                            city = viewModel.city.value,
+                            description = viewModel.description.value,
                             openingHours = openingHoursJson,
                             latitude = lat,
                             longitude = lng
@@ -171,6 +206,7 @@ fun AddRestaurantScreen(navController: NavHostController) {
 
                         if (success) {
                             Toast.makeText(context, "Restaurant created!", Toast.LENGTH_SHORT).show()
+                            viewModel.clear() // Czyścimy formularz po sukcesie
                             navController.popBackStack()
                         } else {
                             Toast.makeText(context, "Error creating restaurant", Toast.LENGTH_SHORT).show()

@@ -171,7 +171,7 @@ fun Controller(navController: NavHostController) {
                 LocationPickerScreen(navController, finalLat, finalLng)
             }
 
-//            composable("owner") { OwnerRestaurantListScreen(navController) } // Ekran z listą restauracji
+//            composable("owner") { OwnerRestaurantListScreen(navController) }
             composable(
                 route = "owner/restaurant/{restaurantId}",
                 arguments = listOf(navArgument("restaurantId") { type = NavType.LongType })
@@ -239,6 +239,7 @@ fun Controller(navController: NavHostController) {
             composable("restaurant_register") { RestaurantRegisterScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
             composable("ownerDashboard") { OwnerRestaurantListScreen(navController) }
+            composable("ownerAccount") { OwnerAccountScreen(navController) }
             composable("ownerAddRestaurant") { AddRestaurantScreen(navController) }
             composable("ownerEditRestaurant/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id") ?: "new" }
             composable("ownerTables/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L }

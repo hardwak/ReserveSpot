@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Delete
@@ -90,7 +91,31 @@ fun OwnerRestaurantListScreen(navController: NavHostController) {
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add")
             }
+        },
+
+        bottomBar = {
+            BottomAppBar(
+                containerColor = Color.White,
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = { navController.navigate("ownerAccount") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Icon(
+                        Icons.Default.AccountCircle,
+                        contentDescription = "Account",
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Edit personal info")
+                }
+            }
         }
+
+
     ) { paddingValues ->
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
