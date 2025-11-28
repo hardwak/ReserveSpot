@@ -15,7 +15,6 @@ import java.util.Set;
 @AllArgsConstructor
 @SuperBuilder
 public class CreateRestaurantDto {
-    @NotNull(message = "Owner ID is required")
     private Long ownerId;
     
     @NotBlank(message = "Restaurant name is required")

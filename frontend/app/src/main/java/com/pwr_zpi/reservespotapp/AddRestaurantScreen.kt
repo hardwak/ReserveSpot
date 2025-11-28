@@ -71,17 +71,17 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
 //            }
 //    }
 
-    val openingHours = remember {
-        mutableStateMapOf(
-            "monday" to "10:00-22:00",
-            "tuesday" to "10:00-22:00",
-            "wednesday" to "10:00-22:00",
-            "thursday" to "10:00-22:00",
-            "friday" to "10:00-23:00",
-            "saturday" to "12:00-23:00",
-            "sunday" to "12:00-22:00"
-        )
-    }
+//    val openingHours = remember {
+//        mutableStateMapOf(
+//            "monday" to "10:00-22:00",
+//            "tuesday" to "10:00-22:00",
+//            "wednesday" to "10:00-22:00",
+//            "thursday" to "10:00-22:00",
+//            "friday" to "10:00-23:00",
+//            "saturday" to "12:00-23:00",
+//            "sunday" to "12:00-22:00"
+//        )
+//    }
     val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
     var isSaving by remember { mutableStateOf(false) }
@@ -197,7 +197,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
                             city = viewModel.city.value,
                             description = viewModel.description.value,
 //                            openingHours = openingHoursJson,
-                            openingHours = openingHours.toMap(),
+                            openingHours = viewModel.openingHours.toMap().toString(),
 
                             latitude = lat,
                             longitude = lng
@@ -242,9 +242,16 @@ suspend fun createNewRestaurant(context: Context, dto: CreateRestaurantDto): Boo
         try {
             val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
             val response = RetrofitClient.ownerApi.createRestaurant("Bearer $token", dto)
+
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string()
+                Log.e("AddRestaurant", "Server Error Code: ${response.code()}")
+                Log.e("AddRestaurant", "Server Error Body: $errorBody")
+            }
+
             response.isSuccessful
         } catch (e: Exception) {
-            Log.e("AddRestaurant", "Error", e)
+            Log.e("AddRestaurant", "Exception Error", e)
             false
         }
     }
