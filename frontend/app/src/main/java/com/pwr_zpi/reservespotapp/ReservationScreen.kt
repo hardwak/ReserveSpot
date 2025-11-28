@@ -60,10 +60,12 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationScreen(
@@ -97,79 +99,81 @@ fun ReservationScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(parsedDate) }
 
+
     var selectedTime by remember { mutableStateOf(initialTime) }
+
     var selectedGuests by remember { mutableStateOf(initialGuests?.toIntOrNull() ?: 2) }
     var selectedDurationLabel by remember { mutableStateOf(initialDuration ?: "1 hour") }
     var selectedLocation by remember { mutableStateOf(initialLocation ?: "Any") }
+
+
     var availableSlots by remember { mutableStateOf<List<AvailableReservationSlotDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+
+
     val durationMap = mapOf("1 hour" to 60, "1.5 hours" to 90, "2 hours" to 120)
+
     val guestsOptions = (1..10).map { it.toString() }
     val durationOptions = durationMap.keys.toList()
     val locationOptions = listOf("Any", "Window", "Garden", "Inside")
 
-    fun fetchAvailability() {
-        scope.launch {
-            isLoading = true
-            try {
-                val token = dataStore.getBackendToken()
 
-                Log.d("ReservationDebug", "Token: $token")
-                Log.d("ReservationDebug", "Restaurant ID: $restaurantId")
-
-                if (token != null) {
-                    val durationMinutes = durationMap[selectedDurationLabel] ?: 60
-                    val dateStr = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
-
-                    Log.d("ReservationDebug", "Requesting: date=$dateStr, duration=$durationMinutes")
-
-                    val response = RetrofitClient.reservationApi.getAvailability(
-                        "Bearer $token",
-                        restaurantId,
-                        dateStr,
-                        durationMinutes
-                    )
-
-                    if (response.isSuccessful) {
-                        availableSlots = response.body() ?: emptyList()
-                        Log.d("ReservationDebug", "Success! Slots: ${availableSlots.size}")
-
-                        if (availableSlots.none { extractTime(it.start) == selectedTime }) {
-                            selectedTime = null
-                        }
-                    } else {
-
-                        val errorBody = response.errorBody()?.string()
-                        Log.e("ReservationDebug", "Error Code: ${response.code()}")
-                        Log.e("ReservationDebug", "Error Body: $errorBody")
-
-                        Toast.makeText(context, "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Log.e("ReservationDebug", "Token is null!")
-                    Toast.makeText(context, "Please login again", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e("ReservationDebug", "Exception", e)
-                Toast.makeText(context, "Connection error: ${e.message}", Toast.LENGTH_SHORT).show()
-            } finally {
-                isLoading = false
-            }
-        }
-    }
 
     LaunchedEffect(selectedDate, selectedDurationLabel) {
-        fetchAvailability()
-    }
+        isLoading = true
+        try {
+            val token = dataStore.getBackendToken()
+            if (token != null) {
+                val durationMinutes = durationMap[selectedDurationLabel] ?: 60
+                val dateStr = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
-    val filteredSlots = remember(availableSlots, selectedGuests, selectedLocation) {
-        availableSlots.filter { slot ->
-            val capacityOk = slot.tableCapacity >= selectedGuests
-            val locationOk = selectedLocation == "Any" ||
-                    (slot.locationInRestaurant?.equals(selectedLocation, ignoreCase = true) == true)
-            capacityOk && locationOk
+                val response = RetrofitClient.reservationApi.getAvailability(
+                    "Bearer $token",
+                    restaurantId,
+                    dateStr,
+                    durationMinutes
+                )
+
+                if (response.isSuccessful) {
+                    availableSlots = response.body() ?: emptyList()
+
+
+                } else {
+                    Toast.makeText(context, "Error downloading hour: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Reservation", "Error fetching slots", e)
+        } finally {
+            isLoading = false
         }
     }
+
+
+    val filteredSlots = remember(availableSlots, selectedGuests, selectedLocation, selectedDate) {
+        availableSlots.filter { slot ->
+
+            val capacityOk = slot.tableCapacity >= selectedGuests
+
+
+            val locationOk = selectedLocation == "Any" ||
+                    (slot.locationInRestaurant?.equals(selectedLocation, ignoreCase = true) == true)
+
+            // Time filter (Backend returns all times, but here we filter to only available in current time)
+
+            val timeOk = if (selectedDate.isEqual(LocalDate.now())) {
+                try {
+                    val slotTime = LocalDateTime.parse(slot.start).toLocalTime()
+                    slotTime.isAfter(LocalTime.now())
+                } catch (e: Exception) { true }
+            } else {
+                true
+            }
+
+            capacityOk && locationOk && timeOk
+        }
+    }
+
 
     val timeOptions = remember(filteredSlots) {
         filteredSlots
@@ -178,10 +182,14 @@ fun ReservationScreen(
             .sorted()
     }
 
+    // Reset selectedTime if it's no longer available after filtering
+    LaunchedEffect(timeOptions) {
+        if (selectedTime != null && !timeOptions.contains(selectedTime)) {
+            selectedTime = null
+        }
+    }
+
     val scrollState = rememberScrollState()
-
-
-
 
 
     Scaffold(
@@ -204,9 +212,7 @@ fun ReservationScreen(
         ) {
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 ReservationTab("Details", true)
@@ -222,14 +228,10 @@ fun ReservationScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    Icons.Default.CalendarToday,
-                    contentDescription = null,
-                    tint = RSRed,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
+                Icon(Icons.Default.CalendarToday, contentDescription = null, tint = RSRed, modifier = Modifier.padding(end = 8.dp))
                 Text("Table reservation", fontWeight = FontWeight.Bold, color = RSRed)
             }
+
 
             Column(
                 modifier = Modifier
@@ -284,6 +286,7 @@ fun ReservationScreen(
                 }
             }
 
+
             Button(
                 onClick = {
                     if (selectedTime == null) {
@@ -291,19 +294,20 @@ fun ReservationScreen(
                         return@Button
                     }
 
+
                     val chosenSlot = filteredSlots.firstOrNull { extractTime(it.start) == selectedTime }
 
                     if (chosenSlot != null) {
                         val dateString = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                        val fullIsoDateTime = chosenSlot.start
 
+
+                        val fullIsoDateTime = chosenSlot.start
 
 
                         val encodedRestaurantName = URLEncoder.encode(restaurantName, StandardCharsets.UTF_8.toString())
                         val encodedLocation = URLEncoder.encode(selectedLocation, StandardCharsets.UTF_8.toString())
 
                         val encodedFullDate = URLEncoder.encode(fullIsoDateTime, StandardCharsets.UTF_8.toString())
-
 
                         val route = "reservationSummary/$encodedRestaurantName?" +
                                 "tableId=${chosenSlot.tableId}&" +
@@ -332,14 +336,19 @@ fun ReservationScreen(
         }
     }
 
+
     if (showDatePicker) {
         ReservationDatePicker(
             initialDate = selectedDate,
-            onDateSelected = { selectedDate = it; showDatePicker = false },
+            onDateSelected = {
+                selectedDate = it
+                showDatePicker = false
+            },
             onDismiss = { showDatePicker = false }
         )
     }
 }
+
 
 fun extractTime(isoDateTime: String): String {
     return try {
@@ -348,6 +357,7 @@ fun extractTime(isoDateTime: String): String {
         isoDateTime.substringAfter("T").take(5)
     }
 }
+
 
 @Composable
 fun ReservationTab(title: String, isSelected: Boolean) {
@@ -359,12 +369,7 @@ fun ReservationTab(title: String, isSelected: Boolean) {
             fontSize = 16.sp
         )
         if (isSelected) {
-            Spacer(
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(2.dp)
-                    .background(Color.Black)
-            )
+            Spacer(modifier = Modifier.width(40.dp).height(2.dp).background(Color.Black))
         }
     }
 }
@@ -381,21 +386,15 @@ fun FormSectionTitle(title: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateSelector(
-    selectedDate: LocalDate,
-    onDateChange: (LocalDate) -> Unit,
-    onOpenCalendar: () -> Unit
-) {
+fun DateSelector(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit, onOpenCalendar: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         TextButton(onClick = { onDateChange(selectedDate.minusDays(1)) }) {
             Text("<- Previous", color = RSRed)
         }
-
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
@@ -404,35 +403,24 @@ fun DateSelector(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.CalendarToday,
-                contentDescription = null,
-                tint = RSRed,
-                modifier = Modifier.size(20.dp)
-            )
+            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = RSRed, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
             Text(
-                if (selectedDate == LocalDate.now()) "Today" else selectedDate.format(
-                    DateTimeFormatter.ofPattern("dd MMM")
-                ),
+                if (selectedDate == LocalDate.now()) "Today" else selectedDate.format(DateTimeFormatter.ofPattern("dd MMM")),
                 fontWeight = FontWeight.Bold,
                 color = RSRed
             )
         }
-
         TextButton(onClick = { onDateChange(selectedDate.plusDays(1)) }) {
             Text("Next ->", color = RSRed)
         }
     }
 }
 
-
 @Composable
 fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (String) -> Unit) {
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -444,11 +432,7 @@ fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onSelect(option) }
                     .background(if (isSelected) RSRed else Color.Transparent)
-                    .border(
-                        1.dp,
-                        if (isSelected) RSRed else Color.LightGray,
-                        RoundedCornerShape(8.dp)
-                    )
+                    .border(1.dp, if (isSelected) RSRed else Color.LightGray, RoundedCornerShape(8.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 color = if (isSelected) Color.White else Color.Black
             )
@@ -458,63 +442,28 @@ fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReservationDatePicker(
-    initialDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val initialTimeMillis =
-        initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-    val todayMillis = remember {
-        LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    }
-
-//   added remember so object would not be created each time
+fun ReservationDatePicker(initialDate: LocalDate, onDateSelected: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    val initialTimeMillis = initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val todayMillis = remember { LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() }
     val selectableDates = remember {
         object : SelectableDates {
-
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-
-                return utcTimeMillis >= todayMillis
-            }
-
-            // years need to be >= current year
-            override fun isSelectableYear(year: Int): Boolean {
-                return year >= LocalDate.now().year
-            }
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayMillis
+            override fun isSelectableYear(year: Int): Boolean = year >= LocalDate.now().year
         }
     }
-
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialTimeMillis,
-        selectableDates = selectableDates
-    )
-
-
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialTimeMillis, selectableDates = selectableDates)
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(
-                onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val selectedLocalDate = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                        onDateSelected(selectedLocalDate)
-                    }
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { millis ->
+                    val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    onDateSelected(selectedLocalDate)
                 }
-            ) {
-                Text("OK", color = RSRed)
-            }
+            }) { Text("OK", color = RSRed) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
-            }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
         }
-    ) {
-        DatePicker(state = datePickerState)
-    }
+    ) { DatePicker(state = datePickerState) }
 }

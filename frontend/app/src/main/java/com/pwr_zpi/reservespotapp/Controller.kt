@@ -239,54 +239,61 @@ fun Controller(navController: NavHostController) {
             composable("restaurant_register") { RestaurantRegisterScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
             composable("ownerDashboard") { OwnerRestaurantListScreen(navController) }
-            composable("ownerAddRestaurant") {
-                AddRestaurantScreen(navController)
-                composable("ownerEditRestaurant/{id}") { backStackEntry ->
-                    val id = backStackEntry.arguments?.getString("id") ?: "new"
-//                OwnerEditRestaurantScreen(navController, id)
-                }
-                composable("ownerTables/{id}") { backStackEntry ->
-                    val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
-//                OwnerTablesScreen(navController, id)
-                }
+            composable("ownerAddRestaurant") { AddRestaurantScreen(navController) }
+            composable("ownerEditRestaurant/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id") ?: "new" }
+            composable("ownerTables/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L }
 //             composable("favourites") { FavouritesScreen(navController) }
 
-                composable(
-                    route = "reservationSummary/{restaurantName}?tableId={tableId}&fullDateTime={fullDateTime}&durationMinutes={durationMinutes}&dateDisplay={dateDisplay}&timeDisplay={timeDisplay}&guests={guests}&durationDisplay={durationDisplay}&location={location}",
-                    arguments = listOf(
-                        navArgument("restaurantName") { type = NavType.StringType },
-
-                        navArgument("tableId") { type = NavType.LongType },
-                        navArgument("fullDateTime") { type = NavType.StringType }, // ISO String
-                        navArgument("durationMinutes") { type = NavType.IntType },
-
-                        navArgument("dateDisplay") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("timeDisplay") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("guests") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("durationDisplay") {
-                            type = NavType.StringType; defaultValue = ""
-                        },
-                        navArgument("location") { type = NavType.StringType; defaultValue = "Any" }
-                    )
-                ) { backStackEntry ->
-                    ReservationSummaryScreen(
-                        navController = navController,
-                        restaurantName = backStackEntry.arguments?.getString("restaurantName")
-                            ?: "Unknown",
-                        tableId = backStackEntry.arguments?.getLong("tableId") ?: 0L,
-                        fullDateTime = backStackEntry.arguments?.getString("fullDateTime") ?: "",
-                        durationMinutes = backStackEntry.arguments?.getInt("durationMinutes") ?: 60,
-                        dateDisplay = backStackEntry.arguments?.getString("dateDisplay") ?: "",
-                        timeDisplay = backStackEntry.arguments?.getString("timeDisplay") ?: "",
-                        guests = backStackEntry.arguments?.getString("guests") ?: "2",
-                        durationDisplay = backStackEntry.arguments?.getString("durationDisplay")
-                            ?: "",
-                        location = backStackEntry.arguments?.getString("location") ?: "Any"
-                    )
-                }
+            composable(
+                route = "reservationSummary/{restaurantName}?" +
+                        "tableId={tableId}&" +
+                        "fullDateTime={fullDateTime}&" +
+                        "dateDisplay={dateDisplay}&" +
+                        "timeDisplay={timeDisplay}&" +
+                        "guests={guests}&" +
+                        "durationMinutes={durationMinutes}&" +
+                        "durationDisplay={durationDisplay}&" +
+                        "location={location}",
+                arguments = listOf(
+                    navArgument("restaurantName") { type = NavType.StringType },
+                    navArgument("tableId") { type = NavType.LongType },
+                    navArgument("fullDateTime") { type = NavType.StringType },
+                    navArgument("dateDisplay") { type = NavType.StringType },
+                    navArgument("timeDisplay") { type = NavType.StringType },
+                    navArgument("guests") { type = NavType.StringType },
+                    navArgument("durationMinutes") { type = NavType.IntType }, // IntType
+                    navArgument("durationDisplay") { type = NavType.StringType },
+                    navArgument("location") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val name = backStackEntry.arguments?.getString("restaurantName") ?: "Unknown"
 
 
+                val tableId = backStackEntry.arguments?.getLong("tableId") ?: 0L
+                val fullDateTime = backStackEntry.arguments?.getString("fullDateTime") ?: ""
+                val dateDisplay = backStackEntry.arguments?.getString("dateDisplay") ?: ""
+                val timeDisplay = backStackEntry.arguments?.getString("timeDisplay") ?: ""
+                val guests = backStackEntry.arguments?.getString("guests") ?: ""
+                val durationMinutes = backStackEntry.arguments?.getInt("durationMinutes") ?: 60
+                val durationDisplay = backStackEntry.arguments?.getString("durationDisplay") ?: ""
+                val location = backStackEntry.arguments?.getString("location") ?: ""
+
+                ReservationSummaryScreen(
+                    navController = navController,
+                    restaurantName = name,
+                    tableId = tableId,
+                    fullDateTime = fullDateTime,
+                    dateDisplay = dateDisplay,
+                    timeDisplay = timeDisplay,
+                    guests = guests,
+                    durationMinutes = durationMinutes,
+                    durationDisplay = durationDisplay,
+                    location = location
+                )
             }
+
+
+
         }
     }
 }
