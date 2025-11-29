@@ -88,6 +88,16 @@ public class ReviewService {
 
         Review review = reviewMapper.toEntity(createDto, eligibility.user(), eligibility.restaurant());
         Review savedReview = reviewRepository.save(review);
+
+        Long restaurantId = review.getRestaurant().getId();
+        restaurantRepository.findById(restaurantId).ifPresent(restaurant -> {
+            List<Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
+            Double average = 0.0;
+            for (Review re : reviews) {
+                average += re.getRating();
+            }
+            restaurant.setAverageRating(Math.round(average * 100.0 / (double) reviews.size()) / 100.0);
+        });
         
         // Trigger AI analysis regeneration for the restaurant
         try {
@@ -114,6 +124,14 @@ public class ReviewService {
                     Long restaurantId = review.getRestaurant().getId();
                     reviewMapper.updateEntity(updateDto, review);
                     Review savedReview = reviewRepository.save(review);
+                    restaurantRepository.findById(restaurantId).ifPresent(restaurant -> {
+                        List<Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
+                        Double average = 0.0;
+                        for (Review re : reviews) {
+                            average += re.getRating();
+                        }
+                        restaurant.setAverageRating(Math.round(average * 100.0 / (double) reviews.size()) / 100.0);
+                    });
                     
                     // Trigger AI analysis regeneration for the restaurant
                     try {
@@ -131,6 +149,17 @@ public class ReviewService {
         Review review = reviewRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
         reviewRepository.delete(review);
+
+        Long restaurantId = review.getRestaurant().getId();
+        restaurantRepository.findById(restaurantId).ifPresent(restaurant -> {
+            List<Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
+            Double average = 0.0;
+            for (Review re : reviews) {
+                average += re.getRating();
+            }
+            restaurant.setAverageRating(Math.round(average * 100.0 / (double) reviews.size()) / 100.0);
+        });
+
     }
 
     public boolean existsById(Long id) {
