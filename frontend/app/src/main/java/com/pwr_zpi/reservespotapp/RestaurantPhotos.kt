@@ -52,7 +52,7 @@ fun PhotoPlaceholder(modifier: Modifier = Modifier) {
             .clip(MaterialTheme.shapes.medium)
             .background(Color.LightGray)
     ) {
-        // Need to switch to Image() function
+
         Text("Photo", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
     }
 }

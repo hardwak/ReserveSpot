@@ -37,7 +37,7 @@ fun OwnerReservationCard(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
-                Text("Cancel / Delete")
+                Text("Cancel")
             }
         }
     }

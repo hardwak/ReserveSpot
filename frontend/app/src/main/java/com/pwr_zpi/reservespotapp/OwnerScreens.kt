@@ -351,7 +351,7 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
         LazyColumn {
             items(tables) { table ->
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)).padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Column { Text("ID: ${table.id} | Nr: ${table.tableNumber ?: "?"}"); Text("Miejsc: ${table.capacity} | ${table.locationInRestaurant}") }
+                    Column { Text("ID: ${table.id} | Nr: ${table.tableNumber ?: "?"}"); Text("Capacity: ${table.capacity} | ${table.locationInRestaurant}") }
                     IconButton(onClick = { scope.launch { deleteTable(context, table.id); tables = fetchTables(context, restaurantId) } }) { Icon(Icons.Default.Delete, "Delete", tint = Color.Gray) }
                 }
             }

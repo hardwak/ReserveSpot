@@ -12,7 +12,6 @@ class RestaurantFormViewModel : ViewModel() {
     var latitude = mutableStateOf("")
     var longitude = mutableStateOf("")
 
-    // Godziny otwarcia
     val openingHours = mutableStateMapOf(
         "monday" to "10:00-22:00",
         "tuesday" to "10:00-22:00",
@@ -28,7 +27,6 @@ class RestaurantFormViewModel : ViewModel() {
         longitude.value = lng.toString()
     }
 
-    // Opcjonalnie: Funkcja do resetowania po udanym zapisie
     fun clear() {
         name.value = ""
         address.value = ""

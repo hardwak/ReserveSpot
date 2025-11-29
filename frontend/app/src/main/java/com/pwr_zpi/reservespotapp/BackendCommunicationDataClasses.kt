@@ -342,8 +342,6 @@ interface ReservationApi {
 }
 
 interface RestaurantApi {
-//    @GET("/api/users/me/favorites")
-//    suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 
     @GET("/api/restaurants/recommendations")
     suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>
@@ -580,7 +578,6 @@ object RetrofitClient {
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            // Używamy naszej skonfigurowanej instancji Gson
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }

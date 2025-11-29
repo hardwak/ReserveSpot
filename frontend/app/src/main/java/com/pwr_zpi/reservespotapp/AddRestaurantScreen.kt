@@ -57,31 +57,6 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
     }
 
 
-
-//    // odbiór lokalizacji z LocationPicker
-//    LaunchedEffect(Unit) {
-//        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Double>("picked_lat")
-//            ?.observeForever { lat ->
-//                latitude = lat.toString()
-//            }
-//
-//        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Double>("picked_lng")
-//            ?.observeForever { lng ->
-//                longitude = lng.toString()
-//            }
-//    }
-
-//    val openingHours = remember {
-//        mutableStateMapOf(
-//            "monday" to "10:00-22:00",
-//            "tuesday" to "10:00-22:00",
-//            "wednesday" to "10:00-22:00",
-//            "thursday" to "10:00-22:00",
-//            "friday" to "10:00-23:00",
-//            "saturday" to "12:00-23:00",
-//            "sunday" to "12:00-22:00"
-//        )
-//    }
     val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
     var isSaving by remember { mutableStateOf(false) }
@@ -109,7 +84,6 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
             Text("Basic Information", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
             Spacer(Modifier.height(8.dp))
 
-            // UŻYWAMY VIEWMODELU ZAMIAST LOKALNYCH ZMIENNYCH
             OutlinedTextField(
                 value = viewModel.name.value,
                 onValueChange = { viewModel.name.value = it },

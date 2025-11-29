@@ -55,8 +55,15 @@ fun Controller(navController: NavHostController) {
 //        "ownerTables/{id}"
 //    )
 
-    val hideBottomBar = currentRoute in listOf("login", "register", "restaurant_register") ||
-            currentRoute?.contains("owner") == true
+    val hideBottomBar = currentRoute in listOf(
+        "login",
+        "register",
+        "restaurant_register",
+        "ownerAccount",
+        "ownerEditDetails",
+        "ownerChangePassword"
+    ) ||
+            currentRoute?.contains("owner") == true || currentRoute?.startsWith("pickLocation") == true
 
 
     Scaffold(
@@ -176,7 +183,7 @@ fun Controller(navController: NavHostController) {
                 LocationPickerScreen(navController, finalLat, finalLng)
             }
 
-//            composable("owner") { OwnerRestaurantListScreen(navController) }
+
             composable(
                 route = "owner/restaurant/{restaurantId}",
                 arguments = listOf(navArgument("restaurantId") { type = NavType.LongType })
@@ -246,8 +253,14 @@ fun Controller(navController: NavHostController) {
             composable("ownerDashboard") { OwnerRestaurantListScreen(navController) }
             composable("ownerAccount") { OwnerAccountScreen(navController) }
             composable("ownerAddRestaurant") { AddRestaurantScreen(navController) }
-            composable("ownerEditRestaurant/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id") ?: "new" }
-            composable("ownerTables/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L }
+            composable("ownerEditDetails") { EditDetailsScreen(navController) }
+            composable("ownerChangePassword") { ChangePasswordScreen(navController) }
+            composable("ownerEditRestaurant/{id}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id") ?: "new"
+            }
+            composable("ownerTables/{id}") { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id")?.toLongOrNull() ?: 0L
+            }
             composable("favourites") { FavouritesScreen(navController) }
 
             composable(
@@ -298,10 +311,6 @@ fun Controller(navController: NavHostController) {
                 )
             }
         }
-
-//            composable("login") { LoginScreen(navController) }
-//            composable("reservations") { ReservationsScreen(navController) }
-//            composable("favourites") { FavouritesScreen(navController) }
 
 
     }
