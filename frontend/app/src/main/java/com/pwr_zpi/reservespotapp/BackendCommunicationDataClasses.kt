@@ -1,6 +1,9 @@
 package com.pwr_zpi.reservespotapp
 
 import androidx.compose.ui.semantics.Role
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -19,6 +22,7 @@ import java.time.LocalDateTime
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import java.security.AuthProvider
+import java.time.format.DateTimeFormatter
 
 
 data class GoogleTokenRequest(
@@ -102,9 +106,8 @@ data class ReviewDto(
     val rating: Int?,
     val comment: String?,
     val pic: String?,
-    val createdAt: String?,
-    val pictureIds: Set<Long>?,
-    val date: String
+    val createdAt: LocalDateTime?,
+    val pictureIds: Set<Long>?
 )
 
 data class RestaurantDto(
@@ -566,15 +569,20 @@ object RetrofitClient {
     const val BASE_URL = "http://10.0.2.2:8080"
 
 
-//    private val gson = GsonBuilder()
-//
-//        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
-//
-//        .create()
+        private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
+        JsonDeserializer { json, _, _ ->
+            LocalDateTime.parse(json.asString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        }
+
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(LocalDateTime::class.java, localDateTimeDeserializer)
+        .create()
+
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            // Używamy naszej skonfigurowanej instancji Gson
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 

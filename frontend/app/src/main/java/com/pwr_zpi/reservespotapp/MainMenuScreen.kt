@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+import android.R.attr.onClick
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.clickable
@@ -31,6 +33,7 @@ import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+@SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(navController: NavHostController) {
@@ -65,12 +68,14 @@ fun MainMenuScreen(navController: NavHostController) {
 
         var recNum = 0
         while (recommendations.size - recNum >= 3) {
+            val num = recNum
             RestaurantInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .align(Alignment.CenterHorizontally),
+                    .align(Alignment.CenterHorizontally)
+                .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num].id}") }),
                 recommendations[recNum]
             )
             recNum += 1
@@ -84,7 +89,8 @@ fun MainMenuScreen(navController: NavHostController) {
                 RestaurantInfoCard(
                     modifier = Modifier
                         .weight(1f)
-                        .height(300.dp), // fixed width
+                        .height(300.dp) // fixed width
+                    .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num + 1].id}") }),
                     recommendations[recNum]
                 )
                 recNum += 1
@@ -94,7 +100,8 @@ fun MainMenuScreen(navController: NavHostController) {
                 RestaurantInfoCard(
                     modifier = Modifier
                         .weight(1f) // dividing space in row
-                        .height(300.dp), // fixed width
+                        .height(300.dp)
+                        .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num + 2].id}") }),// fixed width
                     recommendations[recNum]
                 )
                 recNum += 1
@@ -102,12 +109,14 @@ fun MainMenuScreen(navController: NavHostController) {
         }
 
         while (recommendations.size - recNum > 0) {
+            val num = recNum
             RestaurantInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .align(Alignment.CenterHorizontally),
+                    .align(Alignment.CenterHorizontally)
+                    .clickable(onClick = { navController.navigate("restaurantDetails/${recommendations[num].id}") }),
                 recommendations[recNum]
             )
             recNum += 1

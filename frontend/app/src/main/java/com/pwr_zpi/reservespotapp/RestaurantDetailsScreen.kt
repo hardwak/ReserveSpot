@@ -284,47 +284,66 @@ fun RestaurantDetailsScreen(
             myReview = fetchMyReviewForRestaurant(context, restaurantId)
             canCreateReview = checkReviewEligibility(context, restaurantId)
             photos = fetchPhotos(context, restaurantId)
+
+            if (reviewsWithUser.isNotEmpty()) {
+                aiAnalysis = fetchAiAnalysis(context, restaurantId)
+            }
         }
     }
-
 
     LaunchedEffect(restaurantId) {
         uiState = LoadState.Loading
         uiState = fetchRestaurantDetails(context, restaurantId)
 
-        launch { myReview = fetchMyReviewForRestaurant(context, restaurantId) }
-        launch { canCreateReview = checkReviewEligibility(context, restaurantId) }
+        val result = fetchRestaurantDetails(context, restaurantId)
+        uiState = result
+        if (result is LoadState.Success) {
+            refreshReviews()
+        }
     }
 
-    LaunchedEffect(restaurantId, selectedTabIndex) {
-        if (selectedTabIndex == 1) {
-            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex == 1 && reviewsWithUser.isNotEmpty()) {
             aiAnalysis = fetchAiAnalysis(context, restaurantId)
         }
-
-        if (selectedTabIndex == 0) {
-            photos = fetchPhotos(context, restaurantId)
-        }
     }
 
+//    LaunchedEffect(restaurantId, selectedTabIndex) {
+//        if (selectedTabIndex == 1) {
+//
+//            if (reviewsWithUser.isNotEmpty()) {
+//                aiAnalysis = fetchAiAnalysis(context, restaurantId)
+//            }
+//        }
+//        if (selectedTabIndex == 0) {
+//            photos = fetchPhotos(context, restaurantId)
+//        }
+//    }
+
+
+//    LaunchedEffect(restaurantId) {
+//        uiState = LoadState.Loading
+//        uiState = fetchRestaurantDetails(context, restaurantId)
+//
+//        launch { myReview = fetchMyReviewForRestaurant(context, restaurantId) }
+//        launch { canCreateReview = checkReviewEligibility(context, restaurantId) }
+//    }
+//
+//    LaunchedEffect(restaurantId, selectedTabIndex) {
+//        if (selectedTabIndex == 1) {
+//            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
+//            aiAnalysis = fetchAiAnalysis(context, restaurantId)
+//        }
+//
+//        if (selectedTabIndex == 0) {
+//            photos = fetchPhotos(context, restaurantId)
+//        }
+//    }
 
 
 
-    LaunchedEffect(restaurantId) {
-        uiState = LoadState.Loading
-        uiState = fetchRestaurantDetails(context, restaurantId)
 
-        myReview = fetchMyReviewForRestaurant(context, restaurantId)
-    }
 
-    LaunchedEffect(restaurantId, selectedTabIndex) {
-        if (selectedTabIndex == 1) {
-            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
-        }
-        if (selectedTabIndex == 0) {
-            photos = fetchPhotos(context, restaurantId)
-        }
-    }
 
 
     if (isReviewDialogVisible) {
@@ -399,9 +418,12 @@ fun RestaurantDetailsScreen(
                 )
             }
         },
+
+//        CHECKING canCreateReview
         floatingActionButton = {
             if (selectedTabIndex == 1) {
                 if (myReview == null && canCreateReview) {
+//                if (myReview == null) {
                     FloatingActionButton(
                         onClick = { isReviewDialogVisible = true },
                         containerColor = RSRed,
