@@ -40,7 +40,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
     var city by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
-    // NOWE: pola lokalizacji
+
     var latitude by remember { mutableStateOf("") }
     var longitude by remember { mutableStateOf("") }
 
@@ -50,7 +50,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
     LaunchedEffect(pickedLat?.value, pickedLng?.value) {
         if (pickedLat?.value != null && pickedLng?.value != null) {
             viewModel.updateLocation(pickedLat.value!!, pickedLng.value!!)
-            // Ważne: Wyczyść wynik, aby nie nadpisywał przy kolejnych zmianach
+
             savedStateHandle?.remove<Double>("picked_lat")
             savedStateHandle?.remove<Double>("picked_lng")
         }
@@ -185,9 +185,9 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
 
                     isSaving = true
                     scope.launch {
-//                        val gson = Gson()
+                        val gson = Gson()
 
-//                        val openingHoursJson = gson.toJson(viewModel.openingHours.toMap())
+                        val openingHoursJson = gson.toJson(viewModel.openingHours.toMap())
                         val lat = viewModel.latitude.value.toDoubleOrNull()
                         val lng = viewModel.longitude.value.toDoubleOrNull()
 
@@ -196,9 +196,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
                             address = viewModel.address.value,
                             city = viewModel.city.value,
                             description = viewModel.description.value,
-//                            openingHours = openingHoursJson,
-                            openingHours = viewModel.openingHours.toMap().toString(),
-
+                            openingHours = openingHoursJson,
                             latitude = lat,
                             longitude = lng
                         )
