@@ -330,7 +330,7 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Add table", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-            OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Number of people") }, modifier = Modifier.weight(1f))
+            OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Capacity") }, modifier = Modifier.weight(1f))
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(value = newLocation, onValueChange = { newLocation = it }, label = { Text("Location") }, modifier = Modifier.weight(2f))
         }
