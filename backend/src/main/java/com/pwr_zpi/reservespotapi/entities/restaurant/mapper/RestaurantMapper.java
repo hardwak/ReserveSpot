@@ -65,6 +65,7 @@ public class RestaurantMapper {
                 .city(dto.getCity())
                 .description(dto.getDescription())
                 .openingHours(parseOpeningHours(dto.getOpeningHours()))
+                .averageRating(0.0)
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
                 .pic(dto.getPic())
