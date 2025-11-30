@@ -30,7 +30,7 @@ fun OwnerReservationCard(
             Text("Table ID: ${reservation.tableId}")
             Text("Time: ${reservation.durationMinutes} min")
             val statusColor = if (reservation.status == "CONFIRMED") Color(0xFF4CAF50) else Color.Gray
-            Text("Status: ${reservation.status}", color = statusColor, fontWeight = FontWeight.SemiBold) // Zmiana
+            Text("Status: ${reservation.status}", color = statusColor, fontWeight = FontWeight.SemiBold)
 
             Button(
                 onClick = { onCancel(reservation.id) },

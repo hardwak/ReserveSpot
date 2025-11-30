@@ -535,10 +535,17 @@ interface OwnerApi{
         @Path("id") id: Long
     ): Response<Unit>
 
+//    Only for compatibility. Need to check if needed
     @GET("/api/reservations/owner/upcoming")
     suspend fun getOwnerUpcomingReservations(
         @Header("Authorization") token: String
     ): Response<List<OwnerReservationDto>>
+
+//    @GET("/api/reservations/owner/upcoming")
+//    suspend fun getOwnerUpcomingReservationsByRestaurant(
+//        @Header("Authorization") token: String,
+//        @Query("restaurantId") restaurantId: Long
+//    ): Response<List<OwnerReservationDto>>
 
     @DELETE("/api/reservations/{id}")
     suspend fun cancelReservation(

@@ -115,8 +115,23 @@ fun ReservationScreen(
 
     val guestsOptions = (1..10).map { it.toString() }
     val durationOptions = durationMap.keys.toList()
-    val locationOptions = listOf("Any", "Window", "Garden", "Inside")
+//    val locationOptions = listOf("Any", "Window", "Garden", "Inside")
 
+    val locationOptions = remember(availableSlots) {
+        val locations = availableSlots
+            .mapNotNull { it.locationInRestaurant }
+            .filter { it.isNotBlank() }
+            .distinct() // Tylko unikalne
+            .sorted() // Posortuj alfabetycznie
+
+        listOf("Any") + locations
+    }
+
+    LaunchedEffect(locationOptions) {
+        if (selectedLocation !in locationOptions) {
+            selectedLocation = locationOptions.firstOrNull() ?: "Any"
+        }
+    }
 
 
     LaunchedEffect(selectedDate, selectedDurationLabel) {
@@ -265,12 +280,15 @@ fun ReservationScreen(
 
 
                 FormSectionTitle("Table location")
+                if (isLoading) {
+
+                }
+
                 HorizontalSelector(
                     options = locationOptions,
                     selectedValue = selectedLocation,
                     onSelect = { selectedLocation = it }
                 )
-
 
                 FormSectionTitle("Available Hours")
                 if (isLoading) {

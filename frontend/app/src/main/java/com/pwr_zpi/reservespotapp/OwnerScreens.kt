@@ -367,6 +367,13 @@ fun OwnerReservationsTab(context: Context) {
 
     LaunchedEffect(Unit) { reservations = fetchOwnerReservations(context); isLoading = false }
 
+//    LaunchedEffect(restaurantId) {
+//        isLoading = true
+//        // Używamy zaktualizowanej funkcji fetchOwnerReservations
+//        reservations = fetchOwnerReservations(context, restaurantId)
+//        isLoading = false
+//    }
+
     if (isLoading) {
         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
     } else if (reservations.isEmpty()) {
@@ -574,6 +581,7 @@ suspend fun fetchOwnerReservations(context: Context): List<OwnerReservationDto> 
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
         val response = RetrofitClient.ownerApi.getOwnerUpcomingReservations("Bearer $token")
+//        val response = RetrofitClient.ownerApi.getOwnerUpcomingReservationsByRestaurant("Bearer $token", restaurantId)
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
     } catch (e: Exception) { emptyList() }
 }
