@@ -115,14 +115,14 @@ fun ReservationScreen(
 
     val guestsOptions = (1..10).map { it.toString() }
     val durationOptions = durationMap.keys.toList()
-//    val locationOptions = listOf("Any", "Window", "Garden", "Inside")
+
 
     val locationOptions = remember(availableSlots) {
         val locations = availableSlots
             .mapNotNull { it.locationInRestaurant }
             .filter { it.isNotBlank() }
-            .distinct() // Tylko unikalne
-            .sorted() // Posortuj alfabetycznie
+            .distinct() // only unique
+            .sorted() // sorting alphabetically
 
         listOf("Any") + locations
     }

@@ -232,10 +232,7 @@ data class AccountUserDto(
     val pictureId: Long?
 )
 
-data class ChangePasswordRequest(
-    val currentPassword: String,
-    val newPassword: String
-)
+
 
 data class ChangePasswordDto(
     val currentPassword: String,

@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,12 +33,16 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+
 
 @Composable
-fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, initialLng: Double?) {
+fun ClientLocationDisplayScreen(navController: NavHostController, initialLat: Double?, initialLng: Double?) {
     val startPos = LatLng(initialLat ?: 51.110, initialLng ?: 17.032)
 
     val cameraPositionState = rememberCameraPositionState {
+
         position = CameraPosition.fromLatLngZoom(startPos, 15f)
     }
 
@@ -48,57 +52,51 @@ fun LocationPickerScreen(navController: NavHostController, initialLat: Double?, 
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(zoomControlsEnabled = false)
-        )
+            uiSettings = MapUiSettings(zoomControlsEnabled = false, scrollGesturesEnabled = true, zoomGesturesEnabled = true)
+        ) {
+
+            Marker(
+                state = MarkerState(position = startPos),
+                title = "Restaurant Location",
+                snippet = "Restaurant Location"
+            )
+        }
 
 
-        Icon(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "Center Marker",
-            tint = RSRed,
-            modifier = Modifier
-                .size(48.dp)
-                .align(Alignment.Center)
-                .offset(y = (-24).dp)
-                .zIndex(1f)
-        )
-
-        // Confirm panel with button
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            // Showing up to date (real time) coordinates
+
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Selected location:", style = MaterialTheme.typography.labelMedium)
+                    Text("Restaurant location:", style = MaterialTheme.typography.labelMedium)
+
                     Text(
-                        text = "${cameraPositionState.position.target.latitude}, ${cameraPositionState.position.target.longitude}",
+                        text = "${startPos.latitude}, ${startPos.longitude}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
                 }
             }
 
+
             Button(
                 onClick = {
 
-                    val selectedLocation = cameraPositionState.position.target
-                    navController.previousBackStackEntry?.savedStateHandle?.set("picked_lat", selectedLocation.latitude)
-                    navController.previousBackStackEntry?.savedStateHandle?.set("picked_lng", selectedLocation.longitude)
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                Icon(Icons.Default.Check, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Confirm location")
+                Text("Back to restaurant")
             }
         }
     }

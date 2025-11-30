@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
@@ -308,43 +309,6 @@ fun RestaurantDetailsScreen(
         }
     }
 
-//    LaunchedEffect(restaurantId, selectedTabIndex) {
-//        if (selectedTabIndex == 1) {
-//
-//            if (reviewsWithUser.isNotEmpty()) {
-//                aiAnalysis = fetchAiAnalysis(context, restaurantId)
-//            }
-//        }
-//        if (selectedTabIndex == 0) {
-//            photos = fetchPhotos(context, restaurantId)
-//        }
-//    }
-
-
-//    LaunchedEffect(restaurantId) {
-//        uiState = LoadState.Loading
-//        uiState = fetchRestaurantDetails(context, restaurantId)
-//
-//        launch { myReview = fetchMyReviewForRestaurant(context, restaurantId) }
-//        launch { canCreateReview = checkReviewEligibility(context, restaurantId) }
-//    }
-//
-//    LaunchedEffect(restaurantId, selectedTabIndex) {
-//        if (selectedTabIndex == 1) {
-//            reviewsWithUser = fetchReviewsWithUserNames(context, restaurantId)
-//            aiAnalysis = fetchAiAnalysis(context, restaurantId)
-//        }
-//
-//        if (selectedTabIndex == 0) {
-//            photos = fetchPhotos(context, restaurantId)
-//        }
-//    }
-
-
-
-
-
-
 
     if (isReviewDialogVisible) {
         AddEditReviewDialog(
@@ -423,7 +387,6 @@ fun RestaurantDetailsScreen(
         floatingActionButton = {
             if (selectedTabIndex == 1) {
                 if (myReview == null && canCreateReview) {
-//                if (myReview == null) {
                     FloatingActionButton(
                         onClick = { isReviewDialogVisible = true },
                         containerColor = RSRed,
@@ -516,8 +479,42 @@ fun RestaurantDetailsScreen(
                                 Text(
                                     text = detailsData.address,
                                     color = Color.Gray,
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(vertical = 4.dp)
                                 )
+
+                                val lat = detailsData.latitude
+                                val lng = detailsData.longitude
+
+                                if (lat != null && lng != null) {
+                                    TextButton(
+                                        onClick = {
+                                            val navLat = lat.toFloat()
+                                            val navLng = lng.toFloat()
+                                            navController.navigate("pickLocation?lat=$navLat&lng=$navLng")
+                                        },
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = RSRed,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+
+                                        Spacer(Modifier.width(4.dp))
+
+                                        Text(
+                                            text = "Show on map",
+                                            color = RSRed,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+
+                                    }
+                                }
+
+
                                 Text(
                                     text = detailsData.description,
                                     color = Color.DarkGray,

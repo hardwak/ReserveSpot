@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.TableRestaurant
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -235,9 +236,9 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
             }
 
             when (selectedTabIndex) {
-                0 -> EditRestaurantTab(restaurant!!, context) { updated -> restaurant = updated }
+                0 -> EditRestaurantTab(restaurant!!, context, navController) { updated -> restaurant = updated }
                 1 -> ManageTablesTab(restaurantId, context)
-                2 -> OwnerReservationsTab(context)
+                2 -> OwnerReservationsTab(restaurantId, context)
                 3 -> OwnerReviewsTab(restaurantId, context)
                 4 -> OwnerPhotosTab(restaurantId, context)
             }
@@ -246,7 +247,7 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
 }
 
 @Composable
-fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, onUpdateSuccess: (RestaurantDto) -> Unit) {
+fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, navController: NavHostController, onUpdateSuccess: (RestaurantDto) -> Unit) {
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf(restaurant.name) }
     var address by remember { mutableStateOf(restaurant.address) }
@@ -254,6 +255,36 @@ fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, onUpdateSucce
     var description by remember { mutableStateOf(restaurant.description) }
     val openingHours = remember { mutableStateMapOf<String, String>().apply { putAll(restaurant.openingHours) } }
     val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+
+
+
+    var latitude by remember { mutableStateOf(restaurant.latitude?.toString() ?: "") }
+    var longitude by remember { mutableStateOf(restaurant.longitude?.toString() ?: "") }
+
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = currentBackStackEntry?.savedStateHandle
+
+
+    val pickedLatLiveData = savedStateHandle?.getLiveData<Double>("picked_lat")
+    val pickedLngLiveData = savedStateHandle?.getLiveData<Double>("picked_lng")
+
+    val pickedLatState = pickedLatLiveData?.observeAsState()
+    val pickedLngState = pickedLngLiveData?.observeAsState()
+
+    LaunchedEffect(pickedLatState?.value, pickedLngState?.value) {
+        val newLat = pickedLatState?.value
+        val newLng = pickedLngState?.value
+
+        // Checking if data is new
+        if (newLat != null && newLng != null && (newLat != 0.0 || newLng != 0.0)) {
+            latitude = newLat.toString()
+            longitude = newLng.toString()
+
+            // Deleting data so it would not be used again
+            savedStateHandle?.remove<Double>("picked_lat")
+            savedStateHandle?.remove<Double>("picked_lng")
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
         Text("Basic data", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -267,22 +298,59 @@ fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, onUpdateSucce
         days.forEach { day ->
             OpeningHoursRow(day, openingHours[day] ?: "Closed") { newHours -> openingHours[day] = newHours }
         }
+
+//        Localization section
         Spacer(Modifier.height(24.dp))
+
+        Text("Location", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
+
+        if (latitude.isNotEmpty()) {
+            Text("Current: $latitude, $longitude", fontSize = 14.sp)
+        } else {
+            Text("Location not set.", fontSize = 14.sp, color = Color.Gray)
+        }
+        Spacer(Modifier.height(8.dp))
+
         Button(
             onClick = {
+
+
+                val lat = latitude.toFloatOrNull() ?: 0f
+                val lng = longitude.toFloatOrNull() ?: 0f
+
+                navController.navigate("ownerPickLocation?lat=$lat&lng=$lng")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+        ) {
+            Text("Select/Change Location on Map")
+        }
+
+
+
+        Button(
+            onClick = {
+
+                if (latitude.isBlank() || longitude.isBlank()) {
+                    Toast.makeText(context, "Location must be set on the map.", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
                 scope.launch {
                     val gson = Gson()
                     val openingHoursJson = gson.toJson(openingHours.toMap())
                     val updateDto = UpdateRestaurantDto(
                         name = name, address = address, city = city, description = description,
-                        openingHours = openingHoursJson, latitude = restaurant.latitude,
-                        longitude = restaurant.longitude, pic = restaurant.pic
+                        openingHours = openingHoursJson,
+                        latitude = latitude.toDoubleOrNull(),
+                        longitude = longitude.toDoubleOrNull(),
+                        pic = restaurant.pic
                     )
                     val updatedRestaurant = updateRestaurant(context, restaurant.id, updateDto)
                     if (updatedRestaurant != null) {
                         onUpdateSuccess(updatedRestaurant)
                         Toast.makeText(context, "Changes saved!", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(context, "Save error.", Toast.LENGTH_SHORT).show()
+                    } else Toast.makeText(context, "Save error. Check server logs", Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -360,32 +428,60 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
 }
 
 @Composable
-fun OwnerReservationsTab(context: Context) {
-    var reservations by remember { mutableStateOf<List<OwnerReservationDto>>(emptyList()) }
+fun OwnerReservationsTab(restaurantId: Long, context: Context) {
+    var allOwnerReservations by remember { mutableStateOf<List<OwnerReservationDto>>(emptyList()) }
+    var tablesForRestaurant by remember { mutableStateOf<List<RestaurantTableDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { reservations = fetchOwnerReservations(context); isLoading = false }
+    val restaurantTableIds = remember(tablesForRestaurant) {
+        tablesForRestaurant.map { it.id }.toSet()
+    }
 
-//    LaunchedEffect(restaurantId) {
-//        isLoading = true
-//        // Używamy zaktualizowanej funkcji fetchOwnerReservations
-//        reservations = fetchOwnerReservations(context, restaurantId)
-//        isLoading = false
-//    }
+
+    val filteredReservations = remember(allOwnerReservations, restaurantTableIds) {
+        allOwnerReservations.filter { reservation ->
+            restaurantTableIds.contains(reservation.tableId)
+        }
+    }
+
+
+    fun refreshData() {
+        scope.launch {
+            isLoading = true
+
+            allOwnerReservations = fetchOwnerReservations(context)
+
+            tablesForRestaurant = fetchTables(context, restaurantId)
+            isLoading = false
+        }
+    }
+
+//    Fetching data on first usage or change of the restaurant
+    LaunchedEffect(restaurantId) {
+        refreshData()
+    }
 
     if (isLoading) {
         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-    } else if (reservations.isEmpty()) {
-        Text("No upcoming reservations.", modifier = Modifier.padding(16.dp))
+    } else if (filteredReservations.isEmpty()) {
+        Text("No upcoming reservations for this restaurant.", modifier = Modifier.padding(16.dp))
     } else {
         LazyColumn(modifier = Modifier.padding(16.dp)) {
-            items(reservations) { res ->
-                OwnerReservationCard(reservation = res, onCancel = { id -> scope.launch { cancelOwnerReservation(context, id); reservations = fetchOwnerReservations(context); Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show() } })
+            items(filteredReservations) { res ->
+                OwnerReservationCard(reservation = res, onCancel = { id ->
+                    scope.launch {
+                        cancelOwnerReservation(context, id)
+                        // Refresh all data after canceling to refresh the list
+                        refreshData()
+                        Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
+                    }
+                })
             }
         }
     }
 }
+
 
 @Composable
 fun OwnerReviewsTab(restaurantId: Long, context: Context) {
@@ -532,7 +628,7 @@ suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<Restaur
         val response = RetrofitClient.ownerApi.getMyRestaurants("Bearer $token", ownerId)
         if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
     } catch (e: Exception) {
-        Log.e("API", "Błąd pobierania restauracji", e)
+        Log.e("API", "Error downloading restaurant", e)
         emptyList()
     }
 }

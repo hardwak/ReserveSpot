@@ -110,7 +110,7 @@ fun ReservationSummaryScreen(
                 title = { Text(decodedRestaurantName) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Powrót")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -173,7 +173,7 @@ fun ReservationSummaryScreen(
 
                             if (token != null) {
 
-                                Log.d("ReservationSummary", "Wysyłam: TableId=$tableId, Date=$decodedFullDateTime")
+                                Log.d("ReservationSummary", "Sendind: TableId=$tableId, Date=$decodedFullDateTime")
 
                                 val createDto = CreateReservationDto(
                                     tableId = tableId,

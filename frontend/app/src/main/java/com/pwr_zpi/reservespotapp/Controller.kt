@@ -44,16 +44,7 @@ fun Controller(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hideTopBar = currentRoute in listOf("login", "register")
-//    val hideBottomBar = currentRoute in listOf(
-//        "login",
-//        "register",
-//        "restaurant_register",
-//        "ownerDashboard",
-//        "OwnerRestaurantDetailsScreen",
-//        "ownerAddRestaurant",
-//        "ownerEditRestaurant/{id}",
-//        "ownerTables/{id}"
-//    )
+
 
     val hideBottomBar = currentRoute in listOf(
         "login",
@@ -62,8 +53,8 @@ fun Controller(navController: NavHostController) {
         "ownerAccount",
         "ownerEditDetails",
         "ownerChangePassword"
-    ) ||
-            currentRoute?.contains("owner") == true || currentRoute?.startsWith("pickLocation") == true
+    ) || currentRoute?.contains("owner") == true || currentRoute?.startsWith("pickLocation") == true
+
 
 
     Scaffold(
@@ -165,8 +156,7 @@ fun Controller(navController: NavHostController) {
             }
 
 
-
-
+//Clients route
 
             composable(
                 route = "pickLocation?lat={lat}&lng={lng}",
@@ -180,9 +170,24 @@ fun Controller(navController: NavHostController) {
                 val finalLat = if (lat != 0.0) lat else null
                 val finalLng = if (lng != 0.0) lng else null
 
-                LocationPickerScreen(navController, finalLat, finalLng)
+                ClientLocationDisplayScreen(navController, finalLat, finalLng)
             }
 
+
+            composable(
+                route = "ownerPickLocation?lat={lat}&lng={lng}",
+                arguments = listOf(
+                    navArgument("lat") { type = NavType.FloatType; defaultValue = 0f },
+                    navArgument("lng") { type = NavType.FloatType; defaultValue = 0f }
+                )
+            ) { backStackEntry ->
+                val lat = backStackEntry.arguments?.getFloat("lat")?.toDouble()
+                val lng = backStackEntry.arguments?.getFloat("lng")?.toDouble()
+                val finalLat = if (lat != 0.0) lat else null
+                val finalLng = if (lng != 0.0) lng else null
+
+                LocationPickerScreen(navController, finalLat, finalLng)
+            }
 
             composable(
                 route = "owner/restaurant/{restaurantId}",

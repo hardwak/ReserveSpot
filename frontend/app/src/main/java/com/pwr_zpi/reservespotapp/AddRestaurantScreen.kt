@@ -124,12 +124,12 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
 
             Spacer(Modifier.height(8.dp))
 
-            // NEW BUTTON – opens map
+            // Button for opening map
             Button(
                 onClick = {
                     val lat = viewModel.latitude.value.toFloatOrNull() ?: 0f
                     val lng = viewModel.longitude.value.toFloatOrNull() ?: 0f
-                    navController.navigate("pickLocation?lat=$lat&lng=$lng")
+                    navController.navigate("ownerPickLocation?lat=$lat&lng=$lng")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)

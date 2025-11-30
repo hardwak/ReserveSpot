@@ -574,7 +574,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 selectedRatingRange = selectedRatingRange,
                 onCityChange = {
                     selectedCity = it
-                    isAiSearchActive = false // Zmiana filtra resetuje AI
+                    // changing filter resets AI
+                    isAiSearchActive = false
                 },
                 onCuisineToggle = { cuisine ->
                     selectedCuisines = if (selectedCuisines.contains(cuisine)) {
