@@ -318,6 +318,9 @@ interface ReservationApi {
     @GET("/api/reservations/me/upcoming")
     suspend fun getMyUpcomingReservations(@Header("Authorization") token: String): Response<List<ReservationDto>>
 
+    @GET("/api/reservations/me/history")
+    suspend fun getMyReservationsHistory(@Header("Authorization") token: String): Response<List<ReservationDto>>
+
     @DELETE("/api/reservations/{id}")
     suspend fun cancelReservation(
         @Header("Authorization") token: String,

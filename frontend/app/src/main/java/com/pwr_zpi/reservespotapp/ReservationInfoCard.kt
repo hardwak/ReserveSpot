@@ -56,7 +56,8 @@ import java.time.format.DateTimeFormatter
 fun ReservationInfoCard(
     modifier: Modifier,
     onCancel: () -> Unit = {},
-    info: ReservationDto
+    info: ReservationDto,
+    showCancelButton: Boolean = true
 ) {
     val id = info.id
     val restaurantName = info.restaurantName
@@ -76,9 +77,11 @@ fun ReservationInfoCard(
             )
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .border(width = 1.dp,
+            .border(
+                width = 1.dp,
                 color = RSRed,
-                shape = RoundedCornerShape(16.dp))
+                shape = RoundedCornerShape(16.dp)
+            )
 
     ) {
         Text(
@@ -149,23 +152,26 @@ fun ReservationInfoCard(
         }
 
 
-        Button(
-            onClick = {
-                showDialog = true
-            },
-            modifier = Modifier
-                .padding(8.dp)
-                .align(Alignment.BottomEnd)
-                .width(150.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = RSRed,
-                contentColor = Color.White
-            )
-        ) {
-            Text(
-                text = "Cancel",
-                fontSize = 16.sp
-            )
+        if (showCancelButton)
+        {
+            Button(
+                onClick = {
+                    showDialog = true
+                },
+                modifier = Modifier
+                    .padding(8.dp)
+                    .align(Alignment.BottomEnd)
+                    .width(150.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RSRed,
+                    contentColor = Color.White
+                )
+            ) {
+                Text(
+                    text = "Cancel",
+                    fontSize = 16.sp
+                )
+            }
         }
 
         if (showDialog) {
