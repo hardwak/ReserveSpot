@@ -98,11 +98,25 @@ public class RestaurantController {
         return ResponseEntity.ok(restaurants);
     }
 
+    @GetMapping("/cities")
+    public ResponseEntity<List<String>> getAllCities() {
+        List<String> cities = restaurantService.getAllCities();
+        return ResponseEntity.ok(cities);
+    }
+
     @GetMapping("/recommendations")
-    @Operation(summary = "Get restaurant recommendations", description = "Returns personalized recommendations for logged users, or top-rated for anonymous users.")
-    public ResponseEntity<List<RestaurantDto>> getRecommendations(HttpServletRequest request) {
-        Long userId = currentUserService.requireCurrentUserId(request);
-        List<RestaurantDto> recommendations = restaurantService.getRecommendations(userId);
+    public ResponseEntity<List<RestaurantDto>> getRecommendations(
+            HttpServletRequest request,
+            @RequestParam(required = false) String city
+    ) {
+        Long userId = null;
+        try {
+            userId = currentUserService.requireCurrentUserId(request);
+        } catch (Exception ignored) {
+
+        }
+
+        List<RestaurantDto> recommendations = restaurantService.getRecommendations(userId, city);
         return ResponseEntity.ok(recommendations);
     }
 }
