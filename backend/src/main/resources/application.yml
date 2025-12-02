@@ -1,8 +1,14 @@
 spring:
+  cloud:
+    azure:
+      storage:
+        blob:
+          connection-string: ${AZURE_STORAGE_CONNECTION_STRING}
+          container-name: reservespot-images
   application:
     name: ReserveSpotAPI
   datasource:
-    url: jdbc:postgresql://localhost:5432/reserve-spot
+    url: jdbc:postgresql://reserve-spot-db.postgres.database.azure.com:5432/postgres
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver

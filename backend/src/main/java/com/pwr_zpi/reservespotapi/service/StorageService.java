@@ -1,65 +1,54 @@
 package com.pwr_zpi.reservespotapi.service;
 
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class StorageService {
 
-    private final MinioClient minioClient;
+    private final BlobServiceClient blobServiceClient;
 
-    @Value("${MINIO_BUCKET_NAME}")
-    private String bucketName;
-
-    @Value("${MINIO_URL}")
-    private String minioUrl;
+    @Value("${spring.cloud.azure.storage.blob.container-name}")
+    private String containerName;
 
     public String uploadFile(MultipartFile file) {
         try {
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
-            InputStream inputStream = file.getInputStream();
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(fileName)
-                            .stream(inputStream, file.getSize(), -1)
-                            .contentType(file.getContentType())
-                            .build()
-            );
+            BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+            blobClient.upload(file.getInputStream(), file.getSize(), true);
 
-            return minioUrl + "/" + bucketName + "/" + fileName;
+            return blobClient.getBlobUrl();
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload file to MinIO", e);
+            throw new RuntimeException("Failed to upload file to Azure Blob Storage", e);
         }
     }
 
     public void deleteFile(String fileUrl) {
         try {
-            String objectName = extractObjectNameFromUrl(fileUrl);
+            String fileName = extractFileNameFromUrl(fileUrl);
+            BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
 
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(objectName)
-                            .build()
-            );
+            if (blobClient.exists()) {
+                blobClient.delete();
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to delete file from MinIO", e);
+            System.err.println("Warning: Failed to delete blob from Azure: " + e.getMessage());
         }
     }
 
-    private String extractObjectNameFromUrl(String fileUrl) {
+    private String extractFileNameFromUrl(String fileUrl) {
         return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
     }
 }
