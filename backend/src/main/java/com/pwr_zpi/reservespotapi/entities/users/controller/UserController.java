@@ -1,8 +1,7 @@
 package com.pwr_zpi.reservespotapi.entities.users.controller;
 
-import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
-import com.pwr_zpi.reservespotapi.entities.users.User;
+import com.pwr_zpi.reservespotapi.entities.users.Role;
 import com.pwr_zpi.reservespotapi.entities.users.dto.CreateUserDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateProfileDto;
 import com.pwr_zpi.reservespotapi.entities.users.dto.UpdateUserDto;

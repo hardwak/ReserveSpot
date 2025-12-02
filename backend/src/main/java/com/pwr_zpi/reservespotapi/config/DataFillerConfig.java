@@ -37,6 +37,7 @@ import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("!test")
 public class DataFillerConfig {
 
     private final PasswordEncoder passwordEncoder;
@@ -663,6 +664,12 @@ public class DataFillerConfig {
                     .sentimentScore(0.86)
                     .lastUpdated(LocalDateTime.now().minusDays(1))
                     .build());
+
+            if (client1.getFavoriteRestaurants() == null) {
+                client1.setFavoriteRestaurants(new HashSet<>());
+            }
+            client1.getFavoriteRestaurants().add(restaurant1);
+            userRepository.save(client1);
         };
     }
 }
