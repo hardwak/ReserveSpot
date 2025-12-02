@@ -37,6 +37,7 @@ import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("!test")
 public class DataFillerConfig {
 
     private final PasswordEncoder passwordEncoder;
@@ -50,10 +51,10 @@ public class DataFillerConfig {
     private final RestaurantStatisticRepository statisticRepository;
     private final AiAnalysisRepository aiAnalysisRepository;
 
-    @Value("${ADMIN_USERNAME}")
+    @Value("${ADMIN_USERNAME:rsadmin}")
     private String adminUsername;
 
-    @Value("${ADMIN_PASSWORD}")
+    @Value("${ADMIN_PASSWORD:rsadmin}")
     private String adminPassword;
 
     @Bean
