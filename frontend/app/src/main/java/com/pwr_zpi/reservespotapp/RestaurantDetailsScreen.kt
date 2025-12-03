@@ -48,9 +48,11 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -106,6 +108,8 @@ sealed class LoadState {
     data class Success(val data: RestaurantDto) : LoadState()
     data class Error(val message: String) : LoadState()
 }
+
+
 
 
 suspend fun checkReviewEligibility(context: Context, restaurantId: Long): Boolean =
@@ -261,9 +265,8 @@ fun RestaurantDetailsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
+
     var reviewsWithUser by remember { mutableStateOf(emptyList<ReviewWithUser>()) }
     var photos by remember { mutableStateOf(emptyList<PictureDto>()) }
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -366,20 +369,27 @@ fun RestaurantDetailsScreen(
 
     Scaffold(
         bottomBar = {
-            Button(
-                onClick = { navController.navigate("reservation/$restaurantId/${detailsData.name}") },
+
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+                    // Minimalny padding pionowy, aby uniknąć "przyklejenia"
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                Text(
-                    "BOOK NOW",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Button(
+                    onClick = { navController.navigate("reservation/$restaurantId/${detailsData.name}") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp), // ZMNIEJSZONA WYSOKOŚĆ PRZYCISKU (48dp to standardowy dotykowy cel)
+                    colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+                ) {
+                    Text(
+                        "BOOK NOW",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         },
 
@@ -401,8 +411,8 @@ fun RestaurantDetailsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .offset(y = (-40).dp)
+                .padding(top = paddingValues.calculateTopPadding())
+                .padding(bottom = 68.dp)
         ) {
             Box(modifier = Modifier
                 .fillMaxWidth()
@@ -585,20 +595,40 @@ fun RestaurantDetailsScreen(
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
+
+//                        IconButton(
+//                            onClick = { navController.popBackStack() },
+//                            modifier = Modifier
+//                                .align(Alignment.TopStart)
+//                                .padding(16.dp)
+//                                .padding(top = 40.dp)
+//                                .size(48.dp)
+//                                .clip(CircleShape)
+//                                .background(RSRed) // Używa koloru RSRed dla tła
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+//                                contentDescription = "Back",
+//                                tint = Color.White // Biała strzałka
+//                            )
+//                        }
+                        // **UPROSZCZONY PRZYCISK ULUBIONYCH - TYLKO IKONA SERCA**
                         IconButton(
-                            onClick = { navController.popBackStack() },
+                            // Używamy pustej funkcji lambda - kliknięcie nic nie robi
+                            onClick = { /* Logika dodana przez kolegę */ },
                             modifier = Modifier
-                                .align(Alignment.TopStart)
+                                .align(Alignment.TopEnd) // Pozycja po prawej stronie
                                 .padding(16.dp)
                                 .padding(top = 40.dp)
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .background(RSRed)
+                                .background(Color.White)
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White
+                                // Wyświetlamy puste serce, dopóki logika nie zostanie podłączona
+                                imageVector = Icons.Outlined.FavoriteBorder,
+                                contentDescription = "Add to Favorites (Placeholder)",
+                                tint = RSRed // Kolor serca, aby pasował do motywu
                             )
                         }
                     }
@@ -653,6 +683,22 @@ fun RestaurantDetailsScreen(
                         }
                     }
                 }
+            }
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .padding(top = 40.dp)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(RSRed)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
             }
         }
     }
