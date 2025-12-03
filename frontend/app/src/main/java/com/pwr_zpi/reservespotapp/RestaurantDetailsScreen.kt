@@ -407,8 +407,22 @@ fun RestaurantDetailsScreen(
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp)) {
-                val imageUrl = detailsData.pic
-                if (imageUrl.isNullOrBlank()) {
+
+                val rawUrl = detailsData.pic
+
+                Log.d("ImageDebug", "Raw URL from backend: $rawUrl")
+
+                val fixedUrl = if (!rawUrl.isNullOrBlank()) {
+                    // Changing localhost to 10.0.2.2 (for emulator)
+                    val url = rawUrl.replace("localhost", "10.0.2.2")
+                    Log.d("ImageDebug", "Fixed URL for Coil: $url")
+                    url
+                } else {
+                    null
+                }
+
+
+                if (fixedUrl.isNullOrBlank()) {
                     Image(
                         painter = painterResource(id = R.drawable.food_placeholder),
                         contentDescription = null,
@@ -416,18 +430,30 @@ fun RestaurantDetailsScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
+
+                    val imageRequest = ImageRequest.Builder(LocalContext.current)
+                        .data(fixedUrl)
+                        .crossfade(true)
+                        .listener(
+                            onStart = { Log.d("ImageDebug", "Coil started loading: $fixedUrl") },
+                            onSuccess = { _, _ -> Log.d("ImageDebug", "Coil success!") },
+                            onError = { _, result ->
+                                Log.e("ImageDebug", "Coil ERROR: ${result.throwable.message}")
+                                result.throwable.printStackTrace()
+                            }
+                        )
+                        .build()
+
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current).data(imageUrl)
-                            .crossfade(true).build(),
+                        model = imageRequest,
                         placeholder = painterResource(id = R.drawable.food_placeholder),
-                        error = painterResource(id = R.drawable.loading_placeholder),
-                        contentDescription = null,
+                        error = painterResource(id = R.drawable.loading_placeholder), // if error show loading placeholder
+                        contentDescription = "Restaurant Image",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
             }
-
             LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -803,7 +829,28 @@ fun PhotosTabContent(photos: List<PictureDto>) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     rowPhotos.forEach { photo ->
-                        val url = photo.url
+                        val rawUrl = photo.url
+
+                        // fixing Image URL for phone emulator
+                        val fixedUrl = if (!rawUrl.isNullOrBlank()) {
+                            when {
+
+                                rawUrl.contains("localhost") -> rawUrl.replace("localhost", "10.0.2.2")
+
+
+                                !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + if (rawUrl.startsWith("/")) rawUrl else "/$rawUrl"
+
+
+                                else -> rawUrl
+                            }
+                        } else {
+                            null
+                        }
+
+
+                        Log.d("GalleryImage", "Raw: $rawUrl -> Fixed: $fixedUrl")
+
+
                         Card(
                             modifier = Modifier
                                 .weight(1f)
@@ -811,11 +858,13 @@ fun PhotosTabContent(photos: List<PictureDto>) {
                             shape = RoundedCornerShape(12.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            if (url != null) {
+                            if (!fixedUrl.isNullOrBlank()) {
                                 AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current).data(url)
-                                        .crossfade(true).build(),
-                                    contentDescription = null,
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(fixedUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Restaurant Gallery Photo",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize(),
                                     placeholder = painterResource(id = R.drawable.food_placeholder),
@@ -831,6 +880,7 @@ fun PhotosTabContent(photos: List<PictureDto>) {
                             }
                         }
                     }
+                    // Filler for odd number of photos
                     if (rowPhotos.size == 1) Spacer(modifier = Modifier.weight(1f))
                 }
             }

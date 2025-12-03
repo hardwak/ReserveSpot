@@ -65,7 +65,6 @@ data class MyUpcomingReservationsResponse(
 )
 
 enum class ReservationStatus {
-    PENDING,
     CONFIRMED,
     COMPLETED,
     CANCELLED
@@ -292,6 +291,22 @@ interface PicturesApi {
         @Part file: MultipartBody.Part,
         @Part("description") description: RequestBody? = null
     ): Response<PictureDto>
+
+    @Multipart
+    @POST("/api/pictures/restaurants/{restaurantId}/pictures")
+    suspend fun uploadRestaurantPicture(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long,
+        @Part file: MultipartBody.Part,
+        @Part("description") description: RequestBody? = null
+    ): Response<PictureDto>
+
+    @DELETE("/api/pictures/restaurants/{restaurantId}/pictures/{pictureId}")
+    suspend fun deleteRestaurantPicture(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long,
+        @Path("pictureId") pictureId: Long
+    ): Response<Void>
 }
 
 interface AuthApi {

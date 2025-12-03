@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -554,15 +556,27 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
         refreshPictures()
     }
 
+    fun handleDelete(pictureId: Long) {
+        scope.launch {
+            val success = deleteRestaurantPicture(context, restaurantId, pictureId)
+            if (success) {
+                Toast.makeText(context, "Photo deleted.", Toast.LENGTH_SHORT).show()
+                refreshPictures()
+            } else {
+                Toast.makeText(context, "Error deleting photo.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             scope.launch {
                 isUploading = true
-                val success = uploadRestaurantPicture(context, uri)
+                val success = uploadRestaurantPicture(context, restaurantId, uri)
                 if (success) {
-                    Toast.makeText(context, "Photo added! (Refresh or check if assigned)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Photo added!", Toast.LENGTH_SHORT).show()
                     refreshPictures()
                 } else {
                     Toast.makeText(context, "Error sending photo.", Toast.LENGTH_SHORT).show()
@@ -603,19 +617,42 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(pictures) { pic ->
-                    val imageUrl = pic.url?.let {
-                        if (it.startsWith("http")) it else "${RetrofitClient.BASE_URL}$it"
+                    val rawUrl = pic.url
+                    val imageUrl = if (!rawUrl.isNullOrBlank()) {
+                        rawUrl.replace("localhost", "10.0.2.2")
+                    } else {
+                        null
                     }
-
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = "Restaurant photo",
+                    Box(
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                    ) {
+
+
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = "Restaurant photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+
+//                      Delete photo button
+                        IconButton(
+                            onClick = {
+                                pic.id?.let { handleDelete(it) } ?: Toast.makeText(context, "Photo ID is missing.", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 8.dp, y = (-8).dp)
+                                .background(RSRed, CircleShape)
+                                .size(32.dp)
+                                .padding(4.dp)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete photo", tint = Color.White)
+                        }
+                    }
                 }
             }
         }
@@ -717,7 +754,7 @@ suspend fun fetchRestaurantPictures(context: Context, restaurantId: Long): List<
     }
 }
 
-suspend fun uploadRestaurantPicture(context: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
+suspend fun uploadRestaurantPicture(context: Context, restaurantId: Long, uri: Uri): Boolean = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
         val file = File(context.cacheDir, "upload_image.jpg")
@@ -728,10 +765,31 @@ suspend fun uploadRestaurantPicture(context: Context, uri: Uri): Boolean = withC
         }
         val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
         val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-        val response = RetrofitClient.picturesApi.uploadPicture("Bearer $token", body)
+        val response = RetrofitClient.picturesApi.uploadRestaurantPicture(
+            "Bearer $token",
+            restaurantId,
+            body,
+            null
+        )
         response.isSuccessful
     } catch (e: Exception) {
         Log.e("API", "Upload error", e)
+        false
+    }
+}
+
+
+suspend fun deleteRestaurantPicture(context: Context, restaurantId: Long, pictureId: Long): Boolean = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
+        val response = RetrofitClient.picturesApi.deleteRestaurantPicture(
+            "Bearer $token",
+            restaurantId,
+            pictureId
+        )
+        response.isSuccessful
+    } catch (e: Exception) {
+        Log.e("API", "Error deleting photo (ID: $pictureId)", e)
         false
     }
 }
