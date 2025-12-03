@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+
+import com.pwr_zpi.reservespotapp.OwnerReservationDto
 import android.app.TimePickerDialog
 import android.content.Context
 import android.net.Uri
@@ -58,9 +60,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Calendar
-import com.pwr_zpi.reservespotapp.RetrofitClient // Umożliwia dostęp do RetrofitClient.userApi
-import com.pwr_zpi.reservespotapp.AccountUserDto // Umożliwia dostęp do userResponse.body()
-import com.pwr_zpi.reservespotapp.RestaurantDto
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -249,59 +249,174 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
 }
 
 @Composable
-fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, navController: NavHostController, onUpdateSuccess: (RestaurantDto) -> Unit) {
+fun EditRestaurantTab(
+    restaurant: RestaurantDto,
+    context: Context,
+    navController: NavHostController,
+    onUpdateSuccess: (RestaurantDto) -> Unit
+) {
     val scope = rememberCoroutineScope()
+
+
     var name by remember { mutableStateOf(restaurant.name) }
     var address by remember { mutableStateOf(restaurant.address) }
     var city by remember { mutableStateOf(restaurant.city) }
     var description by remember { mutableStateOf(restaurant.description) }
+
+
     val openingHours = remember { mutableStateMapOf<String, String>().apply { putAll(restaurant.openingHours) } }
     val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
-
 
 
     var latitude by remember { mutableStateOf(restaurant.latitude?.toString() ?: "") }
     var longitude by remember { mutableStateOf(restaurant.longitude?.toString() ?: "") }
 
+
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var currentPicUrl by remember { mutableStateOf(restaurant.pic) }
+    var isUploadingImage by remember { mutableStateOf(false) }
+
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        selectedImageUri = uri
+        if (uri != null) {
+
+            currentPicUrl = null
+        }
+    }
+
+
     val currentBackStackEntry = navController.currentBackStackEntry
     val savedStateHandle = currentBackStackEntry?.savedStateHandle
-
-
     val pickedLatLiveData = savedStateHandle?.getLiveData<Double>("picked_lat")
     val pickedLngLiveData = savedStateHandle?.getLiveData<Double>("picked_lng")
-
     val pickedLatState = pickedLatLiveData?.observeAsState()
     val pickedLngState = pickedLngLiveData?.observeAsState()
 
     LaunchedEffect(pickedLatState?.value, pickedLngState?.value) {
         val newLat = pickedLatState?.value
         val newLng = pickedLngState?.value
-
-        // Checking if data is new
         if (newLat != null && newLng != null && (newLat != 0.0 || newLng != 0.0)) {
             latitude = newLat.toString()
             longitude = newLng.toString()
-
-            // Deleting data so it would not be used again
             savedStateHandle?.remove<Double>("picked_lat")
             savedStateHandle?.remove<Double>("picked_lng")
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-        Text("Basic data", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("City") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
-        Spacer(Modifier.height(24.dp))
-        Text("Opening hours", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        days.forEach { day ->
-            OpeningHoursRow(day, openingHours[day] ?: "Closed") { newHours -> openingHours[day] = newHours }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.LightGray)
+                .clickable(onClick = { photoPickerLauncher.launch("image/*") })
+        ) {
+
+            val displayUrl = currentPicUrl?.replace("localhost", "10.0.2.2")
+
+
+            val finalImageModel: Any? = selectedImageUri ?: displayUrl
+
+            if (finalImageModel != null) {
+                AsyncImage(
+                    model = finalImageModel,
+                    contentDescription = "Restaurant Main Photo",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.AddPhotoAlternate,
+                        contentDescription = "Add Photo",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+
+
+            Text(
+                text = if (finalImageModel == null) "ADD MAIN PHOTO" else "CHANGE PHOTO",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(vertical = 8.dp),
+                fontSize = 14.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+
+            if (isUploadingImage) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = RSRed
+                )
+            }
         }
 
-//        Localization section
+        Spacer(Modifier.height(24.dp))
+
+
+        Text("Basic data", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = address,
+            onValueChange = { address = it },
+            label = { Text("Address") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = city,
+            onValueChange = { city = it },
+            label = { Text("City") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Description") },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+
+        Text("Opening hours", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        days.forEach { day ->
+            OpeningHoursRow(
+                day,
+                openingHours[day] ?: "Closed"
+            ) { newHours -> openingHours[day] = newHours }
+        }
+
         Spacer(Modifier.height(24.dp))
 
         Text("Location", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
@@ -315,11 +430,8 @@ fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, navController
 
         Button(
             onClick = {
-
-
                 val lat = latitude.toFloatOrNull() ?: 0f
                 val lng = longitude.toFloatOrNull() ?: 0f
-
                 navController.navigate("ownerPickLocation?lat=$lat&lng=$lng")
             },
             modifier = Modifier.fillMaxWidth(),
@@ -328,41 +440,78 @@ fun EditRestaurantTab(restaurant: RestaurantDto, context: Context, navController
             Text("Select/Change Location on Map")
         }
 
-
+        Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = {
-
                 if (latitude.isBlank() || longitude.isBlank()) {
                     Toast.makeText(context, "Location must be set on the map.", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 scope.launch {
+                    isUploadingImage = true
+
+                    var newPicUrl = restaurant.pic
+
+
+                    if (selectedImageUri != null) {
+
+                        val uploadedUrl = uploadImageForRestaurant(context, selectedImageUri!!)
+                        if (uploadedUrl != null) {
+                            newPicUrl = uploadedUrl
+                        } else {
+                            isUploadingImage = false
+                            Toast.makeText(context, "Image upload failed. Changes not saved.", Toast.LENGTH_LONG).show()
+                            return@launch
+                        }
+                    }
+
+
                     val gson = Gson()
                     val openingHoursJson = gson.toJson(openingHours.toMap())
+
                     val updateDto = UpdateRestaurantDto(
-                        name = name, address = address, city = city, description = description,
+                        name = name,
+                        address = address,
+                        city = city,
+                        description = description,
                         openingHours = openingHoursJson,
                         latitude = latitude.toDoubleOrNull(),
                         longitude = longitude.toDoubleOrNull(),
-                        pic = restaurant.pic
+                        pic = newPicUrl
                     )
+
+
                     val updatedRestaurant = updateRestaurant(context, restaurant.id, updateDto)
+
+                    isUploadingImage = false
+
                     if (updatedRestaurant != null) {
                         onUpdateSuccess(updatedRestaurant)
                         Toast.makeText(context, "Changes saved!", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(context, "Save error. Check server logs", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Save error. Check server logs", Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed),
+            enabled = !isUploadingImage
         ) {
-            Text("Save changes")
+            if (isUploadingImage) {
+                Text("Uploading Image...")
+            } else {
+                Text("Save changes")
+            }
         }
+
+
+        Spacer(Modifier.height(32.dp))
     }
 }
-
 @Composable
 fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) -> Unit) {
     val context = LocalContext.current
@@ -431,21 +580,31 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
 
 @Composable
 fun OwnerReservationsTab(restaurantId: Long, context: Context) {
-    var allOwnerReservations by remember { mutableStateOf<List<OwnerReservationDto>>(emptyList()) }
+    var allOwnerReservations by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
     var tablesForRestaurant by remember { mutableStateOf<List<RestaurantTableDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
+
+    val statusTabs = listOf("CONFIRMED", "COMPLETED", "CANCELLED")
+    var selectedStatusIndex by remember { mutableStateOf(0) }
+    val selectedStatus = statusTabs[selectedStatusIndex]
 
     val restaurantTableIds = remember(tablesForRestaurant) {
         tablesForRestaurant.map { it.id }.toSet()
     }
 
+    val filteredReservations = remember(allOwnerReservations, restaurantTableIds, selectedStatus) {
+        allOwnerReservations
+            .filter { reservation ->
+                restaurantTableIds.contains(reservation.tableId) && reservation.restaurantId == restaurantId
+            }
+            .filter { reservation ->
 
-    val filteredReservations = remember(allOwnerReservations, restaurantTableIds) {
-        allOwnerReservations.filter { reservation ->
-            restaurantTableIds.contains(reservation.tableId)
-        }
+                reservation.status.name == selectedStatus
+            }
     }
+
+
 
 
     fun refreshData() {
@@ -453,7 +612,6 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
             isLoading = true
 
             allOwnerReservations = fetchOwnerReservations(context)
-
             tablesForRestaurant = fetchTables(context, restaurantId)
             isLoading = false
         }
@@ -464,21 +622,48 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
         refreshData()
     }
 
-    if (isLoading) {
-        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-    } else if (filteredReservations.isEmpty()) {
-        Text("No upcoming reservations for this restaurant.", modifier = Modifier.padding(16.dp))
-    } else {
-        LazyColumn(modifier = Modifier.padding(16.dp)) {
-            items(filteredReservations) { res ->
-                OwnerReservationCard(reservation = res, onCancel = { id ->
-                    scope.launch {
-                        cancelOwnerReservation(context, id)
-                        // Refresh all data after canceling to refresh the list
-                        refreshData()
-                        Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
-                    }
-                })
+    Column(modifier = Modifier.fillMaxSize()) {
+        ScrollableTabRow(
+            selectedTabIndex = selectedStatusIndex,
+            contentColor = RSRed,
+            edgePadding = 0.dp,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    Modifier.tabIndicatorOffset(tabPositions[selectedStatusIndex]),
+                    color = RSRed
+                )
+            }
+        ) {
+            statusTabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedStatusIndex == index,
+                    onClick = { selectedStatusIndex = index },
+                    text = { Text(title, color = if (selectedStatusIndex == index) RSRed else Color.Gray, fontWeight = FontWeight.SemiBold) }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        if (isLoading) {
+            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
+        } else if (allOwnerReservations.isEmpty()) {
+            Text("No reservations available for your restaurants.", modifier = Modifier.padding(16.dp), color = Color.Gray)
+        } else if (filteredReservations.isEmpty()) {
+            Text("No ${selectedStatus.lowercase()} reservations for this restaurant.", modifier = Modifier.padding(16.dp), color = Color.Gray)
+        } else {
+            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
+                items(filteredReservations) { res ->
+                    OwnerReservationCard(reservation = res, onCancel = { id ->
+                        scope.launch {
+                            cancelOwnerReservation(context, id)
+
+                            refreshData()
+                            Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                }
             }
         }
     }
@@ -710,13 +895,26 @@ suspend fun deleteTable(context: Context, id: Long) = withContext(Dispatchers.IO
     } catch (e: Exception) { Log.e("API", "Błąd usuwania stolika", e) }
 }
 
-suspend fun fetchOwnerReservations(context: Context): List<OwnerReservationDto> = withContext(Dispatchers.IO) {
+
+suspend fun fetchOwnerReservations(context: Context): List<ReservationDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+
+
         val response = RetrofitClient.ownerApi.getOwnerUpcomingReservations("Bearer $token")
-//        val response = RetrofitClient.ownerApi.getOwnerUpcomingReservationsByRestaurant("Bearer $token", restaurantId)
-        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) { emptyList() }
+
+
+        if (response.isSuccessful) {
+
+            @Suppress("UNCHECKED_CAST")
+            response.body() as? List<ReservationDto> ?: emptyList()
+        } else {
+            emptyList()
+        }
+    } catch (e: Exception) {
+        Log.e("API", "Error in fetchOwnerReservations", e)
+        emptyList()
+    }
 }
 
 suspend fun cancelOwnerReservation(context: Context, id: Long) = withContext(Dispatchers.IO) {
@@ -791,5 +989,32 @@ suspend fun deleteRestaurantPicture(context: Context, restaurantId: Long, pictur
     } catch (e: Exception) {
         Log.e("API", "Error deleting photo (ID: $pictureId)", e)
         false
+    }
+}
+
+suspend fun uploadImageForRestaurant(context: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+        val file = File(context.cacheDir, "main_image.jpg")
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            FileOutputStream(file).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+
+        val response = RetrofitClient.picturesApi.uploadPicture("Bearer $token", body, null)
+
+        if (response.isSuccessful) {
+            response.body()?.url
+        } else {
+            Log.e("Upload", "Upload of main image failed: ${response.code()}")
+            null
+        }
+    } catch (e: Exception) {
+        Log.e("Upload", "Upload error for main image", e)
+        null
     }
 }

@@ -505,7 +505,7 @@ data class OwnerReservationDto(
     val tableId: Long,
     val reservationDatetime: String, //ISO format
     val durationMinutes: Int,
-    val status: String // PENDING, CONFIRMED etc.
+    val reservationStatus: String,
 )
 
 interface OwnerApi{
@@ -551,7 +551,7 @@ interface OwnerApi{
     @GET("/api/reservations/owner/upcoming")
     suspend fun getOwnerUpcomingReservations(
         @Header("Authorization") token: String
-    ): Response<List<OwnerReservationDto>>
+    ): Response<List<ReservationDto>>
 
 //    @GET("/api/reservations/owner/upcoming")
 //    suspend fun getOwnerUpcomingReservationsByRestaurant(
@@ -632,4 +632,6 @@ object RetrofitClient {
     val aiAnalysisApi: AiAnalysisApi by lazy {
         retrofit.create(AiAnalysisApi::class.java)
     }
+
+
 }

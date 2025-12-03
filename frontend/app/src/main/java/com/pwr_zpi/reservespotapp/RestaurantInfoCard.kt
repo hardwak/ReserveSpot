@@ -21,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +52,15 @@ fun RestaurantInfoCard(
     modifier: Modifier = Modifier,
     info: RestaurantDto,
     onRefresh: () -> Unit = {}
+) {
 
-    ) {
-    val imageURL = info.pic ?: ""
+    val rawUrl = info.pic ?: ""
+    val imageURL = if (rawUrl.isNotBlank()) {
+        rawUrl.replace("localhost", "10.0.2.2")
+    } else {
+        ""
+    }
+
     val restaurantName = info.name
     val rating = info.averageRating
     val views = info.reviewIds.size
@@ -61,14 +68,15 @@ fun RestaurantInfoCard(
     val context = LocalContext.current
 
     var isFavourite by remember { mutableStateOf(false) }
-    checkFavouriteRestaurant(
-        id,
-        context,
-        onSuccess = { isFav ->
-            isFavourite = isFav
-        }
-    )
-
+    LaunchedEffect(id) {
+        checkFavouriteRestaurant(
+            id,
+            context,
+            onSuccess = { isFav ->
+                isFavourite = isFav
+            }
+        )
+    }
 
     Box(
         modifier = modifier

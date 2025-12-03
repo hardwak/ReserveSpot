@@ -11,10 +11,14 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 
 @Composable
 fun OwnerReservationCard(
-    reservation: OwnerReservationDto,
+    reservation: ReservationDto,
     onCancel: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+    val isConfirmed = reservation.status.name == "CONFIRMED"
+    val statusColor = if (isConfirmed) Color(0xFF4CAF50) else Color.Gray
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -29,15 +33,18 @@ fun OwnerReservationCard(
             }
             Text("Table ID: ${reservation.tableId}")
             Text("Time: ${reservation.durationMinutes} min")
-            val statusColor = if (reservation.status == "CONFIRMED") Color(0xFF4CAF50) else Color.Gray
-            Text("Status: ${reservation.status}", color = statusColor, fontWeight = FontWeight.SemiBold)
 
-            Button(
-                onClick = { onCancel(reservation.id) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            ) {
-                Text("Cancel")
+
+            Text("Status: ${reservation.status.name}", color = statusColor, fontWeight = FontWeight.SemiBold)
+
+            if (isConfirmed) {
+                Button(
+                    onClick = { onCancel(reservation.id) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    Text("Cancel")
+                }
             }
         }
     }
