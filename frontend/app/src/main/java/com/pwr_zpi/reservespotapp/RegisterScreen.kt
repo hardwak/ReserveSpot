@@ -41,7 +41,6 @@ import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import retrofit2.HttpException
 
 @Composable
@@ -351,28 +350,17 @@ fun sendRegisterRequest(
             )
 
             if (response.isSuccessful) {
-                Log.d("Register", "Registration successful: ${response.body()?.message}")
+                val message = response.body()?.string() ?: "Success"
+                Log.d("Register", "Registration successful: $message")
 
                 // After successful registration, automatically navigate to login screen
                 CoroutineScope(Dispatchers.Main).launch {
                     onSuccess()
                 }
             } else {
-                val errorBody = response.errorBody()?.string()
-                val errorMessage = try {
-                    if (errorBody != null) {
-                        JSONObject(errorBody).getString("message")
-                    } else {
-                        "Unknown error"
-                    }
-                } catch (e: Exception) {
-                    Log.e("Register", "Failed to parse error: ${e.message}")
-                    "Unknown error"
-                }
-
+                val errorMessage = response.errorBody()?.string() ?: "Unknown error"
                 Log.e("Register", "Registration failed: $errorMessage")
                 onError(errorMessage)
-
             }
 
         } catch (e: IOException) {

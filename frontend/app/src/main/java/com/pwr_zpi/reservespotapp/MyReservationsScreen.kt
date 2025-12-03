@@ -54,10 +54,13 @@ fun ReservationsScreen(navController: NavHostController) {
     LaunchedEffect(refreshTrigger) {
         isLoading = true
 
-        val all = fetchReservations(context)
-        upcoming = all.filter { it.status == ReservationStatus.CONFIRMED }
-        finished = all.filter { it.status == ReservationStatus.COMPLETED }
-        canceled = all.filter { it.status == ReservationStatus.CANCELLED }
+        val history = fetchReservationsHistory(context)
+
+        upcoming = fetchUpcomingReservations(context)
+        Log.d("History", history.toString())
+        finished = history.filter { it.status == ReservationStatus.COMPLETED }
+        canceled = history.filter { it.status == ReservationStatus.CANCELLED }
+        Log.d("Upcoming", upcoming.toString())
 
         isLoading = false
     }
@@ -134,8 +137,33 @@ fun ReservationsScreen(navController: NavHostController) {
     }
 }
 
+suspend fun fetchUpcomingReservations(context: Context): List<ReservationDto> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val dataStoreManager = DataStoreManager(context)
+            val token = dataStoreManager.getBackendToken()
 
-suspend fun fetchReservations(context: Context): List<ReservationDto> {
+            if (token.isNullOrEmpty()) {
+                Log.e("fetchReservations", "No authentication token found")
+                return@withContext emptyList()
+            }
+
+            val response = RetrofitClient.reservationApi
+                .getMyUpcomingReservations("Bearer $token")
+
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                Log.e("fetchReservations", "Error: ${response.code()} - ${response.message()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("fetchReservations", "Exception while fetching reservations", e)
+            emptyList()
+        }
+    }
+}
+suspend fun fetchReservationsHistory(context: Context): List<ReservationDto> {
     return withContext(Dispatchers.IO) {
         try {
             val dataStoreManager = DataStoreManager(context)

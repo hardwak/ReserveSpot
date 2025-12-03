@@ -20,8 +20,8 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
-import java.time.LocalDateTime
 import java.security.AuthProvider
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
@@ -320,10 +320,10 @@ interface AuthApi {
     suspend fun validateToken(@Header("Authorization") token: String): Response<Unit>
 
     @POST("/api/auth/register")
-    suspend fun register(@Body request: ClientRegisterRequest): Response<RegisterResponse>
+    suspend fun register(@Body request: ClientRegisterRequest): Response<ResponseBody>
 
     @POST("/api/auth/register")
-    suspend fun restaurantRegister(@Body request: RestaurantRegisterRequest): Response<RegisterResponse>
+    suspend fun restaurantRegister(@Body request: RestaurantRegisterRequest): Response<ResponseBody>
 
 }
 

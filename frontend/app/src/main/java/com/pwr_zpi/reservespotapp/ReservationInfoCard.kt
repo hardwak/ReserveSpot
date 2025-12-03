@@ -170,8 +170,18 @@ fun ReservationInfoCard(
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text("Cancel reservation?") },
-                text = { Text("Are you sure you want to cancel your reservation?") },
+                title = {
+                    Text(
+                        "Cancel reservation?",
+                        color = RSRed                // Title color
+                    )
+                },
+                text = {
+                    Text(
+                        "Are you sure you want to cancel your reservation?",
+                        color = Color.Black          // Body text color
+                    )
+                },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -184,17 +194,28 @@ fun ReservationInfoCard(
                                     Toast.makeText(context, "Error: $it", Toast.LENGTH_SHORT).show()
                                 }
                             )
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RSRed,
+                            contentColor = Color.White     // text/icon color inside button
+                        )
                     ) {
                         Text("Yes")
                     }
                 },
                 dismissButton = {
-                    Button(onClick = { showDialog = false }) {
+                    Button(
+                        onClick = { showDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RSRed,
+                            contentColor = Color.White
+                        )
+                    ) {
                         Text("No")
                     }
                 }
             )
+
         }
 
     }
