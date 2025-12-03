@@ -51,14 +51,30 @@ fun MainMenuScreen(navController: NavHostController) {
     var recommendations by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    val cities = listOf("New York", "Los Angeles", "Chicago", "Houston", "Miami")
-    var selectedCity by remember { mutableStateOf<String?>("Wroclaw") }
+    val dataStoreManager = DataStoreManager(context)
+
+    var cities by remember { mutableStateOf<List<String>>(emptyList()) }
+    var selectedCity by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         isLoading = true
-        recommendations = fetchRecommendations(context)
-        Log.d("", recommendations.toString())
+        cities = getCities(context)
+        Log.d("cities", cities.toString())
+        if (cities.isNotEmpty()) {
+            selectedCity = dataStoreManager.getCity()
+            Log.d("selectedCity", selectedCity.toString())
+        }
         isLoading = false
+    }
+
+    LaunchedEffect(selectedCity) {
+        if (selectedCity != null) {
+            isLoading = true
+            recommendations = fetchRecommendations(context, selectedCity)
+            dataStoreManager.saveCity(city = selectedCity)
+            isLoading = false
+            Log.d("recommendations", recommendations.toString())
+        }
     }
 
     if (isLoading) {
@@ -150,7 +166,7 @@ fun MainMenuScreen(navController: NavHostController) {
             CitySelector(
                 cities = cities,
                 selectedCity = selectedCity,
-                onCitySelected = { selectedCity = it }, // TODO send an API call to backend
+                onCitySelected = { selectedCity = it},
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
@@ -229,7 +245,10 @@ fun CitySelector(
 
 
 
-suspend fun fetchRecommendations(context: Context): List<RestaurantDto> {
+suspend fun fetchRecommendations(
+    context: Context,
+    city: String?
+): List<RestaurantDto> {
     return withContext(Dispatchers.IO) {
         try {
             val dataStoreManager = DataStoreManager(context)
@@ -241,7 +260,7 @@ suspend fun fetchRecommendations(context: Context): List<RestaurantDto> {
             }
 
             val response = RetrofitClient.restaurantApi
-                .getRecommendations("Bearer $token")
+                .getRecommendations("Bearer $token", city)
 
             if (response.isSuccessful) {
                 response.body() ?: emptyList()
@@ -251,6 +270,34 @@ suspend fun fetchRecommendations(context: Context): List<RestaurantDto> {
             }
         } catch (e: Exception) {
             Log.e("fetchRecommendations", "Exception while fetching recommendations", e)
+            emptyList()
+        }
+    }
+}
+
+suspend fun getCities(context: Context): List<String> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val dataStoreManager = DataStoreManager(context)
+            val token = dataStoreManager.getBackendToken()
+
+            if (token.isNullOrEmpty()) {
+                Log.e("getCities", "No authentication token found")
+                return@withContext emptyList()
+            }
+            // Log.d("token", "Not null")
+
+            val response = RetrofitClient.restaurantApi
+                .getCities("Bearer $token")
+
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                Log.e("getCities", "Error: ${response.code()} - ${response.message()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("getCities", "Exception while fetching cities", e)
             emptyList()
         }
     }

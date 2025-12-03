@@ -347,7 +347,13 @@ interface RestaurantApi {
 //    suspend fun getMyFavourites(@Header("Authorization") token: String): Response<List<RestaurantDto>>
 
     @GET("/api/restaurants/recommendations")
-    suspend fun getRecommendations(@Header("Authorization") token: String): Response<List<RestaurantDto>>
+    suspend fun getRecommendations(
+        @Header("Authorization") token: String,
+        @Query("city") city: String? = null
+    ): Response<List<RestaurantDto>>
+
+    @GET("/api/restaurants/cities")
+    suspend fun getCities(@Header("Authorization") token: String): Response<List<String>>
 
     //    IT WORKS
     @POST("/api/restaurants/search")

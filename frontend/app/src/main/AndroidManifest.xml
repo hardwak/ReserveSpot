@@ -15,7 +15,7 @@
         android:theme="@style/Theme.ReserveSpotApp" >
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="TU_WSTAW_SWOJ_KLUCZ_API_GOOGLE_MAPS" />
+            android:value="AIzaSyC2obLFmKKM4L5JM6j02rTYCS9My-zNNf8" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
