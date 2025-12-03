@@ -22,7 +22,7 @@ public class RestaurantAiAnalysisService {
 
     private final ObjectMapper objectMapper;
 
-    @Value("${GEMINI_API_KEY}")
+    @Value("${GEMINI_API_KEY:test-api-key}")
     private String apiKey;
 
     public static class AnalysisResult {

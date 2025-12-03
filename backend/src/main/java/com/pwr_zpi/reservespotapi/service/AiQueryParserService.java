@@ -23,7 +23,7 @@ public class AiQueryParserService {
     private final ObjectMapper objectMapper;
     private final TagRepository tagRepository;
 
-    @Value("${GEMINI_API_KEY}")
+    @Value("${GEMINI_API_KEY:test-api-key}")
     private String apiKey;
 
     @Data

@@ -251,6 +251,31 @@ public class ReservationService {
         return reservationRepository.count();
     }
 
+    /**
+     * Updates past CONFIRMED reservations to COMPLETED status.
+     * This method should be called periodically (e.g., via scheduled task)
+     * to automatically mark reservations as completed when their time has passed.
+     *
+     * @return number of reservations updated
+     */
+    public int completePastReservations() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> pastReservations = reservationRepository
+                .findByStatus(ReservationStatus.CONFIRMED)
+                .stream()
+                .filter(reservation -> {
+                    LocalDateTime endTime = reservation.getReservationDatetime()
+                            .plusMinutes(normalizeDuration(reservation.getDurationMinutes()));
+                    return endTime.isBefore(now);
+                })
+                .toList();
+
+        pastReservations.forEach(reservation -> reservation.setStatus(ReservationStatus.COMPLETED));
+        reservationRepository.saveAll(pastReservations);
+
+        return pastReservations.size();
+    }
+
     private void validateReservationTime(LocalDateTime reservationDatetime) {
         if (reservationDatetime == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation datetime is required");
