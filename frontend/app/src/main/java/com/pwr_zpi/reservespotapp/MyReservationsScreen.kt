@@ -55,7 +55,7 @@ fun ReservationsScreen(navController: NavHostController) {
         isLoading = true
 
         val all = fetchReservations(context)
-        upcoming = all.filter { it.status == ReservationStatus.CONFIRMED || it.status == ReservationStatus.PENDING }
+        upcoming = all.filter { it.status == ReservationStatus.CONFIRMED }
         finished = all.filter { it.status == ReservationStatus.COMPLETED }
         canceled = all.filter { it.status == ReservationStatus.CANCELLED }
 
@@ -130,6 +130,7 @@ fun ReservationsScreen(navController: NavHostController) {
                 }
             }
         }
+
     }
 }
 

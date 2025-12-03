@@ -7,15 +7,20 @@ import com.pwr_zpi.reservespotapi.entities.restaurant.dto.RestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.dto.UpdateRestaurantDto;
 import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
 import com.pwr_zpi.reservespotapi.entities.users.User;
+import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Component
 public class RestaurantMapper {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final CurrentUserService currentUserService;
 
     public RestaurantDto toDto(Restaurant restaurant) {
         if (restaurant == null) {
@@ -68,8 +73,13 @@ public class RestaurantMapper {
 
         // Set owner if provided
         if (dto.getOwnerId() != null) {
-            User owner = new User();
-            owner.setId(dto.getOwnerId());
+            Long owner = currentUserService.requireCurrentUserId(null);
+            if (!Objects.equals(dto.getOwnerId(), owner)){
+                throw new RuntimeException("Cannot");
+            }
+        }
+        else {
+            User owner = currentUserService.requireCurrentUser(null);
             restaurant.setOwner(owner);
         }
 

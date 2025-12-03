@@ -1,5 +1,7 @@
 package com.pwr_zpi.reservespotapp
 
+import android.R.attr.onClick
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
@@ -47,7 +49,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MainMenuScreen(navController: NavHostController) {
 
-    // start
     val context = LocalContext.current
     var recommendations by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }

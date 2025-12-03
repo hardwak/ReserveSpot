@@ -1,6 +1,9 @@
 package com.pwr_zpi.reservespotapp
 
 import androidx.compose.ui.semantics.Role
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -17,8 +20,9 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
-import java.security.AuthProvider
 import java.time.LocalDateTime
+import java.security.AuthProvider
+import java.time.format.DateTimeFormatter
 
 
 data class GoogleTokenRequest(
@@ -61,7 +65,6 @@ data class MyUpcomingReservationsResponse(
 )
 
 enum class ReservationStatus {
-    PENDING,
     CONFIRMED,
     COMPLETED,
     CANCELLED
@@ -102,9 +105,8 @@ data class ReviewDto(
     val rating: Int?,
     val comment: String?,
     val pic: String?,
-    val createdAt: String?,
-    val pictureIds: Set<Long>?,
-    val date: String
+    val createdAt: LocalDateTime?,
+    val pictureIds: Set<Long>?
 )
 
 data class RestaurantDto(
@@ -229,10 +231,7 @@ data class AccountUserDto(
     val pictureId: Long?
 )
 
-data class ChangePasswordRequest(
-    val currentPassword: String,
-    val newPassword: String
-)
+
 
 data class ChangePasswordDto(
     val currentPassword: String,
@@ -263,7 +262,6 @@ data class CreateRestaurantDto(
     val address: String,
     val city: String,
     val description: String,
-//    val openingHours: String, // JSON String
     val openingHours: String,
     val latitude: Double?,
     val longitude: Double?
@@ -293,6 +291,22 @@ interface PicturesApi {
         @Part file: MultipartBody.Part,
         @Part("description") description: RequestBody? = null
     ): Response<PictureDto>
+
+    @Multipart
+    @POST("/api/pictures/restaurants/{restaurantId}/pictures")
+    suspend fun uploadRestaurantPicture(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long,
+        @Part file: MultipartBody.Part,
+        @Part("description") description: RequestBody? = null
+    ): Response<PictureDto>
+
+    @DELETE("/api/pictures/restaurants/{restaurantId}/pictures/{pictureId}")
+    suspend fun deleteRestaurantPicture(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long,
+        @Path("pictureId") pictureId: Long
+    ): Response<Void>
 }
 
 interface AuthApi {
@@ -502,7 +516,7 @@ data class OwnerReservationDto(
     val tableId: Long,
     val reservationDatetime: String, //ISO format
     val durationMinutes: Int,
-    val status: String // PENDING, CONFIRMED etc.
+    val reservationStatus: String,
 )
 
 interface OwnerApi{
@@ -544,10 +558,17 @@ interface OwnerApi{
         @Path("id") id: Long
     ): Response<Unit>
 
+//    Only for compatibility. Need to check if needed
     @GET("/api/reservations/owner/upcoming")
     suspend fun getOwnerUpcomingReservations(
         @Header("Authorization") token: String
-    ): Response<List<OwnerReservationDto>>
+    ): Response<List<ReservationDto>>
+
+//    @GET("/api/reservations/owner/upcoming")
+//    suspend fun getOwnerUpcomingReservationsByRestaurant(
+//        @Header("Authorization") token: String,
+//        @Query("restaurantId") restaurantId: Long
+//    ): Response<List<OwnerReservationDto>>
 
     @DELETE("/api/reservations/{id}")
     suspend fun cancelReservation(
@@ -575,15 +596,19 @@ object RetrofitClient {
     const val BASE_URL = "http://10.0.2.2:8080"
 
 
-    //    private val gson = GsonBuilder()
-//
-//        .registerTypeAdapter(LocalDateTime::class.java, com.google.gson.internal.bind.TypeAdapters.get(LocalDateTime::class.java))
-//
-//        .create()
+        private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
+        JsonDeserializer { json, _, _ ->
+            LocalDateTime.parse(json.asString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        }
+
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(LocalDateTime::class.java, localDateTimeDeserializer)
+        .create()
+
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
@@ -618,4 +643,6 @@ object RetrofitClient {
     val aiAnalysisApi: AiAnalysisApi by lazy {
         retrofit.create(AiAnalysisApi::class.java)
     }
+
+
 }

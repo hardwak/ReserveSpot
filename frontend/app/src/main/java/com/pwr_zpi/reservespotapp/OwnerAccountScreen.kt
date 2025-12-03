@@ -1,14 +1,12 @@
 package com.pwr_zpi.reservespotapp
 
-import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
@@ -24,43 +22,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
-suspend fun fetchMyAccountDetails(context: Context): AccountUserDto? = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken()
-        if (token == null) {
-            Log.e("Account", "Brak tokena w DataStore!")
-            return@withContext null
-        }
-
-        val response = RetrofitClient.userApi.getMyDetails("Bearer $token")
-
-        if (response.isSuccessful) {
-            response.body()
-        } else {
-            Log.e("Account", "Błąd API: Kod ${response.code()} - ${response.message()}")
-            Log.e("Account", "Treść błędu: ${response.errorBody()?.string()}")
-            null
-        }
-    } catch (e: Exception) {
-        Log.e("Account", "Wyjątek podczas pobierania danych konta", e)
-        null
-    }
-}
 
 @Composable
-fun AccountScreen(navController: NavHostController) {
+fun OwnerAccountScreen(navController: NavHostController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val dataStore = DataStoreManager(context)
 
     var userData by remember { mutableStateOf<AccountUserDto?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-
 
     LaunchedEffect(navController.currentBackStackEntry) {
         isLoading = true
@@ -88,7 +61,6 @@ fun AccountScreen(navController: NavHostController) {
                 CircularProgressIndicator(color = RSRed)
             }
         } else {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -103,17 +75,14 @@ fun AccountScreen(navController: NavHostController) {
                 )
                 Spacer(Modifier.width(16.dp))
 
-
                 Column {
-
                     Text(
-                        text = "Hi, ${userData?.name ?: "User"}!",
+                        text = "Hi, ${userData?.name ?: "Owner"}!",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
-
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -129,7 +98,6 @@ fun AccountScreen(navController: NavHostController) {
                             color = Color.Gray
                         )
                     }
-
 
                     if (!userData?.phoneNumber.isNullOrEmpty()) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -159,18 +127,28 @@ fun AccountScreen(navController: NavHostController) {
             icon = Icons.Default.AccountCircle,
             text = "Edit data",
             onClick = {
-                navController.navigate("editDetails")
+                navController.navigate("ownerEditDetails")
             }
         )
+
 
         AccountOptionRow(
             icon = Icons.Default.Settings,
             text = "Change password",
-            onClick = { navController.navigate("changePassword") }
+            onClick = { navController.navigate("ownerChangePassword") }
+        )
+
+        AccountOptionRow(
+            icon = Icons.Default.Business,
+            text = "Back to dashboard",
+            onClick = {
+
+                navController.popBackStack("ownerDashboard", inclusive = false)
+
+            }
         )
 
         Spacer(modifier = Modifier.weight(1f))
-
 
         OutlinedButton(
             onClick = {

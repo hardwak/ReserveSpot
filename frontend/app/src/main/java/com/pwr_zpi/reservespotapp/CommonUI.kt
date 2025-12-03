@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
@@ -45,7 +48,7 @@ fun EditDetailTextField(
 }
 
 /**
- * Sahred componenent for screens Account and Settings.
+ * Shared componenent for screens Account and Settings.
  */
 @Composable
 fun AccountOptionRow(icon: ImageVector, text: String, onClick: () -> Unit) {
@@ -68,3 +71,4 @@ fun AccountOptionRow(icon: ImageVector, text: String, onClick: () -> Unit) {
     }
     HorizontalDivider()
 }
+

@@ -1,13 +1,17 @@
 package com.pwr_zpi.reservespotapp
 
+import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +44,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,75 +53,230 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
-data class Restaurant(
-    val name: String,
-    val address: String,
-    val city: String,
-    val cuisine: String,
-    val rating: Float,
-    val id: Long
-)
+suspend fun fetchRestaurants(
+    context: Context,
+    searchCriteria: RestaurantSearchDto
+): List<RestaurantDto> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val dataStoreManager = DataStoreManager(context)
+            val token = dataStoreManager.getBackendToken()
 
-val allCuisines = listOf("Italian", "Polish", "Ukrainian", "Japanese", "Vegan", "American")
-val allCities = listOf("Wrocław", "Warszawa", "Kraków", "Białystok")
+            if (token.isNullOrEmpty()) {
+                Log.e("fetchRestaurants", "No authentication token found")
+                return@withContext emptyList()
+            }
+
+
+            val response = RetrofitClient.restaurantApi.searchRestaurants(
+                "Bearer $token",
+                searchCriteria
+            )
+
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                Log.e("fetchRestaurants", "Error: ${response.code()} - ${response.message()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("fetchRestaurants", "Exception while fetching restaurants", e)
+            emptyList()
+        }
+    }
+}
+
+suspend fun fetchRestaurantsAi(
+    context: Context,
+    query: String
+): List<RestaurantDto> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val dataStoreManager = DataStoreManager(context)
+            val token = dataStoreManager.getBackendToken()
+
+            if (token.isNullOrEmpty()) {
+                Log.e("fetchRestaurantsAi", "No authentication token found")
+                return@withContext emptyList()
+            }
+
+            val request = AiSearchRequest(query = query)
+
+            val response = RetrofitClient.restaurantApi.searchRestaurantsAi(
+                "Bearer $token",
+                request
+            )
+
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                Log.e("fetchRestaurantsAi", "Error: ${response.code()} - ${response.message()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("fetchRestaurantsAi", "Exception while fetching restaurants via AI", e)
+            emptyList()
+        }
+    }
+}
+
+suspend fun fetchAvailableTags(context: Context): List<TagDto> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+            val response = RetrofitClient.restaurantApi.getAvailableTags("Bearer $token")
+            if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+        } catch (e: Exception) {
+            Log.e("ChooseRestaurant", "Error getting tags", e)
+            emptyList()
+        }
+    }
+}
+
+suspend fun fetchAvailableCities(context: Context): List<String> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val dataStoreManager = DataStoreManager(context)
+            val token = dataStoreManager.getBackendToken() ?: return@withContext emptyList()
+
+            val response = RetrofitClient.restaurantApi.getAllRestaurants("Bearer $token")
+
+            if (response.isSuccessful) {
+                response.body()
+                    ?.map { it.city }
+                    ?.distinct()
+                    ?: emptyList()
+            } else {
+                Log.e("fetchCities", "Error: ${response.code()} - ${response.message()}")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("fetchCities", "Exception while fetching cities", e)
+            emptyList()
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChooseRestaurantScreen(navController: NavHostController) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var isGeminiSearchVisible by remember { mutableStateOf(false) }
     // field for putting prompt in it
     var geminiPrompt by remember { mutableStateOf(TextFieldValue("")) }
 
+    var isLoading by remember { mutableStateOf(false) }
+    var restaurants by remember { mutableStateOf<List<RestaurantDto>>(emptyList()) }
+    var availableCuisines by remember { mutableStateOf<List<TagDto>>(emptyList()) }
+    var availableCities by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isFiltersLoading by remember { mutableStateOf(true) }
+
+
+    var isAiSearchActive by remember { mutableStateOf(false) }
+
 //    filter states
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-
-//    saving filter states
-    var selectedCity by remember { mutableStateOf("Wrocław") }
+    var selectedCity by remember { mutableStateOf("New York") }
     var selectedCuisines by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var selectedRatingRange by remember { mutableStateOf(1.0f..5.0f) }
+    var selectedRatingRange by remember { mutableStateOf(0.0f..5.0f) }
 
+    LaunchedEffect(Unit) {
+        isFiltersLoading = true
+        val fetchedCuisines = fetchAvailableTags(context)
+        val fetchedCities = fetchAvailableCities(context)
+
+        availableCuisines = fetchedCuisines
+        availableCities = fetchedCities
+
+        if (fetchedCities.isNotEmpty()) {
+            selectedCity = fetchedCities.first()
+        }
+        isFiltersLoading = false
+    }
+
+    LaunchedEffect(
+        searchQuery.text,
+        selectedCity,
+        selectedCuisines,
+        selectedRatingRange,
+        isFiltersLoading,
+        isAiSearchActive
+    ) {
+        if (isFiltersLoading) return@LaunchedEffect
+
+        if (isAiSearchActive && searchQuery.text.isEmpty()) {
+
+        }
+
+        if(searchQuery.text.isNotEmpty()) {
+            isAiSearchActive = false
+        }
+
+        if(!isAiSearchActive) {
+            delay(300)
+            isLoading = true
+
+            val selectedTagIds = availableCuisines
+                .filter { selectedCuisines.contains(it.name) }
+                .map { it.id }
+                .toSet()
+
+            val searchCriteria = RestaurantSearchDto(
+                query = searchQuery.text.ifBlank { null },
+                city = selectedCity,
+                tagIds = if (selectedTagIds.isEmpty()) null else selectedTagIds,
+                minRating = selectedRatingRange.start.toDouble(),
+                maxRating = selectedRatingRange.endInclusive.toDouble()
+            )
+
+            restaurants = fetchRestaurants(context, searchCriteria)
+            isLoading = false
+        }
+    }
 
     fun searchWithGemini(prompt: String) {
-
+        if (prompt.isBlank()) return
 
         println("Gemini Search initiated with prompt: $prompt")
 
-// hiding field
+
+        isAiSearchActive = true
         isGeminiSearchVisible = false
-//      clearing field
+        isLoading = true
+
+
         geminiPrompt = TextFieldValue("")
+
+
+        searchQuery = TextFieldValue("")
+
+        scope.launch {
+
+            val aiResults = fetchRestaurantsAi(context, prompt)
+
+
+            restaurants = aiResults
+            isLoading = false
+        }
     }
 
-
-    // TODO fetch from database
-    val restaurants = listOf(
-        Restaurant("La Bella Pizza", "ul. Wrocławska 10", "Wrocław", "Italian", 4.5f, id = 1L),
-        Restaurant("Sushi Master", "ul. Długa 22", "Wrocław", "Japanese", 1.4f, id = 2L),
-        Restaurant("Burger Town", "ul. Słoneczna 5", "Warszawa", "American", 2.1f, id = 3L),
-        Restaurant("Green Garden", "ul. Polna 3", "Kraków", "Vegan", 3.8f, id = 4L),
-        Restaurant("Puzata Chata", "ul. Ukraińska 24", "Białystok", "Ukrainian", 5.0f, id = 5L),
-        Restaurant("Stara Pierogarnia", "ul. Rynek 5", "Wrocław", "Polish", 4.6f, id = 6L)
-    )
-
-    val filteredRestaurants = restaurants.filter { restaurant ->
-        val matchesSearch = restaurant.name.contains(searchQuery.text, ignoreCase = true)
-        val matchesCity = restaurant.city == selectedCity
-        val matchesCuisine =
-            selectedCuisines.isEmpty() || selectedCuisines.contains(restaurant.cuisine)
-        val matchesRating = restaurant.rating in selectedRatingRange
-
-        matchesSearch && matchesCity && matchesCuisine && matchesRating
-    }
 
     Scaffold(
 
@@ -133,13 +294,18 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 0.dp, bottom = 16.dp),
+                    .offset(y = (-40).dp)
+                    .padding(bottom = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { searchQuery = it },
+                    onValueChange = {
+                        searchQuery = it
+
+                        if (it.text.isNotEmpty()) isAiSearchActive = false
+                    },
                     label = { Text("Search restaurants") },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
@@ -151,9 +317,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                     )
                 )
 
-
                 Spacer(modifier = Modifier.width(8.dp))
-
 
                 IconButton(
                     onClick = { showFilterSheet = true },
@@ -167,7 +331,6 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                         contentDescription = "Filters"
                     )
                 }
-
             }
 
             Button(
@@ -176,7 +339,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .offset(y = (-20).dp)
+                    .padding(bottom = 2.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = RSRed
                 )
@@ -190,19 +354,11 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 Text(if (isGeminiSearchVisible) "Hide AI prompt" else "Search with Gemini AI")
             }
 
-
-//                uncomment for color change
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = Color.Green
-//                )
-
-
             if (isGeminiSearchVisible) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    // alignment of elements
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
@@ -236,77 +392,208 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                 }
             }
 
+            if (isFiltersLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = RSRed)
+                }
+                return@Column
+            }
 
-            // Restaurant list
-            LazyColumn {
-                items(filteredRestaurants) { restaurant ->
-                    RestaurantInfoCard(
-
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp)
-                            .padding(vertical = 8.dp, horizontal = 4.dp) //outside padding
-                            .clickable {
-                                // ZMIANA: Zamiast nazwy, przekazujemy ID i rating
-                                navController.navigate("restaurantDetails/${restaurant.id}/${restaurant.rating}")
-                            },
-                        info = RestaurantDto(
-                            name = restaurant.name,
-                            averageRating = restaurant.rating.toDouble(),
-                            id = 1L,
-                            ownerId = 20L,
-                            address = "123 Placeholder St",
-                            city = "Sample City",
-                            description = "This is a placeholder description for the restaurant.",
-                            openingHours = mapOf(
-                                "Mon" to "10:00–22:00",
-                                "Tue" to "10:00–22:00",
-                                "Wed" to "10:00–22:00",
-                                "Thu" to "10:00–22:00",
-                                "Fri" to "10:00–23:00",
-                                "Sat" to "11:00–23:00",
-                                "Sun" to "11:00–21:00"
-                            ),
-                            latitude = 0.0,
-                            longitude = 0.0,
-                            pic = "https://example.com/placeholder.jpg",
-                            tableIds = setOf(1, 2, 3),
-                            reviewIds = setOf(101, 102),
-                            aiAnalysisIds = emptySet(),
-                            statisticIds = emptySet(),
-                            tagIds = setOf(1, 2),
-                            pictureIds = setOf(11, 12)
-                        ) // TODO fetch from database
-                    )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = RSRed)
+                }
+            } else if (restaurants.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No restaurants meeting this criteria.")
+                }
+            } else {
+                LazyColumn {
+                    items(restaurants) { restaurant ->
+                        RestaurantInfoCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp)
+                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                                .clickable {
+                                    val restaurantIdToNavigate = restaurant.id
+                                    navController.navigate("restaurantDetails/$restaurantIdToNavigate")
+                                },
+                            info = restaurant
+                        )
+                    }
                 }
             }
         }
     }
+
+
+
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun FilterBottomSheetContent(
+        selectedCity: String,
+        selectedCuisines: Set<String>,
+        selectedRatingRange: ClosedFloatingPointRange<Float>,
+        onCityChange: (String) -> Unit,
+        onCuisineToggle: (String) -> Unit,
+        onRatingChange: (ClosedFloatingPointRange<Float>) -> Unit,
+        onApply: () -> Unit,
+        onResetFilters: () -> Unit,
+        availableCities: List<String>,
+        availableCuisines: List<String>
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                "Filters",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            OutlinedButton(
+                onClick = onResetFilters, //calling reset function
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
+                border = BorderStroke(1.dp, RSRed)
+            ) {
+                Text("Reset filters")
+            }
+
+            Spacer(Modifier.height(15.dp))
+
+            // City filter
+            Text("Choose a city", style = MaterialTheme.typography.titleMedium)
+            availableCities.forEach { city ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCityChange(city) }
+                        .padding(vertical = 4.dp)
+                ) {
+                    RadioButton(
+                        selected = (city == selectedCity),
+                        onClick = { onCityChange(city) },
+                        colors = RadioButtonDefaults.colors(selectedColor = RSRed)
+                    )
+                    Spacer(Modifier.padding(start = 15.dp))
+                    Text(city)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Cuisine filter
+            Text("Choose filter", style = MaterialTheme.typography.titleMedium)
+            availableCuisines.forEach { cuisine ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCuisineToggle(cuisine) }
+                        .padding(vertical = 4.dp)
+                ) {
+                    Checkbox(
+                        checked = selectedCuisines.contains(cuisine),
+                        onCheckedChange = { onCuisineToggle(cuisine) },
+                        colors = CheckboxDefaults.colors(checkedColor = RSRed)
+                    )
+                    Spacer(Modifier.padding(start = 8.dp))
+                    Text(cuisine)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Rating filter
+            Text(
+                "Rating: od ${
+                    String.format("%.1f", selectedRatingRange.start)
+                } do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
+                style = MaterialTheme.typography.titleMedium
+            )
+            RangeSlider(
+                value = selectedRatingRange,
+                onValueChange = onRatingChange, // passing new value
+                valueRange = 1.0f..5.0f,
+                steps = 8, // filter steps (5-1) / 0.5 = 8
+                colors = SliderDefaults.colors(
+                    thumbColor = RSRed,
+                    activeTrackColor = RSRed
+                )
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = onApply,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+
+
+            ) {
+                Text("Apply filters")
+            }
+        }
+    }
+
     if (showFilterSheet) {
         ModalBottomSheet(
             onDismissRequest = { showFilterSheet = false },
             sheetState = sheetState
         ) {
-            // Passing states and functions to filters panel
             FilterBottomSheetContent(
                 selectedCity = selectedCity,
                 selectedCuisines = selectedCuisines,
                 selectedRatingRange = selectedRatingRange,
-                onCityChange = { selectedCity = it },
+                onCityChange = {
+                    selectedCity = it
+                    // changing filter resets AI
+                    isAiSearchActive = false
+                },
                 onCuisineToggle = { cuisine ->
-                    // Checkbox logic
                     selectedCuisines = if (selectedCuisines.contains(cuisine)) {
                         selectedCuisines - cuisine
                     } else {
                         selectedCuisines + cuisine
                     }
+                    isAiSearchActive = false
                 },
-                onRatingChange = { selectedRatingRange = it },
-
+                onRatingChange = {
+                    selectedRatingRange = it
+                    isAiSearchActive = false
+                },
                 onResetFilters = {
-                    selectedCity = "Wrocław"
+                    selectedCity = "New York"
                     selectedCuisines = emptySet()
                     selectedRatingRange = 1.0f..5.0f
+                    isAiSearchActive = false
                 },
                 onApply = {
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -314,129 +601,15 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
                             showFilterSheet = false
                         }
                     }
-                }
+                },
+                availableCities = availableCities,
+                availableCuisines = availableCuisines.map { it.name }
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FilterBottomSheetContent(
-    selectedCity: String,
-    selectedCuisines: Set<String>,
-    selectedRatingRange: ClosedFloatingPointRange<Float>,
-    onCityChange: (String) -> Unit,
-    onCuisineToggle: (String) -> Unit,
-    onRatingChange: (ClosedFloatingPointRange<Float>) -> Unit,
-    onApply: () -> Unit,
-    onResetFilters: () -> Unit
-) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text(
-            "Filters",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        OutlinedButton(
-            onClick = onResetFilters, //calling reset function
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
-            border = BorderStroke(1.dp, RSRed)
-        ) {
-            Text("Reset filters")
-        }
-
-        Spacer(Modifier.height(15.dp))
-
-        // City filter
-        Text("Choose a city", style = MaterialTheme.typography.titleMedium)
-        allCities.forEach { city ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCityChange(city) }
-                    .padding(vertical = 4.dp)
-            ) {
-                RadioButton(
-                    selected = (city == selectedCity),
-                    onClick = { onCityChange(city) },
-                    colors = RadioButtonDefaults.colors(selectedColor = RSRed)
-                )
-                Spacer(Modifier.padding(start = 15.dp))
-                Text(city)
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // Cuisine filter
-        Text("Choose cuisine", style = MaterialTheme.typography.titleMedium)
-        allCuisines.forEach { cuisine ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onCuisineToggle(cuisine) }
-                    .padding(vertical = 4.dp)
-            ) {
-                Checkbox(
-                    checked = selectedCuisines.contains(cuisine),
-                    onCheckedChange = { onCuisineToggle(cuisine) },
-                    colors = CheckboxDefaults.colors(checkedColor = RSRed)
-                )
-                Spacer(Modifier.padding(start = 8.dp))
-                Text(cuisine)
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // Rating filter
-        Text(
-            "Rating: od ${
-                String.format(
-                    "%.1f",
-                    selectedRatingRange.start
-                )
-            } do ${String.format("%.1f", selectedRatingRange.endInclusive)}",
-            style = MaterialTheme.typography.titleMedium
-        )
-        RangeSlider(
-            value = selectedRatingRange,
-            onValueChange = onRatingChange, // passing new value
-            valueRange = 1.0f..5.0f,
-            steps = 8, // filter steps (5-1) / 0.5 = 8
-            colors = SliderDefaults.colors(
-                thumbColor = RSRed,
-                activeTrackColor = RSRed
-            )
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Button(
-            onClick = onApply,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
 
 
-        ) {
-            Text("Apply filters")
-        }
-    }
-}
 
 
