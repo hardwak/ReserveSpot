@@ -275,6 +275,11 @@ data class RestaurantTableDto(
     val reservationIds: Set<Long>?
 )
 
+data class OwnerReviewWithUser(
+    val review: ReviewDto,
+    val userName: String
+)
+
 interface PicturesApi {
     @GET("/api/pictures")
     suspend fun getPictures(

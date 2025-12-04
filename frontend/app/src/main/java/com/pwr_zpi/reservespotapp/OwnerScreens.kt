@@ -1,7 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
 
-import com.pwr_zpi.reservespotapp.OwnerReservationDto
 import android.app.TimePickerDialog
 import android.content.Context
 import android.net.Uri
@@ -43,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -603,9 +603,6 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
     }
 
 
-
-
-
     LaunchedEffect(restaurantId, selectedStatus) {
         isLoading = true
         reservationsByStatus = fetchReservationsByStatus(context, selectedStatus)
@@ -676,20 +673,26 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
 
 
 
-
 @Composable
 fun OwnerReviewsTab(restaurantId: Long, context: Context) {
-    var reviews by remember { mutableStateOf<List<ReviewDto>>(emptyList()) }
+    var reviewsWithUsers by remember { mutableStateOf<List<OwnerReviewWithUser>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
+    LaunchedEffect(restaurantId) {
+        isLoading = true
+        reviewsWithUsers = fetchReviewsWithUserNamesForOwner(context, restaurantId)
+        isLoading = false
+    }
 
     if (isLoading) {
         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
-    } else if (reviews.isEmpty()) {
+    } else if (reviewsWithUsers.isEmpty()) {
         Text("This restaurant has no reviews yet.", modifier = Modifier.padding(16.dp), color = Color.Gray)
     } else {
         LazyColumn(modifier = Modifier.padding(16.dp)) {
-            items(reviews) { review ->
+            items(reviewsWithUsers) { item ->
+                val review = item.review
+                val userName = item.userName
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -697,6 +700,14 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            Text(
+                                text = userName,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+
                             Icon(Icons.Default.Star, null, tint = RSRed, modifier = Modifier.size(16.dp))
                             Text(
                                 text = "${review.rating ?: 0}/5",
@@ -712,10 +723,36 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
                             )
                         }
                         Spacer(Modifier.height(8.dp))
+
                         if (!review.comment.isNullOrEmpty()) {
                             Text(text = review.comment, fontSize = 14.sp)
                         } else {
-                            Text(text = "No comment", fontSize = 14.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color.Gray)
+                            Text(text = "No reviews", fontSize = 14.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color.Gray)
+                        }
+
+                        if (!review.pic.isNullOrBlank()) {
+                            val rawUrl = review.pic
+
+                            val finalImageUrl = when {
+                                rawUrl.contains("localhost") -> rawUrl.replace("localhost", "10.0.2.2")
+                                !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + rawUrl
+                                else -> rawUrl
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            AsyncImage(
+                                model = finalImageUrl,
+                                contentDescription = "Review photo",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.LightGray),
+                                contentScale = ContentScale.Crop,
+                                 placeholder = painterResource(id = R.drawable.food_placeholder),
+                                 error = painterResource(id = R.drawable.food_placeholder)
+                            )
                         }
                     }
                 }
@@ -1041,5 +1078,35 @@ suspend fun uploadImageForRestaurant(context: Context, uri: Uri): String? = with
     } catch (e: Exception) {
         Log.e("Upload", "Upload error for main image", e)
         null
+    }
+}
+
+suspend fun fetchReviewsWithUserNamesForOwner(context: Context, restaurantId: Long): List<OwnerReviewWithUser> = withContext(Dispatchers.IO) {
+    val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+
+    // 1. Pobierz surowe opinie
+    val reviews = fetchRestaurantReviews(context, restaurantId)
+
+    if (reviews.isEmpty()) return@withContext emptyList()
+
+    // 2. Mapuj i pobieraj nazwę dla każdego użytkownika
+    reviews.map { review ->
+        val userName = if (review.userId != null) {
+            try {
+                // Wywołanie API do pobrania szczegółów użytkownika
+                val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", review.userId)
+                if (userResponse.isSuccessful) {
+                    userResponse.body()?.name ?: "User #${review.userId}"
+                } else {
+                    "Anonymous"
+                }
+            } catch (e: Exception) {
+                "User"
+            }
+        } else {
+            // Opinia dodana przez telefon/bez logowania
+            review.phoneNumber ?: "Anonymous"
+        }
+        OwnerReviewWithUser(review, userName)
     }
 }
