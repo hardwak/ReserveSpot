@@ -869,10 +869,10 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
                             },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .offset(x = 8.dp, y = (-8).dp)
+                                .padding(8.dp)
                                 .background(RSRed, CircleShape)
                                 .size(32.dp)
-                                .padding(4.dp)
+
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete photo", tint = Color.White)
                         }
