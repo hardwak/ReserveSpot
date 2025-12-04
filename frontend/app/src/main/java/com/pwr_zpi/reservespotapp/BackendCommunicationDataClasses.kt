@@ -523,7 +523,6 @@ data class TableDto(
     val locationInRestaurant: String
 )
 
-// DTO for reservations (owner view - /api/reservations/owner/upcoming)
 data class OwnerReservationDto(
     val id: Long,
     val userId: Long,

@@ -318,12 +318,6 @@ fun Controller(navController: NavHostController) {
                 )
             }
         }
-
-//            composable("login") { LoginScreen(navController) }
-//            composable("reservations") { ReservationsScreen(navController) }
-//            composable("favourites") { FavouritesScreen(navController) }
-
-
     }
 }
 

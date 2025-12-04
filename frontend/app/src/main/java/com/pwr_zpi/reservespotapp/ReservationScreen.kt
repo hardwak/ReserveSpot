@@ -82,11 +82,20 @@ fun ReservationScreen(
     val scope = rememberCoroutineScope()
     val dataStore = DataStoreManager(context)
 
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
 
-    val parsedDate = remember(initialDate) {
-        if (!initialDate.isNullOrEmpty()) {
+    val savedDate = savedStateHandle?.get<String>("selected_date")
+    val savedTime = savedStateHandle?.get<String>("selected_time")
+    val savedGuests = savedStateHandle?.get<String>("selected_guests")
+    val savedDuration = savedStateHandle?.get<String>("selected_duration")
+    val savedLocation = savedStateHandle?.get<String>("selected_location")
+
+    val parsedDate = remember(initialDate, savedDate) {
+        val dateString = savedDate ?: initialDate
+
+        if (!dateString.isNullOrEmpty()) {
             try {
-                val parsed = LocalDate.parse(initialDate, DateTimeFormatter.ISO_LOCAL_DATE)
+                val parsed = LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE)
                 if (parsed.isBefore(LocalDate.now())) LocalDate.now() else parsed
             } catch (e: Exception) {
                 LocalDate.now()
@@ -96,16 +105,38 @@ fun ReservationScreen(
         }
     }
 
-
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(parsedDate) }
 
+    var selectedTime by remember {
+        mutableStateOf(savedTime ?: initialTime)
+    }
 
-    var selectedTime by remember { mutableStateOf(initialTime) }
 
-    var selectedGuests by remember { mutableStateOf(initialGuests?.toIntOrNull() ?: 2) }
-    var selectedDurationLabel by remember { mutableStateOf(initialDuration ?: "1 hour") }
-    var selectedLocation by remember { mutableStateOf(initialLocation ?: "Any") }
+    var selectedGuests by remember {
+        val guestsStr = savedGuests ?: initialGuests
+        mutableStateOf(guestsStr?.toIntOrNull() ?: 2)
+    }
+
+
+    var selectedDurationLabel by remember {
+        mutableStateOf(savedDuration ?: initialDuration ?: "1 hour")
+    }
+
+
+    var selectedLocation by remember {
+        mutableStateOf(savedLocation ?: initialLocation ?: "Any")
+    }
+
+
+
+    LaunchedEffect(Unit) {
+        savedStateHandle?.remove<String>("selected_date")
+        savedStateHandle?.remove<String>("selected_time")
+        savedStateHandle?.remove<String>("selected_guests")
+        savedStateHandle?.remove<String>("selected_duration")
+        savedStateHandle?.remove<String>("selected_location")
+    }
 
 
     var availableSlots by remember { mutableStateOf<List<AvailableReservationSlotDto>>(emptyList()) }
@@ -128,9 +159,12 @@ fun ReservationScreen(
         listOf("Any") + locations
     }
 
-    LaunchedEffect(locationOptions) {
-        if (selectedLocation !in locationOptions) {
-            selectedLocation = locationOptions.firstOrNull() ?: "Any"
+
+    LaunchedEffect(locationOptions, availableSlots) {
+        if (availableSlots.isNotEmpty()) {
+            if (selectedLocation !in locationOptions) {
+                selectedLocation = locationOptions.firstOrNull() ?: "Any"
+            }
         }
     }
 
@@ -152,10 +186,8 @@ fun ReservationScreen(
 
                 if (response.isSuccessful) {
                     availableSlots = response.body() ?: emptyList()
-
-
                 } else {
-                    Toast.makeText(context, "Error downloading hour: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    // Handle error
                 }
             }
         } catch (e: Exception) {
@@ -198,10 +230,12 @@ fun ReservationScreen(
             .sorted()
     }
 
-    // Reset selectedTime if it's no longer available after filtering
-    LaunchedEffect(timeOptions) {
-        if (selectedTime != null && !timeOptions.contains(selectedTime)) {
-            selectedTime = null
+
+    LaunchedEffect(timeOptions, availableSlots) {
+        if (availableSlots.isNotEmpty()) {
+            if (selectedTime != null && !timeOptions.contains(selectedTime)) {
+                selectedTime = null
+            }
         }
     }
 
@@ -281,10 +315,6 @@ fun ReservationScreen(
 
 
                 FormSectionTitle("Table location")
-                if (isLoading) {
-
-                }
-
                 HorizontalSelector(
                     options = locationOptions,
                     selectedValue = selectedLocation,

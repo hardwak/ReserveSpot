@@ -1,12 +1,5 @@
 package com.pwr_zpi.reservespotapp
 
-import android.webkit.MimeTypeMap
-import java.io.File
-import java.io.FileOutputStream
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import com.pwr_zpi.reservespotapp.PhotosTabContent
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -14,9 +7,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,23 +16,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -50,7 +35,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
@@ -95,13 +79,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlin.random.Random
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.launch
@@ -602,22 +584,6 @@ fun RestaurantDetailsScreen(
                             }
                         }
 
-//                        IconButton(
-//                            onClick = { navController.popBackStack() },
-//                            modifier = Modifier
-//                                .align(Alignment.TopStart)
-//                                .padding(16.dp)
-//                                .padding(top = 40.dp)
-//                                .size(48.dp)
-//                                .clip(CircleShape)
-//                                .background(RSRed) // Używa koloru RSRed dla tła
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-//                                contentDescription = "Back",
-//                                tint = Color.White // Biała strzałka
-//                            )
-//                        }
 
                         IconButton(
 

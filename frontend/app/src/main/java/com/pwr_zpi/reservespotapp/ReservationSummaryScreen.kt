@@ -153,7 +153,24 @@ fun ReservationSummaryScreen(
 
                 OutlinedButton(
                     onClick = {
+//                        navController.popBackStack()
+//                    },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
+//                    border = BorderStroke(1.dp, RSRed),
+//                    enabled = !isSubmitting
+//                ) {
+//                    Text("Change reservation data", fontSize = 16.sp)
+//                }
+
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selected_date", dateDisplay)
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selected_time", timeDisplay)
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selected_guests", guests)
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selected_duration", durationDisplay)
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selected_location", decodedLocation)
+
                         navController.popBackStack()
+
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = RSRed),
