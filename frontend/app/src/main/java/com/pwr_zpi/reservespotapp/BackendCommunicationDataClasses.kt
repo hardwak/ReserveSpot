@@ -280,6 +280,11 @@ data class OwnerReviewWithUser(
     val userName: String
 )
 
+data class OwnerReservationWithUser(
+    val reservation: ReservationDto,
+    val userName: String
+)
+
 interface PicturesApi {
     @GET("/api/pictures")
     suspend fun getPictures(

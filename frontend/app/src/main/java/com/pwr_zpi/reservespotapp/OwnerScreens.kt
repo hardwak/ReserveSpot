@@ -580,7 +580,7 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
 
 @Composable
 fun OwnerReservationsTab(restaurantId: Long, context: Context) {
-    var reservationsByStatus by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
+    var reservationsByStatus by remember { mutableStateOf<List<OwnerReservationWithUser>>(emptyList()) }
     var tablesForRestaurant by remember { mutableStateOf<List<RestaurantTableDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
@@ -596,25 +596,22 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
     fun refreshCurrentStatusData() {
         scope.launch {
             isLoading = true
-            reservationsByStatus = fetchReservationsByStatus(context, selectedStatus)
+            val rawReservations = fetchReservationsByStatus(context, selectedStatus)
+            reservationsByStatus = fetchReservationsWithOwnerName(context, rawReservations)
             tablesForRestaurant = fetchTables(context, restaurantId)
             isLoading = false
         }
     }
 
-
     LaunchedEffect(restaurantId, selectedStatus) {
-        isLoading = true
-        reservationsByStatus = fetchReservationsByStatus(context, selectedStatus)
-        tablesForRestaurant = fetchTables(context, restaurantId)
-        isLoading = false
+        refreshCurrentStatusData()
     }
 
 
     val finalFilteredReservations = remember(reservationsByStatus, restaurantTableIds) {
         reservationsByStatus
-            .filter { reservation ->
-                restaurantTableIds.contains(reservation.tableId) && reservation.restaurantId == restaurantId
+            .filter { item ->
+                restaurantTableIds.contains(item.reservation.tableId) && item.reservation.restaurantId == restaurantId
             }
     }
 
@@ -651,8 +648,8 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
             Text("No ${selectedStatus.lowercase()} reservations for this restaurant.", modifier = Modifier.padding(16.dp), color = Color.Gray)
         } else {
             LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                items(finalFilteredReservations, key = { it.id }) { res ->
-                    OwnerReservationCard(reservation = res, onCancel = { idToCancel ->
+                items(finalFilteredReservations, key = { it.reservation.id }) { item ->
+                    OwnerReservationCard(reservationWithUser = item, onCancel = { idToCancel ->
                         scope.launch {
                             val successful = cancelOwnerReservation(context, idToCancel)
 
@@ -661,7 +658,7 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
                                 Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
 
                             } else {
-                                Toast.makeText(context, "Anulowanie nie powiodło się.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Problem with cancellation.", Toast.LENGTH_SHORT).show()
                             }
                         }
                     })
@@ -953,26 +950,24 @@ suspend fun deleteTable(context: Context, id: Long) = withContext(Dispatchers.IO
 }
 
 
-suspend fun fetchOwnerReservations(context: Context): List<ReservationDto> = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+suspend fun fetchReservationsWithOwnerName(context: Context, reservations: List<ReservationDto>): List<OwnerReservationWithUser> = withContext(Dispatchers.IO) {
+    val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
-
-        val response = RetrofitClient.ownerApi.getOwnerUpcomingReservations("Bearer $token")
-
-
-        if (response.isSuccessful) {
-
-            @Suppress("UNCHECKED_CAST")
-            response.body() as? List<ReservationDto> ?: emptyList()
+    reservations.map { reservation ->
+        val userName = if (reservation.userId != null) {
+            try {
+                val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", reservation.userId)
+                userResponse.body()?.name ?: "User #${reservation.userId}"
+            } catch (e: Exception) {
+                "Anonymous User"
+            }
         } else {
-            emptyList()
+            "Unknown User"
         }
-    } catch (e: Exception) {
-        Log.e("API", "Error in fetchOwnerReservations", e)
-        emptyList()
+        OwnerReservationWithUser(reservation, userName)
     }
 }
+
 
 suspend fun cancelOwnerReservation(context: Context, id: Long): Boolean = withContext(Dispatchers.IO) {
     try {
@@ -1084,16 +1079,16 @@ suspend fun uploadImageForRestaurant(context: Context, uri: Uri): String? = with
 suspend fun fetchReviewsWithUserNamesForOwner(context: Context, restaurantId: Long): List<OwnerReviewWithUser> = withContext(Dispatchers.IO) {
     val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
-    // 1. Pobierz surowe opinie
+
     val reviews = fetchRestaurantReviews(context, restaurantId)
 
     if (reviews.isEmpty()) return@withContext emptyList()
 
-    // 2. Mapuj i pobieraj nazwę dla każdego użytkownika
+
     reviews.map { review ->
         val userName = if (review.userId != null) {
             try {
-                // Wywołanie API do pobrania szczegółów użytkownika
+
                 val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", review.userId)
                 if (userResponse.isSuccessful) {
                     userResponse.body()?.name ?: "User #${review.userId}"
@@ -1104,7 +1099,7 @@ suspend fun fetchReviewsWithUserNamesForOwner(context: Context, restaurantId: Lo
                 "User"
             }
         } else {
-            // Opinia dodana przez telefon/bez logowania
+
             review.phoneNumber ?: "Anonymous"
         }
         OwnerReviewWithUser(review, userName)
