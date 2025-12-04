@@ -530,8 +530,8 @@ class ReservationServiceTest {
     void testGetReservationsByDateRange() {
         // Given
         LocalDateTime today = LocalDateTime.now().plusHours(2);
-        LocalDateTime tomorrow = LocalDateTime.now().plusDays(1).withHour(19);
-        LocalDateTime dayAfter = LocalDateTime.now().plusDays(2).withHour(19);
+        LocalDateTime tomorrow = LocalDateTime.now().plusDays(1).plusHours(2);
+        LocalDateTime dayAfter = LocalDateTime.now().plusDays(2).plusHours(2);
 
         CreateReservationDto dto1 = CreateReservationDto.builder()
                 .tableId(testTable.getId())
