@@ -1,5 +1,6 @@
 package com.pwr_zpi.reservespotapp
 
+import java.time.ZoneOffset
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
@@ -56,7 +57,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -86,7 +86,8 @@ fun ReservationScreen(
     val parsedDate = remember(initialDate) {
         if (!initialDate.isNullOrEmpty()) {
             try {
-                LocalDate.parse(initialDate, DateTimeFormatter.ISO_LOCAL_DATE)
+                val parsed = LocalDate.parse(initialDate, DateTimeFormatter.ISO_LOCAL_DATE)
+                if (parsed.isBefore(LocalDate.now())) LocalDate.now() else parsed
             } catch (e: Exception) {
                 LocalDate.now()
             }
@@ -405,13 +406,21 @@ fun FormSectionTitle(title: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateSelector(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit, onOpenCalendar: () -> Unit) {
+
+    val isPreviousEnabled = selectedDate.isAfter(LocalDate.now())
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextButton(onClick = { onDateChange(selectedDate.minusDays(1)) }) {
-            Text("<- Previous", color = RSRed)
+        TextButton(onClick = { if (isPreviousEnabled) {
+            onDateChange(selectedDate.minusDays(1))
+        } },
+            enabled = isPreviousEnabled
+
+            ) {
+            Text("<- Previous",  color = if (isPreviousEnabled) RSRed else Color.Gray)
         }
         Row(
             modifier = Modifier
@@ -424,7 +433,7 @@ fun DateSelector(selectedDate: LocalDate, onDateChange: (LocalDate) -> Unit, onO
             Icon(Icons.Default.CalendarToday, contentDescription = null, tint = RSRed, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
             Text(
-                if (selectedDate == LocalDate.now()) "Today" else selectedDate.format(DateTimeFormatter.ofPattern("dd MMM")),
+                if (selectedDate.isEqual(LocalDate.now())) "Today" else selectedDate.format(DateTimeFormatter.ofPattern("dd MMM")),
                 fontWeight = FontWeight.Bold,
                 color = RSRed
             )
@@ -461,21 +470,30 @@ fun HorizontalSelector(options: List<String>, selectedValue: String, onSelect: (
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationDatePicker(initialDate: LocalDate, onDateSelected: (LocalDate) -> Unit, onDismiss: () -> Unit) {
-    val initialTimeMillis = initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val todayMillis = remember { LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() }
+
+    val initialTimeMillis = initialDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+    val todayMillis = remember { LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }
+
     val selectableDates = remember {
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayMillis
+
             override fun isSelectableYear(year: Int): Boolean = year >= LocalDate.now().year
         }
     }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialTimeMillis, selectableDates = selectableDates)
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialTimeMillis,
+        selectableDates = selectableDates
+    )
+
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                    val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val selectedLocalDate = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
                     onDateSelected(selectedLocalDate)
                 }
             }) { Text("OK", color = RSRed) }

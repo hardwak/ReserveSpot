@@ -580,7 +580,7 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
 
 @Composable
 fun OwnerReservationsTab(restaurantId: Long, context: Context) {
-    var allOwnerReservations by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
+    var reservationsByStatus by remember { mutableStateOf<List<ReservationDto>>(emptyList()) }
     var tablesForRestaurant by remember { mutableStateOf<List<RestaurantTableDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
@@ -593,40 +593,39 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
         tablesForRestaurant.map { it.id }.toSet()
     }
 
-    val filteredReservations = remember(allOwnerReservations, restaurantTableIds, selectedStatus) {
-        allOwnerReservations
-            .filter { reservation ->
-                restaurantTableIds.contains(reservation.tableId) && reservation.restaurantId == restaurantId
-            }
-            .filter { reservation ->
-
-                reservation.status.name == selectedStatus
-            }
-    }
-
-
-
-
-    fun refreshData() {
+    fun refreshCurrentStatusData() {
         scope.launch {
             isLoading = true
-
-            allOwnerReservations = fetchOwnerReservations(context)
+            reservationsByStatus = fetchReservationsByStatus(context, selectedStatus)
             tablesForRestaurant = fetchTables(context, restaurantId)
             isLoading = false
         }
     }
 
-//    Fetching data on first usage or change of the restaurant
-    LaunchedEffect(restaurantId) {
-        refreshData()
+
+
+
+
+    LaunchedEffect(restaurantId, selectedStatus) {
+        isLoading = true
+        reservationsByStatus = fetchReservationsByStatus(context, selectedStatus)
+        tablesForRestaurant = fetchTables(context, restaurantId)
+        isLoading = false
     }
 
+
+    val finalFilteredReservations = remember(reservationsByStatus, restaurantTableIds) {
+        reservationsByStatus
+            .filter { reservation ->
+                restaurantTableIds.contains(reservation.tableId) && reservation.restaurantId == restaurantId
+            }
+    }
+
+
     Column(modifier = Modifier.fillMaxSize()) {
-        ScrollableTabRow(
+        TabRow(
             selectedTabIndex = selectedStatusIndex,
             contentColor = RSRed,
-            edgePadding = 0.dp,
             modifier = Modifier.fillMaxWidth().height(48.dp),
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
@@ -639,6 +638,7 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
                 Tab(
                     selected = selectedStatusIndex == index,
                     onClick = { selectedStatusIndex = index },
+                    modifier = Modifier.weight(1f),
                     text = { Text(title, color = if (selectedStatusIndex == index) RSRed else Color.Gray, fontWeight = FontWeight.SemiBold) }
                 )
             }
@@ -648,19 +648,24 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
 
         if (isLoading) {
             Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
-        } else if (allOwnerReservations.isEmpty()) {
+        } else if (reservationsByStatus.isEmpty()) {
             Text("No reservations available for your restaurants.", modifier = Modifier.padding(16.dp), color = Color.Gray)
-        } else if (filteredReservations.isEmpty()) {
+        } else if (finalFilteredReservations.isEmpty()) {
             Text("No ${selectedStatus.lowercase()} reservations for this restaurant.", modifier = Modifier.padding(16.dp), color = Color.Gray)
         } else {
             LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                items(filteredReservations) { res ->
-                    OwnerReservationCard(reservation = res, onCancel = { id ->
+                items(finalFilteredReservations, key = { it.id }) { res ->
+                    OwnerReservationCard(reservation = res, onCancel = { idToCancel ->
                         scope.launch {
-                            cancelOwnerReservation(context, id)
+                            val successful = cancelOwnerReservation(context, idToCancel)
 
-                            refreshData()
-                            Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
+                            if (successful) {
+                                refreshCurrentStatusData()
+                                Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
+
+                            } else {
+                                Toast.makeText(context, "Anulowanie nie powiodło się.", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     })
                 }
@@ -670,16 +675,13 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
 }
 
 
+
+
 @Composable
 fun OwnerReviewsTab(restaurantId: Long, context: Context) {
     var reviews by remember { mutableStateOf<List<ReviewDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(restaurantId) {
-        isLoading = true
-        reviews = fetchRestaurantReviews(context, restaurantId)
-        isLoading = false
-    }
 
     if (isLoading) {
         Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
@@ -844,6 +846,24 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
     }
 }
 
+suspend fun fetchReservationsByStatus(context: Context, status: String): List<ReservationDto> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+
+        val response = RetrofitClient.reservationApi.getReservationsByStatus("Bearer $token", status)
+
+        if (response.isSuccessful) {
+            response.body() ?: emptyList()
+        } else {
+            Log.e("API", "Error downloading reservations by status: HTTP Code ${response.code()}")
+            emptyList()
+        }
+    } catch (e: Exception) {
+        Log.e("API", "Exception in fetchReservationsByStatus", e)
+        emptyList()
+    }
+}
+
 suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<RestaurantDto> = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
@@ -917,11 +937,16 @@ suspend fun fetchOwnerReservations(context: Context): List<ReservationDto> = wit
     }
 }
 
-suspend fun cancelOwnerReservation(context: Context, id: Long) = withContext(Dispatchers.IO) {
+suspend fun cancelOwnerReservation(context: Context, id: Long): Boolean = withContext(Dispatchers.IO) {
     try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext
-        RetrofitClient.ownerApi.cancelReservation("Bearer $token", id)
-    } catch (e: Exception) { Log.e("API", "Błąd anulowania", e) }
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
+        val response = RetrofitClient.ownerApi.cancelReservation("Bearer $token", id)
+
+        response.isSuccessful
+    } catch (e: Exception) {
+        Log.e("API", "Błąd anulowania", e)
+        false
+    }
 }
 
 suspend fun fetchRestaurantReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
