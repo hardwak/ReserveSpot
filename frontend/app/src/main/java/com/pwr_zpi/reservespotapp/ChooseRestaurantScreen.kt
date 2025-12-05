@@ -197,6 +197,8 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
     var selectedCuisines by remember { mutableStateOf<Set<String>>(emptySet()) }
     var selectedRatingRange by remember { mutableStateOf(0.0f..5.0f) }
 
+    val dataStoreManager = DataStoreManager(context)
+
     LaunchedEffect(Unit) {
         isFiltersLoading = true
         val fetchedCuisines = fetchAvailableTags(context)
@@ -206,7 +208,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
         availableCities = fetchedCities
 
         if (fetchedCities.isNotEmpty()) {
-            selectedCity = fetchedCities.first()
+            selectedCity = dataStoreManager.getCity() ?: "New York"
         }
         isFiltersLoading = false
     }
@@ -247,6 +249,7 @@ fun ChooseRestaurantScreen(navController: NavHostController) {
             )
 
             restaurants = fetchRestaurants(context, searchCriteria)
+            dataStoreManager.saveCity(city = selectedCity)
             isLoading = false
         }
     }
