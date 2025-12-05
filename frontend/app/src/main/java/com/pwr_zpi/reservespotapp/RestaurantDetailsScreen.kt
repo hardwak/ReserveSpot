@@ -455,8 +455,8 @@ fun RestaurantDetailsScreen(
 
                     AsyncImage(
                         model = imageRequest,
-                        placeholder = painterResource(id = R.drawable.food_placeholder),
-                        error = painterResource(id = R.drawable.loading_placeholder), // if error show loading placeholder
+                        placeholder = painterResource(id = R.drawable.loading_placeholder),
+                        error = painterResource(id = R.drawable.food_placeholder), // if error show loading placeholder
                         contentDescription = "Restaurant Image",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
