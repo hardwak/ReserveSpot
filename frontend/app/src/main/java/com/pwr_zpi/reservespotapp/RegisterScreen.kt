@@ -261,7 +261,7 @@ fun RegisterScreen(navController: NavHostController) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Sign in with Google",
+                text = "Sign Up with Google",
                 color = Color.Black
             )
         }
