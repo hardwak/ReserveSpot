@@ -750,7 +750,7 @@ fun RestaurantTagsSection(tags: List<String>) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Używamy LazyRow dla poziomego przewijania tagów
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -758,8 +758,8 @@ fun RestaurantTagsSection(tags: List<String>) {
                 items(tags) { tag ->
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, RSRed), // Czerwona obwódka jak na screenie
-                        color = Color.White // Białe tło
+                        border = BorderStroke(1.dp, RSRed),
+                        color = Color.White
                     ) {
                         Text(
                             text = tag,
