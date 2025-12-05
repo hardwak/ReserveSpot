@@ -12,10 +12,16 @@ import com.pwr_zpi.reservespotapi.entities.review.Review;
 import com.pwr_zpi.reservespotapi.entities.review.ReviewRepository;
 import com.pwr_zpi.reservespotapi.entities.users.User;
 import com.pwr_zpi.reservespotapi.entities.users.UserRepository;
+import com.pwr_zpi.reservespotapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +35,7 @@ public class PictureService {
     private final RestaurantRepository restaurantRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final StorageService storageService;
 
     public List<PictureDto> getAllPictures() {
         return pictureRepository.findAll()
@@ -60,6 +67,101 @@ public class PictureService {
         Picture picture = pictureMapper.toEntity(createDto);
         Picture savedPicture = pictureRepository.save(picture);
         return pictureMapper.toDto(savedPicture);
+    }
+
+    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/webp"
+    );
+
+
+    public PictureDto uploadPicture(MultipartFile file, String description) {
+        validateFile(file);
+
+        String fileUrl = storageService.uploadFile(file);
+
+        Picture picture = Picture.builder()
+                .url(fileUrl)
+                .description(description)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+
+        Picture savedPicture = pictureRepository.save(picture);
+
+        return pictureMapper.toDto(savedPicture);
+    }
+
+    public PictureDto uploadPictureToRestaurant(Long restaurantId, MultipartFile file, String description, Long userId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+
+        if (!restaurant.getOwner().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not the owner of this restaurant");
+        }
+
+        validateFile(file);
+        String fileUrl = storageService.uploadFile(file);
+
+        Picture picture = Picture.builder()
+                .url(fileUrl)
+                .description(description)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+
+        Picture savedPicture = pictureRepository.save(picture);
+
+        restaurant.getPictures().add(savedPicture);
+        restaurantRepository.save(restaurant);
+
+        return pictureMapper.toDto(savedPicture);
+    }
+
+    public void deletePictureFromRestaurant(Long restaurantId, Long pictureId, Long userId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+
+        if (!restaurant.getOwner().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not the owner of this restaurant");
+        }
+
+        Picture picture = pictureRepository.findById(pictureId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Picture not found"));
+
+        if (!restaurant.getPictures().contains(picture)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This picture does not belong to the specified restaurant");
+        }
+
+        restaurant.getPictures().remove(picture);
+        restaurantRepository.save(restaurant);
+
+        if (isOrphan(picture)) {
+            storageService.deleteFile(picture.getUrl());
+            pictureRepository.delete(picture);
+        }
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File cannot be empty");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Invalid file type. Only images (JPG, PNG, WebP) are allowed"
+            );
+        }
+    }
+
+    private boolean isOrphan(Picture picture) {
+        boolean usedByRestaurants = !picture.getRestaurants().isEmpty();
+        boolean usedByReviews = !picture.getReviews().isEmpty();
+        boolean usedByUser = picture.getUser() != null;
+
+        return !usedByRestaurants && !usedByReviews && !usedByUser;
     }
 
     public Optional<PictureDto> updatePicture(Long id, UpdatePictureDto updateDto) {
@@ -109,7 +211,7 @@ public class PictureService {
                     userRepository.save(user);
                 }
                 
-                // Now delete the picture
+                storageService.deleteFile(picture.getUrl());
                 pictureRepository.delete(picture);
             return true;
             })

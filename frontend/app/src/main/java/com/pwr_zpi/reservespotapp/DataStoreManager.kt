@@ -1,7 +1,6 @@
 package com.pwr_zpi.reservespotapp.data
 
 import android.content.Context
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -15,7 +14,7 @@ class DataStoreManager(private val context: Context) {
 
     companion object {
         private val BACKEND_TOKEN_KEY = stringPreferencesKey("backend_token")
-        private val REMEMBER_ME_KEY = booleanPreferencesKey("remember_me")
+        private val CURRENT_CITY = stringPreferencesKey("city")
     }
 
     suspend fun saveBackendToken(token: String) {
@@ -24,28 +23,39 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    suspend fun saveRememberMe(enabled: Boolean) {
+    suspend fun saveCity(city: String?) {
         context.dataStore.edit { prefs ->
-            prefs[REMEMBER_ME_KEY] = enabled
+            if (city != null) {
+                prefs[CURRENT_CITY] = city
+            }
+            else {
+                prefs.remove(CURRENT_CITY)
+            }
         }
     }
 
     val backendToken: Flow<String?> = context.dataStore.data
         .map { prefs -> prefs[BACKEND_TOKEN_KEY] }
 
-    val rememberMe: Flow<Boolean> = context.dataStore.data
-        .map { prefs -> prefs[REMEMBER_ME_KEY] ?: false }
+    val city: Flow<String?> = context.dataStore.data
+        .map { prefs -> prefs[CURRENT_CITY] }
 
-    suspend fun clearTokenIfNotRemembered() {
-        val remember = context.dataStore.data.map { it[REMEMBER_ME_KEY] ?: false }.first()
-        if (!remember) {
-            context.dataStore.edit { prefs ->
-                prefs.remove(BACKEND_TOKEN_KEY)
-            }
+
+    // Suspend function to read token once
+    suspend fun getBackendToken(): String? {
+        return context.dataStore.data.map { prefs -> prefs[BACKEND_TOKEN_KEY] }.first()
+    }
+
+    // Clear token
+    suspend fun clearBackendToken() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(BACKEND_TOKEN_KEY)
         }
     }
 
-    suspend fun clearAll() {
-        context.dataStore.edit { it.clear() }
+    suspend fun getCity(): String? {
+        return context.dataStore.data.map { prefs -> prefs[CURRENT_CITY] }.first()
     }
+
+
 }

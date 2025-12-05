@@ -89,13 +89,9 @@ public class AiAnalysisService {
         // Get all reviews for the restaurant
         List<com.pwr_zpi.reservespotapi.entities.review.Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
 
-        // Get all statistics for the restaurant
-        List<com.pwr_zpi.reservespotapi.entities.restaurant_statistic.RestaurantStatistic> statistics = 
-                statisticRepository.findByRestaurantId(restaurantId);
-
         // Generate AI analysis
         RestaurantAiAnalysisService.AnalysisResult analysisResult = 
-                restaurantAiAnalysisService.analyzeRestaurant(restaurant, reviews, statistics);
+                restaurantAiAnalysisService.analyzeRestaurant(restaurant, reviews);
 
         // Check if analysis already exists
         Optional<AiAnalysis> existingAnalysis = analysisRepository.findByRestaurantId(restaurantId);

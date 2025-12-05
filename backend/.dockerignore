@@ -1,0 +1,33 @@
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Environment files (use docker-compose env_file instead)
+.env
+.env.local
+
+# Test files
+*.log
+*.tmp
+
+# Documentation
+*.md
+!README.md
+

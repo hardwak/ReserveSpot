@@ -4,10 +4,14 @@ import com.pwr_zpi.reservespotapi.entities.picture.dto.CreatePictureDto;
 import com.pwr_zpi.reservespotapi.entities.picture.dto.PictureDto;
 import com.pwr_zpi.reservespotapi.entities.picture.dto.UpdatePictureDto;
 import com.pwr_zpi.reservespotapi.entities.picture.service.PictureService;
+import com.pwr_zpi.reservespotapi.entities.users.service.CurrentUserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -20,6 +24,7 @@ import java.util.Optional;
 public class PictureController {
 
     private final PictureService pictureService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping
     public ResponseEntity<List<PictureDto>> getAllPictures() {
@@ -52,6 +57,15 @@ public class PictureController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPicture);
     }
 
+    @PostMapping("/file")
+    public ResponseEntity<PictureDto> uploadPicture(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "description", required = false) String description
+    ) {
+        PictureDto uploadedPicture = pictureService.uploadPicture(file, description);
+        return ResponseEntity.status(HttpStatus.CREATED).body(uploadedPicture);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<PictureDto> updatePicture(@PathVariable Long id, 
                                                   @Valid @RequestBody UpdatePictureDto updateDto) {
@@ -76,5 +90,30 @@ public class PictureController {
     public ResponseEntity<Boolean> pictureExists(@PathVariable Long id) {
         boolean exists = pictureService.existsById(id);
         return ResponseEntity.ok(exists);
+    }
+
+    @PostMapping("/restaurants/{restaurantId}/pictures")
+    @PreAuthorize("hasRole('RESTAURANT') or hasRole('ADMIN')")
+    public ResponseEntity<PictureDto> uploadRestaurantPicture(
+            @PathVariable Long restaurantId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "description", required = false) String description,
+            HttpServletRequest request
+    ) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        PictureDto picture = pictureService.uploadPictureToRestaurant(restaurantId, file, description, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(picture);
+    }
+
+    @DeleteMapping("/restaurants/{restaurantId}/pictures/{pictureId}")
+    @PreAuthorize("hasRole('RESTAURANT') or hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteRestaurantPicture(
+            @PathVariable Long restaurantId,
+            @PathVariable Long pictureId,
+            HttpServletRequest request
+    ) {
+        Long userId = currentUserService.requireCurrentUserId(request);
+        pictureService.deletePictureFromRestaurant(restaurantId, pictureId, userId);
+        return ResponseEntity.noContent().build();
     }
 }
