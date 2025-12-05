@@ -599,7 +599,7 @@ interface AiAnalysisApi {
 
 
 object RetrofitClient {
-    const val BASE_URL = "http://10.0.2.2:8080"
+    const val BASE_URL = "https://reserve-spot-api-hdavh5ezgeb9b9f2.polandcentral-01.azurewebsites.net"
 
 
         private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =

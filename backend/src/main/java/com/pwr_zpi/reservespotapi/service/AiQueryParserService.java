@@ -1,17 +1,24 @@
 package com.pwr_zpi.reservespotapi.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pwr_zpi.reservespotapi.entities.ai_analysis.AiAnalysis;
+import com.pwr_zpi.reservespotapi.entities.ai_analysis.AiAnalysisRepository;
+import com.pwr_zpi.reservespotapi.entities.restaurant.Restaurant;
+import com.pwr_zpi.reservespotapi.entities.restaurant.RestaurantRepository;
 import com.pwr_zpi.reservespotapi.entities.tag.Tag;
-import com.pwr_zpi.reservespotapi.entities.tag.TagRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,35 +28,60 @@ import java.util.stream.Collectors;
 public class AiQueryParserService {
 
     private final ObjectMapper objectMapper;
-    private final TagRepository tagRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final AiAnalysisRepository aiAnalysisRepository;
 
     @Value("${GEMINI_API_KEY:test-api-key}")
     private String apiKey;
 
     @Data
-    public static class AiParsedCriteria {
-        private String impliedQuery;
-        private List<String> impliedTags;
-        private Double impliedMinRating;
+    private static class RestaurantContextDto {
+        private Long id;
+        private String name;
+        private String city;
+        private String description;
+        private String aiSummary;
+        private List<String> tags;
     }
 
-    public AiParsedCriteria parseQuery(String naturalLanguageQuery) {
+    @Data
+    public static class AiResponse {
+        private List<Long> matchingRestaurantIds;
+        private String reasoning;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> findMatchingRestaurantIds(String naturalLanguageQuery) {
         try {
-            List<Tag> allTags = tagRepository.findAll();
-            String availableTags = allTags.stream()
-                    .map(Tag::getName)
-                    .collect(Collectors.joining(", "));
+            List<Restaurant> allRestaurants = restaurantRepository.findAll();
+
+            List<RestaurantContextDto> contextList = allRestaurants.stream().map(r -> {
+                RestaurantContextDto dto = new RestaurantContextDto();
+                dto.setId(r.getId());
+                dto.setName(r.getName());
+                dto.setCity(r.getCity());
+                dto.setDescription(r.getDescription());
+
+                dto.setTags(r.getTags().stream().map(Tag::getName).toList());
+
+                aiAnalysisRepository.findByRestaurantId(r.getId())
+                        .ifPresent(analysis -> dto.setAiSummary(analysis.getSummaryText()));
+
+                return dto;
+            }).toList();
+
+            String restaurantsJson = objectMapper.writeValueAsString(contextList);
 
             String systemPrompt = String.format(
-                    "You are a query analyst for a restaurant reservation application. " +
-                            "The available tags in the database are: [%s]. " +
-                            "Your task is to analyze the user's query and return a JSON object based on their intent. " +
-                            "The JSON schema must be as follows: " +
-                            "{\"impliedQuery\": \"...\", \"impliedTags\": [\"...\"], \"impliedMinRating\": ...}. " +
-                            "impliedQuery: Main keywords (e.g., 'ramen', 'pizza'). " +
-                            "impliedTags: A list of tags selected EXCLUSIVELY from the provided list of available tags that match the query. If none match, return an empty list []. " +
-                            "impliedMinRating: If the user suggests quality ('good', 'great', 'best'), set 4.0. If they suggest luxury ('exclusive', 'top'), set 4.5. Otherwise, null.",
-                    availableTags
+                    "You are an intelligent restaurant concierge. " +
+                            "I will provide you with a JSON list of restaurants (including their names, descriptions, tags, and AI summaries). " +
+                            "Your task is to analyze the User Query and return the IDs of the restaurants that best match the request. " +
+                            "Analyze deep semantic meaning (e.g. if user asks for 'date night', look for 'romantic', 'fine dining', 'cozy' in descriptions/summaries). " +
+                            "If the user specifies a city in the query, STRICTLY filter by that city. " +
+                            "Return a JSON object with this schema: {\"matchingRestaurantIds\": [1, 2, ...], \"reasoning\": \"...\"}. " +
+                            "If no restaurants match, return an empty list. " +
+                            "Data: %s",
+                    restaurantsJson
             );
 
             String requestBody = objectMapper.writeValueAsString(Map.of(
@@ -81,27 +113,26 @@ public class AiQueryParserService {
 
                 JsonNode geminiResponse = objectMapper.readTree(response.body());
 
-                // Struktura: { "candidates": [ { "content": { "parts": [ { "text": "..." } ] } } ] }
                 String jsonText = geminiResponse
-                        .path("candidates") // Przejdź do "candidates" (to jest tablica)
-                        .path(0)            // Weź pierwszy element [0]
-                        .path("content")    // Przejdź do "content"
-                        .path("parts")      // Przejdź do "parts" (to jest tablica)
-                        .path(0)            // Weź pierwszy element [0]
-                        .path("text")       // Przejdź do "text"
-                        .asText();          // Pobierz jako tekst
+                        .path("candidates")
+                        .path(0)
+                        .path("content")
+                        .path("parts")
+                        .path(0)
+                        .path("text")
+                        .asText();
 
                 if (jsonText.isEmpty()) {
-                    throw new RuntimeException("Gemini API returned an empty text part.");
+                    return Collections.emptyList();
                 }
 
-                return objectMapper.readValue(jsonText, AiParsedCriteria.class);
-
+                AiResponse aiResponse = objectMapper.readValue(jsonText, AiResponse.class);
+                return aiResponse.getMatchingRestaurantIds() != null ? aiResponse.getMatchingRestaurantIds() : Collections.emptyList();
             }
 
         } catch (Exception e) {
-            System.err.println("AI parsing error: " + e.getMessage());
-            return new AiParsedCriteria();
+            System.err.println("AI Search Error: " + e.getMessage());
+            return Collections.emptyList();
         }
     }
 }
