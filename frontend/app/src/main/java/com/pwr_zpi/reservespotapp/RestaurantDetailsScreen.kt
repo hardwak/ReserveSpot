@@ -35,10 +35,11 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -80,13 +81,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.pwr_zpi.reservespotapp.data.DataStoreManager
 import com.pwr_zpi.reservespotapp.ui.theme.RSRed
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class LoadState {
     object Loading : LoadState()
@@ -279,6 +280,8 @@ fun RestaurantDetailsScreen(
         }
     }
 
+    var isFavourite by remember { mutableStateOf(false) }
+
     LaunchedEffect(restaurantId) {
         uiState = LoadState.Loading
         uiState = fetchRestaurantDetails(context, restaurantId)
@@ -288,6 +291,14 @@ fun RestaurantDetailsScreen(
         if (result is LoadState.Success) {
             refreshReviews()
         }
+
+        checkFavouriteRestaurant(
+            restaurantId,
+            context,
+            onSuccess = { isFav ->
+                isFavourite = isFav
+            }
+        )
     }
 
     LaunchedEffect(selectedTabIndex) {
@@ -587,7 +598,25 @@ fun RestaurantDetailsScreen(
 
                         IconButton(
 
-                            onClick = {  },
+                            onClick = {
+                                if (isFavourite) {
+                                    removeFavouriteRestaurant(
+                                        restaurantId,
+                                        context,
+                                        onSuccess = {
+                                            isFavourite = false
+                                        }
+                                    )
+                                } else {
+                                    addFavouriteRestaurant(
+                                        restaurantId,
+                                        context,
+                                        onSuccess = {
+                                            isFavourite = true
+                                        }
+                                    )
+                                }
+                            },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp)
@@ -598,7 +627,7 @@ fun RestaurantDetailsScreen(
                         ) {
                             Icon(
 
-                                imageVector = Icons.Outlined.FavoriteBorder,
+                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Add to Favorites (Placeholder)",
                                 tint = RSRed
                             )
