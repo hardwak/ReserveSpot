@@ -45,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 
 @Composable
@@ -62,7 +63,7 @@ fun RestaurantInfoCard(
     }
 
     val restaurantName = info.name
-    val rating = info.averageRating
+    val rating = ((info.averageRating ?: 1.0) * 100).roundToInt() / 100.0
     val views = info.reviewIds.size
     val id = info.id
     val context = LocalContext.current
