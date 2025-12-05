@@ -212,64 +212,29 @@ public class RestaurantService {
     }
 
     public List<RestaurantDto> searchRestaurantsWithAi(RestaurantSearchDto searchDto) {
+        List<Long> matchingIds = aiQueryParser.findMatchingRestaurantIds(searchDto.getQuery());
 
-        AiQueryParserService.AiParsedCriteria aiCriteria = aiQueryParser.parseQuery(searchDto.getQuery());
-
-        Set<Long> finalTagIds = new HashSet<>();
-        if (searchDto.getTagIds() != null) {
-            finalTagIds.addAll(searchDto.getTagIds());
-        }
-        if (aiCriteria.getImpliedTags() != null && !aiCriteria.getImpliedTags().isEmpty()) {
-            Set<Tag> foundTags = tagRepository.findByNameIn(aiCriteria.getImpliedTags());
-            foundTags.forEach(tag -> finalTagIds.add(tag.getId()));
+        if (matchingIds.isEmpty()) {
+            return List.of();
         }
 
-        double finalMinRating = 0.0;
+        List<Restaurant> restaurants = restaurantRepository.findAllById(matchingIds);
+
+        if (searchDto.getCity() != null && !searchDto.getCity().isBlank()) {
+            restaurants = restaurants.stream()
+                    .filter(r -> r.getCity() != null && r.getCity().equalsIgnoreCase(searchDto.getCity()))
+                    .collect(Collectors.toList());
+        }
+
         if (searchDto.getMinRating() != null) {
-            finalMinRating = searchDto.getMinRating();
+            restaurants = restaurants.stream()
+                    .filter(r -> r.getAverageRating() != null && r.getAverageRating() >= searchDto.getMinRating())
+                    .collect(Collectors.toList());
         }
-        if (aiCriteria.getImpliedMinRating() != null) {
-            finalMinRating = Math.max(finalMinRating, aiCriteria.getImpliedMinRating());
-        }
-
-        String searchText = (aiCriteria.getImpliedQuery() != null) ? aiCriteria.getImpliedQuery() : searchDto.getQuery();
-
-        double finalMinRating1 = finalMinRating;
-        List<Restaurant> restaurants = restaurantRepository.findAll((root, query, cb) -> {
-            Predicate predicate = cb.conjunction();
-
-            if (searchDto.getCity() != null && !searchDto.getCity().isEmpty()) {
-                predicate = cb.and(predicate, cb.equal(root.get("city"), searchDto.getCity()));
-            }
-
-            if (finalMinRating1 > 0.0) {
-                predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.get("averageRating"), finalMinRating1));
-            }
-
-            if (searchDto.getMaxRating() != null) {
-                predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("averageRating"), searchDto.getMaxRating()));
-            }
-
-            if (searchText != null && !searchText.isEmpty()) {
-                predicate = cb.and(predicate, cb.or(
-                        cb.like(cb.lower(root.get("name")), "%" + searchText.toLowerCase() + "%"),
-                        cb.like(cb.lower(root.get("description")), "%" + searchText.toLowerCase() + "%")
-                ));
-            }
-
-            if (!finalTagIds.isEmpty()) {
-                Join<Restaurant, Tag> tagJoin = root.join("tags");
-                predicate = cb.and(predicate, tagJoin.get("id").in(finalTagIds));
-                query.groupBy(root.get("id"));
-                query.having(cb.equal(cb.count(root.get("id")), (long) finalTagIds.size()));
-            }
-
-            return predicate;
-        }, Pageable.unpaged()).getContent();
 
         return restaurants.stream()
                 .map(restaurantMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<String> getAllCities() {
