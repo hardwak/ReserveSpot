@@ -486,178 +486,178 @@ fun RestaurantDetailsScreen(
             }
             LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
                 item {
-                    Box(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 240.dp)
+                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                            .background(Color.White)
+                    ) {
+                        Spacer(modifier = Modifier.height(16.dp))
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 240.dp)
-                                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                                .background(Color.White)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.Start
                         ) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Column(
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalAlignment = Alignment.Start
+                                    .padding(top = 8.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp)
-                                        .align(Alignment.CenterHorizontally),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = detailsData.name,
-                                        fontSize = 32.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Default.Star,
-                                            contentDescription = "Rating",
-                                            tint = Color(0xFFFFC107),
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Text(
-                                            text = String.format("%.1f", displayRating),
-                                            fontSize = 20.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(start = 4.dp)
-                                        )
-                                    }
-                                }
                                 Text(
-                                    text = detailsData.address,
-                                    color = Color.Gray,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(vertical = 4.dp)
-                                )
-
-                                val lat = detailsData.latitude
-                                val lng = detailsData.longitude
-
-                                if (lat != null && lng != null) {
-                                    TextButton(
-                                        onClick = {
-                                            val navLat = lat.toFloat()
-                                            val navLng = lng.toFloat()
-                                            navController.navigate("pickLocation?lat=$navLat&lng=$navLng")
-                                        },
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.LocationOn,
-                                            contentDescription = null,
-                                            tint = RSRed,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-
-                                        Spacer(Modifier.width(4.dp))
-
-                                        Text(
-                                            text = "Show on map",
-                                            color = RSRed,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-
-                                    }
-                                }
-
-
-                                Text(
-                                    text = detailsData.description,
-                                    color = Color.DarkGray,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-
-                                RestaurantTagsSection(tags = restaurantTags)
-
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "Opening hours:",
-                                    fontSize = 18.sp,
+                                    text = detailsData.name,
+                                    fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 4.dp)
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-                                val orderedDaysMap = listOf(
-                                    "monday" to "Monday",
-                                    "tuesday" to "Tuesday",
-                                    "wednesday" to "Wednesday",
-                                    "thursday" to "Thursday",
-                                    "friday" to "Friday",
-                                    "saturday" to "Saturday",
-                                    "sunday" to "Sunday"
-                                )
-                                Column(modifier = Modifier.padding(start = 4.dp)) {
-                                    orderedDaysMap.forEach { (backendKey, englishName) ->
-                                        val hours = detailsData.openingHours[backendKey] ?: "Closed"
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                text = englishName,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = Color.DarkGray
-                                            )
-                                            Text(
-                                                text = hours,
-                                                color = Color.Gray,
-                                                fontWeight = FontWeight.Normal
-                                            )
-                                        }
+                                Spacer(Modifier.width(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = "Rating",
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Text(
+                                        text = String.format("%.1f", displayRating),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = detailsData.address,
+                                color = Color.Gray,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(vertical = 4.dp)
+                            )
+
+                            val lat = detailsData.latitude
+                            val lng = detailsData.longitude
+
+                            if (lat != null && lng != null) {
+                                TextButton(
+                                    onClick = {
+                                        val navLat = lat.toFloat()
+                                        val navLng = lng.toFloat()
+                                        navController.navigate("pickLocation?lat=$navLat&lng=$navLng")
+                                    },
+                                    modifier = Modifier.padding(top = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = RSRed,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+
+                                    Spacer(Modifier.width(4.dp))
+
+                                    Text(
+                                        text = "Show on map",
+                                        color = RSRed,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+
+                                }
+                            }
+
+
+                            Text(
+                                text = detailsData.description,
+                                color = Color.DarkGray,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+
+                            RestaurantTagsSection(tags = restaurantTags)
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Opening hours:",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            val orderedDaysMap = listOf(
+                                "monday" to "Monday",
+                                "tuesday" to "Tuesday",
+                                "wednesday" to "Wednesday",
+                                "thursday" to "Thursday",
+                                "friday" to "Friday",
+                                "saturday" to "Saturday",
+                                "sunday" to "Sunday"
+                            )
+                            Column(modifier = Modifier.padding(start = 4.dp)) {
+                                orderedDaysMap.forEach { (backendKey, englishName) ->
+                                    val hours = detailsData.openingHours[backendKey] ?: "Closed"
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = englishName,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.DarkGray
+                                        )
+                                        Text(
+                                            text = hours,
+                                            color = Color.Gray,
+                                            fontWeight = FontWeight.Normal
+                                        )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
                             }
-                        }
-
-
-                        IconButton(
-
-                            onClick = {
-                                if (isFavourite) {
-                                    removeFavouriteRestaurant(
-                                        restaurantId,
-                                        context,
-                                        onSuccess = {
-                                            isFavourite = false
-                                        }
-                                    )
-                                } else {
-                                    addFavouriteRestaurant(
-                                        restaurantId,
-                                        context,
-                                        onSuccess = {
-                                            isFavourite = true
-                                        }
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(16.dp)
-                                .padding(top = 40.dp)
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(Color.White)
-                        ) {
-                            Icon(
-
-                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Add to Favorites (Placeholder)",
-                                tint = RSRed
-                            )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                 }
+
+
+//                        IconButton(
+//
+//                            onClick = {
+//                                if (isFavourite) {
+//                                    removeFavouriteRestaurant(
+//                                        restaurantId,
+//                                        context,
+//                                        onSuccess = {
+//                                            isFavourite = false
+//                                        }
+//                                    )
+//                                } else {
+//                                    addFavouriteRestaurant(
+//                                        restaurantId,
+//                                        context,
+//                                        onSuccess = {
+//                                            isFavourite = true
+//                                        }
+//                                    )
+//                                }
+//                            },
+//                            modifier = Modifier
+//                                .align(Alignment.TopEnd)
+//                                .padding(16.dp)
+//                                .padding(top = 40.dp)
+//                                .size(48.dp)
+//                                .clip(CircleShape)
+//                                .background(Color.White)
+//                        ) {
+//                            Icon(
+//
+//                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+//                                contentDescription = "Add to Favorites (Placeholder)",
+//                                tint = RSRed
+//                            )
+//                        }
+//                    }
+//                }
 
                 stickyHeader {
                     TabRow(
@@ -729,7 +729,45 @@ fun RestaurantDetailsScreen(
                     tint = Color.White
                 )
             }
+
+            IconButton(
+
+                onClick = {
+                    if (isFavourite) {
+                        removeFavouriteRestaurant(
+                            restaurantId,
+                            context,
+                            onSuccess = {
+                                isFavourite = false
+                            }
+                        )
+                    } else {
+                        addFavouriteRestaurant(
+                            restaurantId,
+                            context,
+                            onSuccess = {
+                                isFavourite = true
+                            }
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .padding(top = 40.dp)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            ) {
+                Icon(
+
+                    imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Add to Favorites (Placeholder)",
+                    tint = RSRed
+                )
+            }
         }
+
         if (fullScreenPhotoUrl != null) {
             FullScreenPhotoDialog(
                 photoUrl = fullScreenPhotoUrl!!,
@@ -750,7 +788,7 @@ fun RestaurantTagsSection(tags: List<String>) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-
+            // Używamy LazyRow dla poziomego przewijania tagów
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -758,8 +796,8 @@ fun RestaurantTagsSection(tags: List<String>) {
                 items(tags) { tag ->
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, RSRed),
-                        color = Color.White
+                        border = BorderStroke(1.dp, RSRed), // Czerwona obwódka jak na screenie
+                        color = Color.White // Białe tło
                     ) {
                         Text(
                             text = tag,
