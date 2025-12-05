@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +56,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -242,6 +245,20 @@ suspend fun uploadImageToBackend(context: Context, uri: Uri): String? =
         }
     }
 
+suspend fun fetchTagsMap(context: Context): Map<Long, String> = withContext(Dispatchers.IO) {
+    try {
+        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyMap()
+        val response = RetrofitClient.restaurantApi.getAvailableTags("Bearer $token")
+        if (response.isSuccessful) {
+            response.body()?.associate { it.id to it.name } ?: emptyMap()
+        } else {
+            emptyMap()
+        }
+    } catch (e: Exception) {
+        emptyMap()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailsScreen(
@@ -251,6 +268,7 @@ fun RestaurantDetailsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var uiState by remember { mutableStateOf<LoadState>(LoadState.Loading) }
+
 
     var reviewsWithUser by remember { mutableStateOf(emptyList<ReviewWithUser>()) }
     var photos by remember { mutableStateOf(emptyList<PictureDto>()) }
@@ -262,8 +280,8 @@ fun RestaurantDetailsScreen(
     var canCreateReview by remember { mutableStateOf(false) }
     var isReviewDialogVisible by remember { mutableStateOf(false) }
     var fullScreenPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var restaurantTags by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    var showOccupancySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val listState = rememberLazyListState()
 
@@ -285,10 +303,13 @@ fun RestaurantDetailsScreen(
     LaunchedEffect(restaurantId) {
         uiState = LoadState.Loading
         uiState = fetchRestaurantDetails(context, restaurantId)
-
         val result = fetchRestaurantDetails(context, restaurantId)
         uiState = result
+
         if (result is LoadState.Success) {
+            val allTagsMap = fetchTagsMap(context)
+            val currentTagIds = result.data.tagIds
+            restaurantTags = currentTagIds.mapNotNull { id -> allTagsMap[id] }
             refreshReviews()
         }
 
@@ -455,8 +476,8 @@ fun RestaurantDetailsScreen(
 
                     AsyncImage(
                         model = imageRequest,
-                        placeholder = painterResource(id = R.drawable.loading_placeholder),
-                        error = painterResource(id = R.drawable.food_placeholder), // if error show loading placeholder
+                        placeholder = painterResource(id = R.drawable.food_placeholder),
+                        error = painterResource(id = R.drawable.loading_placeholder), // if error show loading placeholder
                         contentDescription = "Restaurant Image",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -555,6 +576,9 @@ fun RestaurantDetailsScreen(
                                     color = Color.DarkGray,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
+
+                                RestaurantTagsSection(tags = restaurantTags)
+
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     "Opening hours:",
@@ -715,433 +739,469 @@ fun RestaurantDetailsScreen(
     }
 }
 
+@Composable
+fun RestaurantTagsSection(tags: List<String>) {
+    if (tags.isNotEmpty()) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            Text(
+                "Tags",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-    @Composable
-    fun ReviewsTabContent(
-        reviewsWithUser: List<ReviewWithUser>,
-        myReviewId: Long?,
-        aiAnalysis: AiAnalysisDto?,
-        onEditClick: () -> Unit,
-        onDeleteClick: () -> Unit
-    ) {
-
-
-        Column(modifier = Modifier.padding(top = 8.dp)) {
-
-            if (aiAnalysis != null) {
-                AiSummaryCard(analysis = aiAnalysis)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            if (reviewsWithUser.isEmpty()) {
-                Text(
-                    "No reviews for this restaurant.",
-                    color = Color.Gray,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-
-                reviewsWithUser.forEach { item ->
-                    val review = item.review
-                    val isMyReview = review.id == myReviewId
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp, horizontal = 16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isMyReview) Color(
-                                0xFFFFF8F8
-                            ) else Color.White
-                        ),
-                        border = if (isMyReview) BorderStroke(1.dp, RSRed) else null
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    if (isMyReview) "You" else item.userName,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isMyReview) RSRed else Color.Black
-                                )
-                                Spacer(Modifier.width(8.dp))
-
-                                review.rating?.let { rating ->
-                                    Icon(
-                                        Icons.Default.Star,
-                                        contentDescription = null,
-                                        tint = Color(0xFFFFC107),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(" ${rating}/5", color = Color.Gray)
-                                }
-
-                                Spacer(Modifier.weight(1f))
-
-                                if (isMyReview) {
-                                    IconButton(
-                                        onClick = onEditClick,
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Edit,
-                                            contentDescription = "Edit",
-                                            tint = Color.Gray
-                                        )
-                                    }
-                                    Spacer(Modifier.width(8.dp))
-                                    IconButton(
-                                        onClick = onDeleteClick,
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Delete",
-                                            tint = Color.Red
-                                        )
-                                    }
-
-                                }
-                            }
-
-                            Text(
-                                review.comment ?: "No comment.",
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-
-
-                            if (!review.pic.isNullOrBlank()) {
-                                val rawUrl = review.pic
-
-                                val finalImageUrl = when {
-                                    rawUrl.contains("localhost") -> rawUrl.replace(
-                                        "localhost",
-                                        "10.0.2.2"
-                                    )
-
-                                    !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + rawUrl
-                                    else -> rawUrl
-                                }
-
-                                Log.d("DEBUG_IMAGE", "Original: $rawUrl -> Final: $finalImageUrl")
-
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(finalImageUrl)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = "Review photo",
-                                    modifier = Modifier
-                                        .padding(top = 8.dp)
-                                        .fillMaxWidth()
-                                        .height(200.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color.LightGray),
-                                    contentScale = ContentScale.Crop,
-                                    placeholder = painterResource(id = R.drawable.food_placeholder),
-                                    error = painterResource(id = R.drawable.food_placeholder)
-                                )
-                            }
-
-                            review.createdAt?.let {
-                                Text(
-                                    it.toString().take(10),
-                                    fontSize = 12.sp,
-                                    color = Color.LightGray,
-                                    modifier = Modifier.padding(top = 8.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(80.dp))
-            }
-        }
-    }
-
-    @Composable
-    fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
-        Row {
-            for (i in 1..5) {
-                Icon(
-                    imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.Star,
-                    contentDescription = null,
-                    tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clickable { onRatingChanged(i) }
-                        .padding(4.dp)
-                )
-            }
-        }
-    }
-
-
-
-    @Composable
-    fun AiSummaryCard(analysis: AiAnalysisDto) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF0F7FF),
-                contentColor = Color.Black
-            ),
-            border = BorderStroke(1.dp, Color(0xFF2196F3))
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+            // Używamy LazyRow dla poziomego przewijania tagów
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = "AI Summary",
-                        tint = Color(0xFF2196F3)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Gemini Review Summary",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color(0xFF2196F3)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = analysis.summaryText ?: "Analysis available, but text is missing.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    lineHeight = 20.sp
-                )
-
-                analysis.sentimentScore?.let { score ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                items(tags) { tag ->
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, RSRed), // Czerwona obwódka jak na screenie
+                        color = Color.White // Białe tło
+                    ) {
                         Text(
-                            text = "Sentiment Score: ",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
+                            text = tag,
+                            color = Color.DarkGray,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
-                        Text(text = String.format("%.2f", score), fontSize = 12.sp)
                     }
                 }
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
     }
+}
 
 
-    @Composable
-    fun AddEditReviewDialog(
-        restaurantId: Long,
-        existingReview: ReviewDto?,
-        onDismiss: () -> Unit,
-        onSuccess: () -> Unit
-    ) {
-        val context = LocalContext.current
-        val scope = rememberCoroutineScope()
+@Composable
+fun ReviewsTabContent(
+    reviewsWithUser: List<ReviewWithUser>,
+    myReviewId: Long?,
+    aiAnalysis: AiAnalysisDto?,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
 
-        var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
-        var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
-        var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-        var existingPicUrl by remember { mutableStateOf(existingReview?.pic) }
 
-        var isSubmitting by remember { mutableStateOf(false) }
+    Column(modifier = Modifier.padding(top = 8.dp)) {
 
-        val photoPickerLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia(),
-            onResult = { uri ->
-                if (uri != null) {
-                    selectedImageUri = uri
-                    existingPicUrl = null
-                }
-            }
-        )
+        if (aiAnalysis != null) {
+            AiSummaryCard(analysis = aiAnalysis)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(text = if (existingReview == null) "Add Review" else "Edit Review") },
-            text = {
-                Column {
-                    Text("Rating:")
-                    StarRatingBar(rating = rating, onRatingChanged = { rating = it })
+        if (reviewsWithUser.isEmpty()) {
+            Text(
+                "No reviews for this restaurant.",
+                color = Color.Gray,
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
 
-                    Spacer(modifier = Modifier.height(16.dp))
+            reviewsWithUser.forEach { item ->
+                val review = item.review
+                val isMyReview = review.id == myReviewId
 
-                    OutlinedTextField(
-                        value = comment,
-                        onValueChange = { comment = it },
-                        label = { Text("Comment") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 4
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            photoPickerLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.LightGray,
-                            contentColor = Color.Black
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = "Select Photo from Gallery")
-                    }
-
-                    if (selectedImageUri != null) {
-                        Box(modifier = Modifier.padding(top = 8.dp)) {
-                            AsyncImage(
-                                model = selectedImageUri,
-                                contentDescription = "Selected Image",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            IconButton(
-                                onClick = { selectedImageUri = null },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    tint = Color.Red
-                                )
-                            }
-                        }
-                    } else if (!existingPicUrl.isNullOrBlank()) {
-                        Box(modifier = Modifier.padding(top = 8.dp)) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context).data(existingPicUrl).build(),
-                                contentDescription = "Existing Image",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                            IconButton(
-                                onClick = { existingPicUrl = null },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    tint = Color.Red
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        isSubmitting = true
-                        scope.launch(Dispatchers.IO) {
-                            val token = DataStoreManager(context).getBackendToken()
-                            if (token != null) {
-                                var finalPicUrl: String? = existingPicUrl
-
-                                if (selectedImageUri != null) {
-                                    val uploadedUrl =
-                                        uploadImageToBackend(context, selectedImageUri!!)
-                                    if (uploadedUrl != null) {
-                                        finalPicUrl = uploadedUrl
-                                    } else {
-                                        withContext(Dispatchers.Main) {
-                                            Toast.makeText(
-                                                context,
-                                                "Failed to upload image",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            isSubmitting = false
-                                        }
-                                        return@launch
-                                    }
-                                }
-
-                                val response = if (existingReview == null) {
-                                    val createDto = CreateReviewDto(
-                                        restaurantId = restaurantId,
-                                        rating = rating,
-                                        comment = comment,
-                                        pic = finalPicUrl
-                                    )
-                                    RetrofitClient.reviewsApi.createReview(
-                                        "Bearer $token",
-                                        createDto
-                                    )
-                                } else {
-                                    val updateDto = UpdateReviewDto(
-                                        rating = rating,
-                                        comment = comment,
-                                        pic = finalPicUrl
-                                    )
-                                    RetrofitClient.reviewsApi.updateReview(
-                                        "Bearer $token",
-                                        existingReview.id!!,
-                                        updateDto
-                                    )
-                                }
-
-                                withContext(Dispatchers.Main) {
-                                    isSubmitting = false
-                                    if (response.isSuccessful) {
-                                        onSuccess()
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            "Error: ${response.message()}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    enabled = !isSubmitting,
-                    colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp, horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isMyReview) Color(
+                            0xFFFFF8F8
+                        ) else Color.White
+                    ),
+                    border = if (isMyReview) BorderStroke(1.dp, RSRed) else null
                 ) {
-                    if (isSubmitting) CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = Color.White
-                    )
-                    else Text(if (existingReview == null) "Submit" else "Update")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(
-                        "Cancel",
-                        color = Color.Gray
-                    )
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (isMyReview) "You" else item.userName,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isMyReview) RSRed else Color.Black
+                            )
+                            Spacer(Modifier.width(8.dp))
+
+                            review.rating?.let { rating ->
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFC107),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(" ${rating}/5", color = Color.Gray)
+                            }
+
+                            Spacer(Modifier.weight(1f))
+
+                            if (isMyReview) {
+                                IconButton(
+                                    onClick = onEditClick,
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = "Edit",
+                                        tint = Color.Gray
+                                    )
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = onDeleteClick,
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.Red
+                                    )
+                                }
+
+                            }
+                        }
+
+                        Text(
+                            review.comment ?: "No comment.",
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+
+
+                        if (!review.pic.isNullOrBlank()) {
+                            val rawUrl = review.pic
+
+                            val finalImageUrl = when {
+                                rawUrl.contains("localhost") -> rawUrl.replace(
+                                    "localhost",
+                                    "10.0.2.2"
+                                )
+
+                                !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + rawUrl
+                                else -> rawUrl
+                            }
+
+                            Log.d("DEBUG_IMAGE", "Original: $rawUrl -> Final: $finalImageUrl")
+
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(finalImageUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Review photo",
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.LightGray),
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.food_placeholder),
+                                error = painterResource(id = R.drawable.food_placeholder)
+                            )
+                        }
+
+                        review.createdAt?.let {
+                            Text(
+                                it.toString().take(10),
+                                fontSize = 12.sp,
+                                color = Color.LightGray,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
                 }
             }
-        )
+            Spacer(Modifier.height(80.dp))
+        }
     }
+}
+
+@Composable
+fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
+    Row {
+        for (i in 1..5) {
+            Icon(
+                imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.Star,
+                contentDescription = null,
+                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable { onRatingChanged(i) }
+                    .padding(4.dp)
+            )
+        }
+    }
+}
 
 
 
 @Composable
-    fun FullScreenPhotoDialog(
-        photoUrl: String,
-        onDismiss: () -> Unit
+fun AiSummaryCard(analysis: AiAnalysisDto) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF0F7FF),
+            contentColor = Color.Black
+        ),
+        border = BorderStroke(1.dp, Color(0xFF2196F3))
     ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "AI Summary",
+                    tint = Color(0xFF2196F3)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Gemini Review Summary",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF2196F3)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = analysis.summaryText ?: "Analysis available, but text is missing.",
+                style = MaterialTheme.typography.bodyMedium,
+                lineHeight = 20.sp
+            )
+
+            analysis.sentimentScore?.let { score ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Sentiment Score: ",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+                    Text(text = String.format("%.2f", score), fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AddEditReviewDialog(
+    restaurantId: Long,
+    existingReview: ReviewDto?,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var rating by remember { mutableStateOf(existingReview?.rating ?: 5) }
+    var comment by remember { mutableStateOf(existingReview?.comment ?: "") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var existingPicUrl by remember { mutableStateOf(existingReview?.pic) }
+
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                selectedImageUri = uri
+                existingPicUrl = null
+            }
+        }
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = if (existingReview == null) "Add Review" else "Edit Review") },
+        text = {
+            Column {
+                Text("Rating:")
+                StarRatingBar(rating = rating, onRatingChanged = { rating = it })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Comment") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 4
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.LightGray,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = "Select Photo from Gallery")
+                }
+
+                if (selectedImageUri != null) {
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Selected Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                } else if (!existingPicUrl.isNullOrBlank()) {
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context).data(existingPicUrl).build(),
+                            contentDescription = "Existing Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            onClick = { existingPicUrl = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    isSubmitting = true
+                    scope.launch(Dispatchers.IO) {
+                        val token = DataStoreManager(context).getBackendToken()
+                        if (token != null) {
+                            var finalPicUrl: String? = existingPicUrl
+
+                            if (selectedImageUri != null) {
+                                val uploadedUrl =
+                                    uploadImageToBackend(context, selectedImageUri!!)
+                                if (uploadedUrl != null) {
+                                    finalPicUrl = uploadedUrl
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(
+                                            context,
+                                            "Failed to upload image",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        isSubmitting = false
+                                    }
+                                    return@launch
+                                }
+                            }
+
+                            val response = if (existingReview == null) {
+                                val createDto = CreateReviewDto(
+                                    restaurantId = restaurantId,
+                                    rating = rating,
+                                    comment = comment,
+                                    pic = finalPicUrl
+                                )
+                                RetrofitClient.reviewsApi.createReview(
+                                    "Bearer $token",
+                                    createDto
+                                )
+                            } else {
+                                val updateDto = UpdateReviewDto(
+                                    rating = rating,
+                                    comment = comment,
+                                    pic = finalPicUrl
+                                )
+                                RetrofitClient.reviewsApi.updateReview(
+                                    "Bearer $token",
+                                    existingReview.id!!,
+                                    updateDto
+                                )
+                            }
+
+                            withContext(Dispatchers.Main) {
+                                isSubmitting = false
+                                if (response.isSuccessful) {
+                                    onSuccess()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error: ${response.message()}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
+                    }
+                },
+                enabled = !isSubmitting,
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            ) {
+                if (isSubmitting) CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White
+                )
+                else Text(if (existingReview == null) "Submit" else "Update")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Cancel",
+                    color = Color.Gray
+                )
+            }
+        }
+    )
+}
+
+
+
+@Composable
+fun FullScreenPhotoDialog(
+    photoUrl: String,
+    onDismiss: () -> Unit
+) {
     val context = LocalContext.current
 
 
