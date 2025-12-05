@@ -30,10 +30,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Configuration
 @RequiredArgsConstructor
@@ -50,6 +48,7 @@ public class DataFillerConfig {
     private final PictureRepository pictureRepository;
     private final RestaurantStatisticRepository statisticRepository;
     private final AiAnalysisRepository aiAnalysisRepository;
+    private final Random random = new Random();
 
     @Value("${ADMIN_USERNAME}")
     private String adminUsername;
@@ -301,6 +300,81 @@ public class DataFillerConfig {
                     .capacity(4)
                     .locationInRestaurant("Main Dining")
                     .build());
+
+            Map<String, String> stdHours = new HashMap<>();
+            stdHours.put("monday", "12:00-22:00"); stdHours.put("tuesday", "12:00-22:00");
+            stdHours.put("wednesday", "12:00-22:00"); stdHours.put("thursday", "12:00-23:00");
+            stdHours.put("friday", "12:00-00:00"); stdHours.put("saturday", "11:00-00:00");
+            stdHours.put("sunday", "12:00-21:00");
+
+            Map<String, String> cafeHours = new HashMap<>();
+            cafeHours.put("monday", "08:00-20:00"); cafeHours.put("tuesday", "08:00-20:00");
+            cafeHours.put("wednesday", "08:00-20:00"); cafeHours.put("thursday", "08:00-20:00");
+            cafeHours.put("friday", "08:00-21:00"); cafeHours.put("saturday", "09:00-21:00");
+            cafeHours.put("sunday", "09:00-20:00");
+
+            Map<String, Tag> tags = createTags();
+
+            createUsers(tags);
+            List<User> owners = userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == Role.RESTAURANT)
+                    .collect(Collectors.toList());
+
+            List<Picture> pictures = createCommonPictures();
+
+            createRestaurant("Piec na Szewskiej", "Szewska 44, Wrocław", "Słynna pizza neapolitańska prosto z pieca opalanego drewnem.", owners.get(0), stdHours, 51.109, 17.035, Set.of(tags.get("Italian"), tags.get("Pizza"), tags.get("Casual")), getRandomPics(pictures, 2));
+            createRestaurant("Iggy Pizza", "Kuźnicza 10, Wrocław", "Nowoczesna pizzeria z klimatem, świetne drinki i neapolitańska pizza.", owners.get(1), stdHours, 51.111, 17.033, Set.of(tags.get("Italian"), tags.get("Pizza"), tags.get("Bar"), tags.get("Date Night")), getRandomPics(pictures, 2));
+            createRestaurant("Vivere Italiano", "Ofiar Oświęcimskich 21, Wrocław", "Elegancka włoska restauracja, idealna na romantyczną kolację.", owners.get(2), stdHours, 51.108, 17.030, Set.of(tags.get("Italian"), tags.get("Fine Dining"), tags.get("Romantic"), tags.get("Pasta")), getRandomPics(pictures, 2));
+            createRestaurant("Ragu Pracownia Makaronu", "Sienkiewicza 34, Wrocław", "Ręcznie robione makarony, które podbiły serca Wrocławian.", owners.get(3), stdHours, 51.115, 17.045, Set.of(tags.get("Italian"), tags.get("Pasta"), tags.get("Casual")), getRandomPics(pictures, 2));
+            createRestaurant("Si", "Bogusławskiego 89, Wrocław", "Włoska kuchnia pod nasypem kolejowym. Klimatycznie i smacznie.", owners.get(4), stdHours, 51.100, 17.030, Set.of(tags.get("Italian"), tags.get("Pizza"), tags.get("Date Night")), getRandomPics(pictures, 2));
+            createRestaurant("Classico di Magnolia", "Legnicka 58, Wrocław", "Włoska restauracja w sercu centrum handlowego.", owners.get(0), stdHours, 51.119, 16.989, Set.of(tags.get("Italian"), tags.get("Family Friendly")), getRandomPics(pictures, 1));
+            createRestaurant("Tutti Santi", "Hallera 52, Wrocław", "Prawdziwa włoska pizza mistrza Valerio Valle.", owners.get(1), stdHours, 51.089, 17.006, Set.of(tags.get("Italian"), tags.get("Pizza")), getRandomPics(pictures, 1));
+            createRestaurant("Oliwa i Ogień", "Igielna 11, Wrocław", "Przytulne miejsce z kuchnią śródziemnomorską w rynku.", owners.get(2), stdHours, 51.112, 17.033, Set.of(tags.get("Italian"), tags.get("Romantic")), getRandomPics(pictures, 1));
+
+            createRestaurant("Konspira", "Plac Solny 11, Wrocław", "Podróż w czasie do PRL-u z solidną porcją polskiego jedzenia.", owners.get(3), stdHours, 51.109, 17.029, Set.of(tags.get("Polish"), tags.get("Casual"), tags.get("Meat")), getRandomPics(pictures, 2));
+            createRestaurant("Kurna Chata", "Odrzańska 7, Wrocław", "Tradycyjne polskie smaki w rustykalnym wnętrzu.", owners.get(4), stdHours, 51.112, 17.032, Set.of(tags.get("Polish"), tags.get("Family Friendly"), tags.get("Meat")), getRandomPics(pictures, 2));
+            createRestaurant("Piwnica Świdnicka", "Rynek Ratusz 1, Wrocław", "Najstarsza restauracja w Europie, działająca od 1273 roku.", owners.get(0), stdHours, 51.109, 17.031, Set.of(tags.get("Polish"), tags.get("Fine Dining"), tags.get("Bar")), getRandomPics(pictures, 2));
+            createRestaurant("Chatka przy Jatkach", "Odrzańska 7, Wrocław", "Domowe obiady i klimat starówki.", owners.get(1), stdHours, 51.111, 17.031, Set.of(tags.get("Polish"), tags.get("Casual")), getRandomPics(pictures, 1));
+            createRestaurant("Młoda Polska", "Plac Solny 4, Wrocław", "Nowoczesna kuchnia polska w wykonaniu Beaty Śniechowskiej.", owners.get(2), stdHours, 51.109, 17.028, Set.of(tags.get("Polish"), tags.get("Fine Dining"), tags.get("Modern")), getRandomPics(pictures, 2));
+            createRestaurant("Browar Złoty Pies", "Rynek 41, Wrocław", "Rzemieślnicze piwo i polska kuchnia w samym rynku.", owners.get(3), stdHours, 51.110, 17.033, Set.of(tags.get("Polish"), tags.get("Bar"), tags.get("Craft Beer")), getRandomPics(pictures, 1));
+            createRestaurant("Pierogarnia Stary Młyn", "Rynek 26, Wrocław", "Najlepsze pieczone pierogi w mieście.", owners.get(4), stdHours, 51.110, 17.030, Set.of(tags.get("Polish"), tags.get("Family Friendly")), getRandomPics(pictures, 1));
+
+            createRestaurant("Panda Ramen", "Białoskórnicza 17, Wrocław", "Kultowy ramen we Wrocławiu. Długie kolejki, ale warto.", owners.get(0), stdHours, 51.110, 17.028, Set.of(tags.get("Asian"), tags.get("Japanese"), tags.get("Ramen")), getRandomPics(pictures, 2));
+            createRestaurant("Osiem Misek", "Włodkowica 27, Wrocław", "Bułeczki bao i autorskie dania azjatyckie.", owners.get(1), stdHours, 51.108, 17.026, Set.of(tags.get("Asian"), tags.get("Casual"), tags.get("Street Food")), getRandomPics(pictures, 2));
+            createRestaurant("Sushi Corner", "Włodkowica 11, Wrocław", "Wysokiej jakości sushi w dzielnicy czterech wyznań.", owners.get(2), stdHours, 51.109, 17.027, Set.of(tags.get("Asian"), tags.get("Japanese"), tags.get("Sushi")), getRandomPics(pictures, 2));
+            createRestaurant("Woo Thai", "Grunwaldzka 67, Wrocław", "Autentyczna kuchnia tajska, ostro i smacznie.", owners.get(3), stdHours, 51.114, 17.063, Set.of(tags.get("Asian"), tags.get("Thai"), tags.get("Spicy")), getRandomPics(pictures, 1));
+            createRestaurant("Dim Sum Garden", "Podwale 83, Wrocław", "Chińskie pierożki na parze i nie tylko.", owners.get(4), stdHours, 51.105, 17.038, Set.of(tags.get("Asian"), tags.get("Chinese"), tags.get("Casual")), getRandomPics(pictures, 1));
+            createRestaurant("Chingu Korean BBQ", "Biskupia 4, Wrocław", "Koreański grill i bibimbap.", owners.get(0), stdHours, 51.106, 17.035, Set.of(tags.get("Asian"), tags.get("Korean"), tags.get("Meat")), getRandomPics(pictures, 1));
+            createRestaurant("77 Sushi", "Szewska 77, Wrocław", "Popularna sieciówka z dobrym sushi.", owners.get(1), stdHours, 51.113, 17.036, Set.of(tags.get("Asian"), tags.get("Sushi")), getRandomPics(pictures, 1));
+            createRestaurant("Thali", "Curie-Skłodowskiej 5, Wrocław", "Prawdziwe indyjskie curry w dobrej cenie.", owners.get(2), stdHours, 51.109, 17.055, Set.of(tags.get("Indian"), tags.get("Spicy"), tags.get("Vegetarian")), getRandomPics(pictures, 1));
+            createRestaurant("Masala Grill & Bar", "Kuźnicza 3, Wrocław", "Nowoczesna kuchnia indyjska w centrum.", owners.get(3), stdHours, 51.112, 17.032, Set.of(tags.get("Indian"), tags.get("Fine Dining")), getRandomPics(pictures, 1));
+            createRestaurant("Mango Mama", "Jedności Narodowej 77, Wrocław", "Azjatycki fusion, świetne curry i drinki.", owners.get(4), stdHours, 51.122, 17.044, Set.of(tags.get("Asian"), tags.get("Indian"), tags.get("Thai")), getRandomPics(pictures, 1));
+
+            createRestaurant("Pasibus", "Świdnicka 11, Wrocław", "Wrocławski klasyk burgerowy. Od foodtrucka do legendy.", owners.get(0), stdHours, 51.106, 17.031, Set.of(tags.get("Burger"), tags.get("American"), tags.get("Street Food")), getRandomPics(pictures, 2));
+            createRestaurant("Soczewka", "Rynek 21, Wrocław", "Gourmet burgery w samym rynku.", owners.get(1), stdHours, 51.110, 17.031, Set.of(tags.get("Burger"), tags.get("American"), tags.get("Casual")), getRandomPics(pictures, 1));
+            createRestaurant("Moaburger", "Plac Solny 10, Wrocław", "Wielkie nowozelandzkie burgery.", owners.get(2), stdHours, 51.109, 17.029, Set.of(tags.get("Burger"), tags.get("American"), tags.get("Meat")), getRandomPics(pictures, 1));
+            createRestaurant("Whiskey in the Jar", "Rynek 23, Wrocław", "Steki, burgery, motocykle i rock'n'roll.", owners.get(3), stdHours, 51.110, 17.030, Set.of(tags.get("American"), tags.get("Steakhouse"), tags.get("Bar"), tags.get("Music")), getRandomPics(pictures, 1));
+            createRestaurant("Panczo", "Św. Antoniego 35, Wrocław", "Tex-mex w najlepszym wydaniu. Tacos i tequila.", owners.get(4), stdHours, 51.109, 17.023, Set.of(tags.get("Mexican"), tags.get("Spicy"), tags.get("Bar")), getRandomPics(pictures, 2));
+            createRestaurant("El Gordito", "Armii Krajowej 14, Wrocław", "Autentyczne meksykańskie tacos.", owners.get(0), stdHours, 51.085, 17.045, Set.of(tags.get("Mexican"), tags.get("Street Food")), getRandomPics(pictures, 1));
+            createRestaurant("Campo Modern Grill", "Podwale 83, Wrocław", "Najlepsze steki w Polsce (wyróżnione w rankingu).", owners.get(1), stdHours, 51.105, 17.038, Set.of(tags.get("Steakhouse"), tags.get("Fine Dining"), tags.get("Meat")), getRandomPics(pictures, 2));
+            createRestaurant("Road American Restaurant", "Sky Tower, Wrocław", "Amerykańska kuchnia z widokiem.", owners.get(2), stdHours, 51.094, 17.020, Set.of(tags.get("American"), tags.get("Burger")), getRandomPics(pictures, 1));
+
+            createRestaurant("Vega", "Rynek 27, Wrocław", "Najstarsza wegańska restauracja w Polsce.", owners.get(3), stdHours, 51.110, 17.032, Set.of(tags.get("Vegan"), tags.get("Vegetarian"), tags.get("Healthy")), getRandomPics(pictures, 2));
+            createRestaurant("Krowarzywa", "Rzeźnicza 34, Wrocław", "Wegańskie burgery, które smakują każdemu.", owners.get(4), stdHours, 51.111, 17.029, Set.of(tags.get("Vegan"), tags.get("Burger"), tags.get("Fast Food")), getRandomPics(pictures, 1));
+            createRestaurant("Wilk Syty", "Trzebnicka 3, Wrocław", "Autorska kuchnia roślinna na Nadodrzu.", owners.get(0), stdHours, 51.121, 17.033, Set.of(tags.get("Vegan"), tags.get("Casual"), tags.get("Healthy")), getRandomPics(pictures, 1));
+            createRestaurant("Tajfun", "Cybulskiego 3, Wrocław", "Kuchnia azjatycka w wersji 100% roślinnej.", owners.get(1), stdHours, 51.115, 17.025, Set.of(tags.get("Vegan"), tags.get("Asian")), getRandomPics(pictures, 1));
+
+            createRestaurant("Gniazdo", "Świdnicka 36, Wrocław", "Kawa specialty i świetne śniadania.", owners.get(2), cafeHours, 51.104, 17.032, Set.of(tags.get("Cafe"), tags.get("Breakfast"), tags.get("Coffee")), getRandomPics(pictures, 2));
+            createRestaurant("Charlotte", "Św. Antoniego 2, Wrocław", "Francuskie pieczywo, wino i śniadania cały dzień.", owners.get(3), cafeHours, 51.109, 17.024, Set.of(tags.get("Cafe"), tags.get("Breakfast"), tags.get("French")), getRandomPics(pictures, 2));
+            createRestaurant("Vincent", "Ruska 39, Wrocław", "Boulangerie patisserie - francuskie wypieki.", owners.get(4), cafeHours, 51.110, 17.025, Set.of(tags.get("Cafe"), tags.get("Dessert"), tags.get("French")), getRandomPics(pictures, 1));
+            createRestaurant("Dinette", "Plac Teatralny 8, Wrocław", "Kultowe miejsce na śniadanie we Wrocławiu.", owners.get(0), cafeHours, 51.105, 17.033, Set.of(tags.get("Breakfast"), tags.get("Brunch"), tags.get("Modern")), getRandomPics(pictures, 1));
+            createRestaurant("Giszer", "Szewska 27, Wrocław", "Kawa i bajgle.", owners.get(1), cafeHours, 51.112, 17.036, Set.of(tags.get("Cafe"), tags.get("Breakfast")), getRandomPics(pictures, 1));
+            createRestaurant("Monopol", "Heleny Modrzejewskiej 2, Wrocław", "Luksusowa restauracja w historycznym hotelu.", owners.get(2), stdHours, 51.105, 17.033, Set.of(tags.get("Fine Dining"), tags.get("Hotel"), tags.get("European")), getRandomPics(pictures, 2));
+            createRestaurant("La Maddalena", "Pomorska 1, Wrocław", "Restauracja na wodzie z widokiem na uniwersytet.", owners.get(3), stdHours, 51.115, 17.032, Set.of(tags.get("Fine Dining"), tags.get("Seafood"), tags.get("Romantic")), getRandomPics(pictures, 2));
+            createRestaurant("Bernard", "Rynek 35, Wrocław", "Kuchnia czeska i europejska w sercu rynku.", owners.get(4), stdHours, 51.110, 17.031, Set.of(tags.get("European"), tags.get("Meat"), tags.get("Beer")), getRandomPics(pictures, 1));
+            createRestaurant("Hurry Curry", "Szewska 22, Wrocław", "Szybkie i smaczne curry w różnych stylach.", owners.get(0), stdHours, 51.111, 17.036, Set.of(tags.get("Indian"), tags.get("Thai"), tags.get("Casual")), getRandomPics(pictures, 1));
+            createRestaurant("Szajnochy 11", "Szajnochy 11, Wrocław", "Autorskie sushi w eleganckim wydaniu.", owners.get(1), stdHours, 51.109, 17.028, Set.of(tags.get("Sushi"), tags.get("Fine Dining"), tags.get("Date Night")), getRandomPics(pictures, 2));
+
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -670,6 +744,117 @@ public class DataFillerConfig {
             }
             client1.getFavoriteRestaurants().add(restaurant1);
             userRepository.save(client1);
+
+            System.out.println("Data filled");
         };
     }
+
+    private void createRestaurant(String name, String address, String desc, User owner, Map<String, String> hours, double lat, double lon, Set<Tag> tags, Set<Picture> pics) {
+        Restaurant r = Restaurant.builder()
+                .name(name)
+                .address(address)
+                .city("Wrocław")
+                .description(desc)
+                .owner(owner)
+                .openingHours(hours)
+                .latitude(lat)
+                .longitude(lon)
+                .averageRating(3.5 + (random.nextDouble() * 1.5))
+                .tags(tags)
+                .pictures(pics)
+                .pic(pics.stream().findFirst().map(Picture::getUrl).orElse(null))
+                .build();
+
+        r = restaurantRepository.save(r);
+
+        int tablesCount = 5 + random.nextInt(10);
+        for (int i = 1; i <= tablesCount; i++) {
+            int capacity = (i % 3 == 0) ? 6 : (i % 2 == 0 ? 4 : 2);
+            tableRepository.save(RestaurantTable.builder()
+                    .restaurant(r)
+                    .tableNumber(i)
+                    .capacity(capacity)
+                    .locationInRestaurant(i < 5 ? "Window" : "Main Hall")
+                    .build());
+        }
+
+        aiAnalysisRepository.save(AiAnalysis.builder()
+                .restaurant(r)
+                .summaryText("AI Summary for " + name + ": Customers generally appreciate the atmosphere and food quality. Popular spot for " + tags.stream().findFirst().get().getName() + " cuisine.")
+                .sentimentScore(0.7 + (random.nextDouble() * 0.25))
+                .lastUpdated(LocalDateTime.now())
+                .build());
+
+        statisticRepository.save(RestaurantStatistic.builder()
+                .restaurant(r)
+                .date(LocalDate.now().minusDays(1))
+                .hourOfDay(19)
+                .averageOccupancy(0.4 + (random.nextDouble() * 0.5))
+                .build());
+    }
+
+    private Map<String, Tag> createTags() {
+        String[] tagNames = {
+                "Italian", "Polish", "Indian", "Mexican", "Japanese", "Sushi", "Burger", "Pizza",
+                "Vegan", "Vegetarian", "Asian", "Thai", "French", "American", "Seafood", "Steakhouse",
+                "Cafe", "Breakfast", "Dessert", "Bar", "Pub", "Craft Beer", "Fine Dining", "Casual",
+                "Family Friendly", "Date Night", "Street Food", "Healthy", "Modern", "Meat", "Pasta",
+                "Chinese", "Korean", "European", "Hotel", "Beer", "Ramen", "Coffee", "Brunch", "Romantic",
+                "Asian", "Spicy", "Music", "Fast Food"
+        };
+
+        Map<String, Tag> tagMap = new HashMap<>();
+        for (String name : tagNames) {
+            Tag t = tagRepository.findByNameIgnoreCase(name).orElseGet(() ->
+                    tagRepository.save(Tag.builder().name(name).build())
+            );
+            tagMap.put(name, t);
+        }
+        return tagMap;
+    }
+
+    private void createUsers(Map<String, Tag> tags) {
+        if (userRepository.findByEmail(adminUsername).isEmpty()) {
+            userRepository.save(User.builder().email(adminUsername).name("Super Admin").passwordHash(passwordEncoder.encode(adminPassword)).role(Role.ADMIN).provider(AuthProvider.LOCAL).build());
+        }
+        if (userRepository.findByEmail("user").isEmpty()) {
+            userRepository.save(User.builder().email("user").name("Test User").passwordHash(passwordEncoder.encode("user")).role(Role.CLIENT).provider(AuthProvider.LOCAL).build());
+        }
+        for (int i = 1; i <= 5; i++) {
+            String email = "owner" + i + "@test.com";
+            if (userRepository.findByEmail(email).isEmpty()) {
+                userRepository.save(User.builder()
+                        .email(email)
+                        .name("Owner " + i)
+                        .passwordHash(passwordEncoder.encode("password"))
+                        .role(Role.RESTAURANT)
+                        .provider(AuthProvider.LOCAL)
+                        .build());
+            }
+        }
+    }
+
+    private List<Picture> createCommonPictures() {
+        List<Picture> pics = new ArrayList<>();
+        pics.add(pictureRepository.save(Picture.builder().url("https://dynamic-media-cdn.tripadvisor.com/media/photo-o/28/71/47/c2/seafood-buffet-at-mezz.jpg?w=900&h=500&s=1").description("Cozy Interior").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://popmenucloud.com/jwutdrmk/67f010e1-4698-4340-9ba4-a1c9428699f1.jpg").description("Food Plate").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://cdn.prod.website-files.com/60414b21f1ffcdbb0d5ad688/65206c769c62b75fd6fd0c67_alex-haney-CAhjZmVk5H4-unsplash.jpg").description("Ingredients").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://eu-images.contentstack.com/v3/assets/blt7b94604c32d7613d/bltc10810c25f1aa21e/692dd14d108922509a6b84a0/1._Pauline_copy.jpg?width=1280&auto=webp&quality=80&disable=upscale").description("Bar").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://themillontheriver.com/wp-content/uploads/2025/01/54244983102_1bb2fc8a89_k-ezgif.com-crop.jpg").description("Patio").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://www.gordonramsayrestaurants.com/assets/Uploads/_resampled/CroppedFocusedImage121578650-50-GRR-LC-22B-NOVEMBER-2025-NEW-YEARS-EVE-LATEEF288-lf8t7x.jpg").description("Special Dish").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://media.istockphoto.com/id/1054319798/photo/group-of-happy-friends-having-breakfast-in-the-restaurant.jpg?s=612x612&w=0&k=20&c=rdb2gaIzr5n2eZthvK1B73LQa3yapubVD2AM_-SF50o=").description("Modern Look").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://i.insider.com/5dc498fc695b58645d6f1dab?width=1200&format=jpeg").description("Dessert").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://images.rawpixel.com/image_social_landscape/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA1L2EwMDkta2Fib29tcGljcy0wMDEuanBn.jpg").description("Salad").uploadedAt(LocalDateTime.now()).build()));
+        pics.add(pictureRepository.save(Picture.builder().url("https://static01.nyt.com/images/2024/10/16/multimedia/16best-restaurants-nashville15-jbkq/07best-restaurants-nashville15-jbkq-videoSixteenByNineJumbo1600.jpg").description("Evening").uploadedAt(LocalDateTime.now()).build()));
+        return pics;
+    }
+
+    private Set<Picture> getRandomPics(List<Picture> allPics, int count) {
+        Set<Picture> selected = new HashSet<>();
+        for (int i = 0; i < count; i++) {
+            selected.add(allPics.get(random.nextInt(allPics.size())));
+        }
+        return selected;
+    }
+
 }
