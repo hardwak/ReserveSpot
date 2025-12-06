@@ -74,7 +74,7 @@ data class ReservationDto(
     val id: Long,
     val userId: Long,
     val tableId: Long,
-    val reservationDatetime: String,   // LocalDateTime → String in JSON
+    val reservationDatetime: String,   // LocalDateTime - String in JSON
     val durationMinutes: Int,
     val status: ReservationStatus,
     val restaurantId: Long,
@@ -405,11 +405,6 @@ interface RestaurantApi {
     @GET("/api/tags")
     suspend fun getAvailableTags(@Header("Authorization") token: String): Response<List<TagDto>>
 
-    @POST("/api/tags")
-    suspend fun createTag(
-        @Header("Authorization") token: String,
-        @Body createDto: CreateTagDto
-    ): Response<TagDto>
 
     @GET("/api/restaurants")
     suspend fun getAllRestaurants(@Header("Authorization") token: String): Response<List<RestaurantDto>>
@@ -594,20 +589,6 @@ interface OwnerApi{
         @Path("id") id: Long
     ): Response<Unit>
 
-
-//    @POST("/api/restaurants/{restaurantId}/tags/{tagId}")
-//    suspend fun addTagToRestaurant(
-//        @Header("Authorization") token: String,
-//        @Path("restaurantId") restaurantId: Long,
-//        @Path("tagId") tagId: Long
-//    ): Response<Unit>
-
-//    @DELETE("/api/restaurants/{restaurantId}/tags/{tagId}")
-//    suspend fun removeTagFromRestaurant(
-//        @Header("Authorization") token: String,
-//        @Path("restaurantId") restaurantId: Long,
-//        @Path("tagId") tagId: Long
-//    ): Response<Unit>
 
     @GET("/api/restaurants/{restaurantId}/tags")
     suspend fun getTagsByRestaurant(

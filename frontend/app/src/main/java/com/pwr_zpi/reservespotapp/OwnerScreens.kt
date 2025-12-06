@@ -1330,8 +1330,11 @@ fun TagManagementSection(
 
     var allTagsMap by remember { mutableStateOf(emptyMap<Long, String>()) }
     var currentTagIds by remember { mutableStateOf(initialTagIds) }
-    var newTagText by remember { mutableStateOf("") }
+
+
     var isDropdownExpanded by remember { mutableStateOf(false) }
+
+
 
 
     LaunchedEffect(initialTagIds) {
@@ -1339,8 +1342,6 @@ fun TagManagementSection(
     }
 
     LaunchedEffect(Unit) {
-
-
         allTagsMap = fetchTagsMap(context)
     }
 
@@ -1372,34 +1373,6 @@ fun TagManagementSection(
     }
 
 
-    suspend fun createAndAddTag(name: String) {
-        val token = DataStoreManager(context).getBackendToken() ?: return
-        val createDto = CreateTagDto(name = name)
-
-        try {
-
-            val response = RetrofitClient.restaurantApi.createTag("Bearer $token", createDto)
-            if (response.isSuccessful) {
-                val newTag = response.body() ?: return
-
-                allTagsMap = allTagsMap + (newTag.id to newTag.name)
-                newTagText = ""
-
-
-                addTagLocally(newTag.id)
-                Toast.makeText(context, "New tag created and added!", Toast.LENGTH_SHORT).show()
-
-            } else {
-                Toast.makeText(
-                    context,
-                    "Tag creation failed: ${response.code()}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, "Tag creation error", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -1442,53 +1415,21 @@ fun TagManagementSection(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            OutlinedTextField(
-                value = newTagText,
-                onValueChange = { newTagText = it },
-                label = { Text("Add or create tag") },
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
+
 
             Button(
                 onClick = {
-                    if (newTagText.isBlank()) {
-                        isDropdownExpanded = true
-                    } else {
-                        val matchingTag = allTagsMap.entries.find {
-                            it.value.equals(
-                                newTagText,
-                                ignoreCase = true
-                            )
-                        }
-
-                        if (matchingTag != null) {
-                            addTagLocally(matchingTag.key)
-                            newTagText = ""
-                        } else {
-                            if (newTagText.length >= 3) {
-                                scope.launch { createAndAddTag(newTagText) }
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Tag name must be at least 3 characters long.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
+                    isDropdownExpanded = true
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = RSRed)
             ) {
-                if (newTagText.isBlank()) {
-                    Icon(Icons.Default.Add, contentDescription = "Browse Tags")
-                } else {
-                    Text("Add / Create")
-                }
+                Icon(Icons.Default.Add, contentDescription = "Add Tag")
+                Spacer(Modifier.width(4.dp))
+                Text("Select Tag")
             }
 
             // DropdownMenu
