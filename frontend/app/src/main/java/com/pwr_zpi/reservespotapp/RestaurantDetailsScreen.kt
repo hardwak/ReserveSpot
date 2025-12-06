@@ -620,45 +620,6 @@ fun RestaurantDetailsScreen(
                 }
 
 
-//                        IconButton(
-//
-//                            onClick = {
-//                                if (isFavourite) {
-//                                    removeFavouriteRestaurant(
-//                                        restaurantId,
-//                                        context,
-//                                        onSuccess = {
-//                                            isFavourite = false
-//                                        }
-//                                    )
-//                                } else {
-//                                    addFavouriteRestaurant(
-//                                        restaurantId,
-//                                        context,
-//                                        onSuccess = {
-//                                            isFavourite = true
-//                                        }
-//                                    )
-//                                }
-//                            },
-//                            modifier = Modifier
-//                                .align(Alignment.TopEnd)
-//                                .padding(16.dp)
-//                                .padding(top = 40.dp)
-//                                .size(48.dp)
-//                                .clip(CircleShape)
-//                                .background(Color.White)
-//                        ) {
-//                            Icon(
-//
-//                                imageVector = if (isFavourite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-//                                contentDescription = "Add to Favorites (Placeholder)",
-//                                tint = RSRed
-//                            )
-//                        }
-//                    }
-//                }
-
                 stickyHeader {
                     TabRow(
                         selectedTabIndex = selectedTabIndex,
@@ -788,7 +749,7 @@ fun RestaurantTagsSection(tags: List<String>) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Używamy LazyRow dla poziomego przewijania tagów
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -796,8 +757,8 @@ fun RestaurantTagsSection(tags: List<String>) {
                 items(tags) { tag ->
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, RSRed), // Czerwona obwódka jak na screenie
-                        color = Color.White // Białe tło
+                        border = BorderStroke(1.dp, RSRed),
+                        color = Color.White
                     ) {
                         Text(
                             text = tag,

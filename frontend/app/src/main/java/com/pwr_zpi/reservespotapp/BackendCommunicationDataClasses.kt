@@ -262,7 +262,8 @@ data class CreateRestaurantDto(
     val description: String,
     val openingHours: String,
     val latitude: Double?,
-    val longitude: Double?
+    val longitude: Double?,
+    val tagIds: Set<Long>? = null
 
 )
 
@@ -283,6 +284,11 @@ data class OwnerReviewWithUser(
 data class OwnerReservationWithUser(
     val reservation: ReservationDto,
     val userName: String
+)
+
+data class CreateTagDto(
+    val name: String
+
 )
 
 interface PicturesApi {
@@ -398,6 +404,12 @@ interface RestaurantApi {
 
     @GET("/api/tags")
     suspend fun getAvailableTags(@Header("Authorization") token: String): Response<List<TagDto>>
+
+    @POST("/api/tags")
+    suspend fun createTag(
+        @Header("Authorization") token: String,
+        @Body createDto: CreateTagDto
+    ): Response<TagDto>
 
     @GET("/api/restaurants")
     suspend fun getAllRestaurants(@Header("Authorization") token: String): Response<List<RestaurantDto>>
@@ -581,6 +593,27 @@ interface OwnerApi{
         @Header("Authorization") token: String,
         @Path("id") id: Long
     ): Response<Unit>
+
+
+//    @POST("/api/restaurants/{restaurantId}/tags/{tagId}")
+//    suspend fun addTagToRestaurant(
+//        @Header("Authorization") token: String,
+//        @Path("restaurantId") restaurantId: Long,
+//        @Path("tagId") tagId: Long
+//    ): Response<Unit>
+
+//    @DELETE("/api/restaurants/{restaurantId}/tags/{tagId}")
+//    suspend fun removeTagFromRestaurant(
+//        @Header("Authorization") token: String,
+//        @Path("restaurantId") restaurantId: Long,
+//        @Path("tagId") tagId: Long
+//    ): Response<Unit>
+
+    @GET("/api/restaurants/{restaurantId}/tags")
+    suspend fun getTagsByRestaurant(
+        @Header("Authorization") token: String,
+        @Path("restaurantId") restaurantId: Long
+    ): Response<List<TagDto>>
 }
 
 interface AiAnalysisApi {
@@ -601,6 +634,7 @@ interface AiAnalysisApi {
 object RetrofitClient {
     const val BASE_URL = "https://reserve-spot-api-hdavh5ezgeb9b9f2.polandcentral-01.azurewebsites.net"
 
+//    const val BASE_URL = "http://10.0.2.2:8080"
 
         private val localDateTimeDeserializer: JsonDeserializer<LocalDateTime> =
         JsonDeserializer { json, _, _ ->

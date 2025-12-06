@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
@@ -60,7 +61,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Calendar
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,15 +124,29 @@ fun OwnerRestaurantListScreen(navController: NavHostController) {
 
     ) { paddingValues ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator(color = RSRed)
             }
         } else if (restaurants.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
                 Text("You don't have any restaurants yet.", color = Color.Gray)
             }
         } else {
-            LazyColumn(modifier = Modifier.padding(paddingValues).padding(16.dp)) {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .padding(16.dp)
+            ) {
                 items(restaurants) { restaurant ->
                     OwnerRestaurantCard(
                         restaurant = restaurant,
@@ -159,9 +173,17 @@ fun OwnerRestaurantCard(restaurant: RestaurantDto, onClick: () -> Unit) {
             Text("${restaurant.address}, ${restaurant.city}", color = Color.Gray)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Star, contentDescription = null, tint = RSRed, modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    tint = RSRed,
+                    modifier = Modifier.size(18.dp)
+                )
                 Spacer(Modifier.width(4.dp))
-                Text("${restaurant.averageRating ?: 0.0}", color = RSRed, fontWeight = FontWeight.Bold)
+                Text(text = String.format("%.1f", restaurant.averageRating ?: 0.0),
+                    color = RSRed,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -186,12 +208,18 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
     }
 
     if (isLoading) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
+        Box(
+            Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) { CircularProgressIndicator(color = RSRed) }
         return
     }
 
     if (restaurant == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Error fetching data.") }
+        Box(
+            Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) { Text("Error fetching data.") }
         return
     }
 
@@ -223,9 +251,14 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        text = { Text(title, color = if (selectedTabIndex == index) RSRed else Color.Gray) },
+                        text = {
+                            Text(
+                                title,
+                                color = if (selectedTabIndex == index) RSRed else Color.Gray
+                            )
+                        },
                         icon = {
-                            when(index) {
+                            when (index) {
                                 0 -> Icon(Icons.Default.Edit, null)
                                 1 -> Icon(Icons.Default.TableRestaurant, null)
                                 2 -> Icon(Icons.Default.Event, null)
@@ -238,7 +271,12 @@ fun OwnerRestaurantDetailsScreen(navController: NavHostController, restaurantId:
             }
 
             when (selectedTabIndex) {
-                0 -> EditRestaurantTab(restaurant!!, context, navController) { updated -> restaurant = updated }
+                0 -> EditRestaurantTab(
+                    restaurant!!,
+                    context,
+                    navController
+                ) { updated -> restaurant = updated }
+
                 1 -> ManageTablesTab(restaurantId, context)
                 2 -> OwnerReservationsTab(restaurantId, context)
                 3 -> OwnerReviewsTab(restaurantId, context)
@@ -264,7 +302,8 @@ fun EditRestaurantTab(
     var description by remember { mutableStateOf(restaurant.description) }
 
 
-    val openingHours = remember { mutableStateMapOf<String, String>().apply { putAll(restaurant.openingHours) } }
+    val openingHours =
+        remember { mutableStateMapOf<String, String>().apply { putAll(restaurant.openingHours) } }
     val days = listOf("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 
@@ -275,6 +314,7 @@ fun EditRestaurantTab(
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var currentPicUrl by remember { mutableStateOf(restaurant.pic) }
     var isUploadingImage by remember { mutableStateOf(false) }
+    var currentTagIds by remember { mutableStateOf(restaurant.tagIds) }
 
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -376,6 +416,12 @@ fun EditRestaurantTab(
 
         Spacer(Modifier.height(24.dp))
 
+        TagManagementSection(
+            restaurantId = restaurant.id,
+            initialTagIds = currentTagIds,
+            onTagsChanged = { newIds -> currentTagIds = newIds }
+        )
+        Spacer(Modifier.height(24.dp))
 
         Text("Basic data", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
@@ -445,13 +491,13 @@ fun EditRestaurantTab(
         Button(
             onClick = {
                 if (latitude.isBlank() || longitude.isBlank()) {
-                    Toast.makeText(context, "Location must be set on the map.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Location must be set on the map.", Toast.LENGTH_SHORT)
+                        .show()
                     return@Button
                 }
 
                 scope.launch {
                     isUploadingImage = true
-
                     var newPicUrl = restaurant.pic
 
 
@@ -462,7 +508,11 @@ fun EditRestaurantTab(
                             newPicUrl = uploadedUrl
                         } else {
                             isUploadingImage = false
-                            Toast.makeText(context, "Image upload failed. Changes not saved.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Image upload failed. Changes not saved.",
+                                Toast.LENGTH_LONG
+                            ).show()
                             return@launch
                         }
                     }
@@ -479,7 +529,8 @@ fun EditRestaurantTab(
                         openingHours = openingHoursJson,
                         latitude = latitude.toDoubleOrNull(),
                         longitude = longitude.toDoubleOrNull(),
-                        pic = newPicUrl
+                        pic = newPicUrl,
+                        tagIds = currentTagIds
                     )
 
 
@@ -491,7 +542,8 @@ fun EditRestaurantTab(
                         onUpdateSuccess(updatedRestaurant)
                         Toast.makeText(context, "Changes saved!", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Save error. Check server logs", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Save error. Check server logs", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
             },
@@ -512,6 +564,7 @@ fun EditRestaurantTab(
         Spacer(Modifier.height(32.dp))
     }
 }
+
 @Composable
 fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) -> Unit) {
     val context = LocalContext.current
@@ -522,17 +575,35 @@ fun OpeningHoursRow(day: String, currentHours: String, onHoursChanged: (String) 
         TimePickerDialog(context, { _, selectedHour, selectedMinute ->
             val time = String.format("%02d:%02d", selectedHour, selectedMinute)
             val parts = currentHours.split("-")
-            val newTime = if (isStart) "$time-${if (parts.size > 1) parts[1] else "22:00"}" else "${if (parts.isNotEmpty()) parts[0] else "10:00"}-$time"
+            val newTime =
+                if (isStart) "$time-${if (parts.size > 1) parts[1] else "22:00"}" else "${if (parts.isNotEmpty()) parts[0] else "10:00"}-$time"
             onHoursChanged(newTime)
         }, hour, minute, true).show()
     }
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
         Text(day.replaceFirstChar { it.uppercase() }, modifier = Modifier.width(100.dp))
         Row {
             val parts = currentHours.split("-")
-            OutlinedButton(onClick = { showTimePicker(true) }, modifier = Modifier.height(35.dp)) { Text(if(parts.isNotEmpty()) parts[0] else "Closed", fontSize = 12.sp) }
-            Text("-", modifier = Modifier.padding(horizontal = 4.dp).align(Alignment.CenterVertically))
-            OutlinedButton(onClick = { showTimePicker(false) }, modifier = Modifier.height(35.dp)) { Text(if(parts.size > 1) parts[1] else "Closed", fontSize = 12.sp) }
+            OutlinedButton(
+                onClick = { showTimePicker(true) },
+                modifier = Modifier.height(35.dp)
+            ) { Text(if (parts.isNotEmpty()) parts[0] else "Closed", fontSize = 12.sp) }
+            Text(
+                "-",
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            OutlinedButton(
+                onClick = { showTimePicker(false) },
+                modifier = Modifier.height(35.dp)
+            ) { Text(if (parts.size > 1) parts[1] else "Closed", fontSize = 12.sp) }
         }
     }
 }
@@ -546,32 +617,68 @@ fun ManageTablesTab(restaurantId: Long, context: Context) {
 
     LaunchedEffect(restaurantId) { tables = fetchTables(context, restaurantId) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text("Add table", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-            OutlinedTextField(value = newCapacity, onValueChange = { newCapacity = it }, label = { Text("Capacity") }, modifier = Modifier.weight(1f))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            OutlinedTextField(
+                value = newCapacity,
+                onValueChange = { newCapacity = it },
+                label = { Text("Capacity") },
+                modifier = Modifier.weight(1f)
+            )
             Spacer(Modifier.width(8.dp))
-            OutlinedTextField(value = newLocation, onValueChange = { newLocation = it }, label = { Text("Location") }, modifier = Modifier.weight(2f))
+            OutlinedTextField(
+                value = newLocation,
+                onValueChange = { newLocation = it },
+                label = { Text("Location") },
+                modifier = Modifier.weight(2f)
+            )
         }
         Button(
             onClick = {
                 scope.launch {
-                    val dto = CreateRestaurantTableDto(restaurantId, tables.size + 1, newCapacity.toIntOrNull() ?: 2, newLocation)
+                    val dto = CreateRestaurantTableDto(
+                        restaurantId,
+                        tables.size + 1,
+                        newCapacity.toIntOrNull() ?: 2,
+                        newLocation
+                    )
                     addTable(context, dto)
                     tables = fetchTables(context, restaurantId)
                     newCapacity = ""; newLocation = ""
                     Toast.makeText(context, "Table added!", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = RSRed)
         ) { Text("Add table") }
         Spacer(Modifier.height(16.dp)); Divider(); Spacer(Modifier.height(16.dp))
         Text("Your tables", fontWeight = FontWeight.Bold)
         LazyColumn {
             items(tables) { table ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)).padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column { Text("ID: ${table.id} | Nr: ${table.tableNumber ?: "?"}"); Text("Capacity: ${table.capacity} | ${table.locationInRestaurant}") }
-                    IconButton(onClick = { scope.launch { deleteTable(context, table.id); tables = fetchTables(context, restaurantId) } }) { Icon(Icons.Default.Delete, "Delete", tint = Color.Gray) }
+                    IconButton(onClick = {
+                        scope.launch {
+                            deleteTable(context, table.id); tables =
+                            fetchTables(context, restaurantId)
+                        }
+                    }) { Icon(Icons.Default.Delete, "Delete", tint = Color.Gray) }
                 }
             }
         }
@@ -620,7 +727,9 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
         TabRow(
             selectedTabIndex = selectedStatusIndex,
             contentColor = RSRed,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
                     Modifier.tabIndicatorOffset(tabPositions[selectedStatusIndex]),
@@ -633,7 +742,13 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
                     selected = selectedStatusIndex == index,
                     onClick = { selectedStatusIndex = index },
                     modifier = Modifier.weight(1f),
-                    text = { Text(title, color = if (selectedStatusIndex == index) RSRed else Color.Gray, fontWeight = FontWeight.SemiBold) }
+                    text = {
+                        Text(
+                            title,
+                            color = if (selectedStatusIndex == index) RSRed else Color.Gray,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 )
             }
         }
@@ -641,11 +756,24 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
         Spacer(Modifier.height(8.dp))
 
         if (isLoading) {
-            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator(color = RSRed) }
         } else if (reservationsByStatus.isEmpty()) {
-            Text("No reservations available for your restaurants.", modifier = Modifier.padding(16.dp), color = Color.Gray)
+            Text(
+                "No reservations available for your restaurants.",
+                modifier = Modifier.padding(16.dp),
+                color = Color.Gray
+            )
         } else if (finalFilteredReservations.isEmpty()) {
-            Text("No ${selectedStatus.lowercase()} reservations for this restaurant.", modifier = Modifier.padding(16.dp), color = Color.Gray)
+            Text(
+                "No ${selectedStatus.lowercase()} reservations for this restaurant.",
+                modifier = Modifier.padding(16.dp),
+                color = Color.Gray
+            )
         } else {
             LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
                 items(finalFilteredReservations, key = { it.reservation.id }) { item ->
@@ -658,7 +786,11 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
                                 Toast.makeText(context, "Canceled.", Toast.LENGTH_SHORT).show()
 
                             } else {
-                                Toast.makeText(context, "Problem with cancellation.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Problem with cancellation.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     })
@@ -667,7 +799,6 @@ fun OwnerReservationsTab(restaurantId: Long, context: Context) {
         }
     }
 }
-
 
 
 @Composable
@@ -682,16 +813,27 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
     }
 
     if (isLoading) {
-        Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            contentAlignment = Alignment.Center
+        ) { CircularProgressIndicator(color = RSRed) }
     } else if (reviewsWithUsers.isEmpty()) {
-        Text("This restaurant has no reviews yet.", modifier = Modifier.padding(16.dp), color = Color.Gray)
+        Text(
+            "This restaurant has no reviews yet.",
+            modifier = Modifier.padding(16.dp),
+            color = Color.Gray
+        )
     } else {
         LazyColumn(modifier = Modifier.padding(16.dp)) {
             items(reviewsWithUsers) { item ->
                 val review = item.review
                 val userName = item.userName
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(2.dp)
                 ) {
@@ -705,7 +847,12 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
                                 modifier = Modifier.padding(end = 8.dp)
                             )
 
-                            Icon(Icons.Default.Star, null, tint = RSRed, modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Default.Star,
+                                null,
+                                tint = RSRed,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(
                                 text = "${review.rating ?: 0}/5",
                                 fontWeight = FontWeight.Bold,
@@ -724,14 +871,23 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
                         if (!review.comment.isNullOrEmpty()) {
                             Text(text = review.comment, fontSize = 14.sp)
                         } else {
-                            Text(text = "No reviews", fontSize = 14.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color.Gray)
+                            Text(
+                                text = "No reviews",
+                                fontSize = 14.sp,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                color = Color.Gray
+                            )
                         }
 
                         if (!review.pic.isNullOrBlank()) {
                             val rawUrl = review.pic
 
                             val finalImageUrl = when {
-                                rawUrl.contains("localhost") -> rawUrl.replace("localhost", "10.0.2.2")
+                                rawUrl.contains("localhost") -> rawUrl.replace(
+                                    "localhost",
+                                    "10.0.2.2"
+                                )
+
                                 !rawUrl.startsWith("http") -> "http://10.0.2.2:8080" + rawUrl
                                 else -> rawUrl
                             }
@@ -747,8 +903,8 @@ fun OwnerReviewsTab(restaurantId: Long, context: Context) {
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Color.LightGray),
                                 contentScale = ContentScale.Crop,
-                                 placeholder = painterResource(id = R.drawable.food_placeholder),
-                                 error = painterResource(id = R.drawable.food_placeholder)
+                                placeholder = painterResource(id = R.drawable.food_placeholder),
+                                error = painterResource(id = R.drawable.food_placeholder)
                             )
                         }
                     }
@@ -807,7 +963,11 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Button(
             onClick = { launcher.launch("image/*") },
             modifier = Modifier.fillMaxWidth(),
@@ -828,7 +988,10 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
         Spacer(Modifier.height(16.dp))
 
         if (isLoading) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = RSRed) }
+            Box(
+                Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator(color = RSRed) }
         } else if (pictures.isEmpty()) {
             Text("No photos in the gallery for this restaurant.", color = Color.Gray)
         } else {
@@ -862,7 +1025,11 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
 //                      Delete photo button
                         IconButton(
                             onClick = {
-                                pic.id?.let { handleDelete(it) } ?: Toast.makeText(context, "Photo ID is missing.", Toast.LENGTH_SHORT).show()
+                                pic.id?.let { handleDelete(it) } ?: Toast.makeText(
+                                    context,
+                                    "Photo ID is missing.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -871,7 +1038,11 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
                                 .size(32.dp)
 
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete photo", tint = Color.White)
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Delete photo",
+                                tint = Color.White
+                            )
                         }
                     }
                 }
@@ -880,83 +1051,110 @@ fun OwnerPhotosTab(restaurantId: Long, context: Context) {
     }
 }
 
-suspend fun fetchReservationsByStatus(context: Context, status: String): List<ReservationDto> = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+suspend fun fetchReservationsByStatus(context: Context, status: String): List<ReservationDto> =
+    withContext(Dispatchers.IO) {
+        try {
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
-        val response = RetrofitClient.reservationApi.getReservationsByStatus("Bearer $token", status)
+            val response =
+                RetrofitClient.reservationApi.getReservationsByStatus("Bearer $token", status)
 
-        if (response.isSuccessful) {
-            response.body() ?: emptyList()
-        } else {
-            Log.e("API", "Error downloading reservations by status: HTTP Code ${response.code()}")
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                Log.e(
+                    "API",
+                    "Error downloading reservations by status: HTTP Code ${response.code()}"
+                )
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("API", "Exception in fetchReservationsByStatus", e)
             emptyList()
         }
-    } catch (e: Exception) {
-        Log.e("API", "Exception in fetchReservationsByStatus", e)
-        emptyList()
     }
-}
 
-suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<RestaurantDto> = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-        val response = RetrofitClient.ownerApi.getMyRestaurants("Bearer $token", ownerId)
-        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) {
-        Log.e("API", "Error downloading restaurant", e)
-        emptyList()
+suspend fun fetchOwnerRestaurants(context: Context, ownerId: Long): List<RestaurantDto> =
+    withContext(Dispatchers.IO) {
+        try {
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+            val response = RetrofitClient.ownerApi.getMyRestaurants("Bearer $token", ownerId)
+            if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+        } catch (e: Exception) {
+            Log.e("API", "Error downloading restaurant", e)
+            emptyList()
+        }
     }
-}
 
 
+suspend fun fetchOwnerRestaurantDetails(context: Context, id: Long): RestaurantDto? =
+    withContext(Dispatchers.IO) {
+        try {
+            val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+            val response = RetrofitClient.restaurantApi.getRestaurantDetails("Bearer $token", id)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
 
-suspend fun fetchOwnerRestaurantDetails(context: Context, id: Long): RestaurantDto? = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
-        val response = RetrofitClient.restaurantApi.getRestaurantDetails("Bearer $token", id)
-        if (response.isSuccessful) response.body() else null
-    } catch (e: Exception) { null }
-}
+suspend fun updateRestaurant(context: Context, id: Long, dto: UpdateRestaurantDto): RestaurantDto? =
+    withContext(Dispatchers.IO) {
+        try {
+            val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+            val response = RetrofitClient.ownerApi.updateRestaurant("Bearer $token", id, dto)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
 
-suspend fun updateRestaurant(context: Context, id: Long, dto: UpdateRestaurantDto): RestaurantDto? = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
-        val response = RetrofitClient.ownerApi.updateRestaurant("Bearer $token", id, dto)
-        if (response.isSuccessful) response.body() else null
-    } catch (e: Exception) { null }
-}
+suspend fun fetchTables(context: Context, restaurantId: Long): List<RestaurantTableDto> =
+    withContext(Dispatchers.IO) {
+        try {
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+            val response =
+                RetrofitClient.ownerApi.getTablesByRestaurant("Bearer $token", restaurantId)
+            if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
-suspend fun fetchTables(context: Context, restaurantId: Long): List<RestaurantTableDto> = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-        val response = RetrofitClient.ownerApi.getTablesByRestaurant("Bearer $token", restaurantId)
-        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) { emptyList() }
-}
-
-suspend fun addTable(context: Context, dto: CreateRestaurantTableDto) = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext
-        RetrofitClient.ownerApi.addTable("Bearer $token", dto)
-    } catch (e: Exception) { Log.e("API", "Błąd dodawania stolika", e) }
-}
+suspend fun addTable(context: Context, dto: CreateRestaurantTableDto) =
+    withContext(Dispatchers.IO) {
+        try {
+            val token = DataStoreManager(context).getBackendToken() ?: return@withContext
+            RetrofitClient.ownerApi.addTable("Bearer $token", dto)
+        } catch (e: Exception) {
+            Log.e("API", "Błąd dodawania stolika", e)
+        }
+    }
 
 suspend fun deleteTable(context: Context, id: Long) = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext
         RetrofitClient.ownerApi.deleteTable("Bearer $token", id)
-    } catch (e: Exception) { Log.e("API", "Błąd usuwania stolika", e) }
+    } catch (e: Exception) {
+        Log.e("API", "Błąd usuwania stolika", e)
+    }
 }
 
 
-suspend fun fetchReservationsWithOwnerName(context: Context, reservations: List<ReservationDto>): List<OwnerReservationWithUser> = withContext(Dispatchers.IO) {
+suspend fun fetchReservationsWithOwnerName(
+    context: Context,
+    reservations: List<ReservationDto>
+): List<OwnerReservationWithUser> = withContext(Dispatchers.IO) {
     val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
     reservations.map { reservation ->
         val userName = if (reservation.userId != null) {
             try {
-                val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", reservation.userId)
+                val userResponse =
+                    RetrofitClient.userApi.getUserDetails("Bearer $token", reservation.userId)
                 userResponse.body()?.name ?: "User #${reservation.userId}"
             } catch (e: Exception) {
                 "Anonymous User"
@@ -969,72 +1167,82 @@ suspend fun fetchReservationsWithOwnerName(context: Context, reservations: List<
 }
 
 
-suspend fun cancelOwnerReservation(context: Context, id: Long): Boolean = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
-        val response = RetrofitClient.ownerApi.cancelReservation("Bearer $token", id)
+suspend fun cancelOwnerReservation(context: Context, id: Long): Boolean =
+    withContext(Dispatchers.IO) {
+        try {
+            val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
+            val response = RetrofitClient.ownerApi.cancelReservation("Bearer $token", id)
 
-        response.isSuccessful
-    } catch (e: Exception) {
-        Log.e("API", "Błąd anulowania", e)
-        false
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.e("API", "Błąd anulowania", e)
+            false
+        }
     }
-}
 
-suspend fun fetchRestaurantReviews(context: Context, restaurantId: Long): List<ReviewDto> = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-        val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
-        if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
-    } catch (e: Exception) {
-        Log.e("API", "Błąd pobierania opinii", e)
-        emptyList()
-    }
-}
-
-suspend fun fetchRestaurantPictures(context: Context, restaurantId: Long): List<PictureDto> = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
-        val response = RetrofitClient.picturesApi.getPictures("Bearer $token", restaurantId)
-
-        if (response.isSuccessful) {
-            val allPictures = response.body() ?: emptyList()
-            allPictures.filter { it.restaurantIds.contains(restaurantId) }
-        } else {
+suspend fun fetchRestaurantReviews(context: Context, restaurantId: Long): List<ReviewDto> =
+    withContext(Dispatchers.IO) {
+        try {
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+            val response = RetrofitClient.reviewsApi.getReviews("Bearer $token", restaurantId)
+            if (response.isSuccessful) response.body() ?: emptyList() else emptyList()
+        } catch (e: Exception) {
+            Log.e("API", "Błąd pobierania opinii", e)
             emptyList()
         }
-    } catch (e: Exception) {
-        Log.e("API", "Error downloading photos", e)
-        emptyList()
     }
-}
 
-suspend fun uploadRestaurantPicture(context: Context, restaurantId: Long, uri: Uri): Boolean = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
-        val file = File(context.cacheDir, "upload_image.jpg")
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(file).use { outputStream ->
-                inputStream.copyTo(outputStream)
+suspend fun fetchRestaurantPictures(context: Context, restaurantId: Long): List<PictureDto> =
+    withContext(Dispatchers.IO) {
+        try {
+            val token =
+                DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
+            val response = RetrofitClient.picturesApi.getPictures("Bearer $token", restaurantId)
+
+            if (response.isSuccessful) {
+                val allPictures = response.body() ?: emptyList()
+                allPictures.filter { it.restaurantIds.contains(restaurantId) }
+            } else {
+                emptyList()
             }
+        } catch (e: Exception) {
+            Log.e("API", "Error downloading photos", e)
+            emptyList()
         }
-        val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-        val response = RetrofitClient.picturesApi.uploadRestaurantPicture(
-            "Bearer $token",
-            restaurantId,
-            body,
-            null
-        )
-        response.isSuccessful
-    } catch (e: Exception) {
-        Log.e("API", "Upload error", e)
-        false
     }
-}
+
+suspend fun uploadRestaurantPicture(context: Context, restaurantId: Long, uri: Uri): Boolean =
+    withContext(Dispatchers.IO) {
+        try {
+            val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
+            val file = File(context.cacheDir, "upload_image.jpg")
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(file).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+            val response = RetrofitClient.picturesApi.uploadRestaurantPicture(
+                "Bearer $token",
+                restaurantId,
+                body,
+                null
+            )
+            response.isSuccessful
+        } catch (e: Exception) {
+            Log.e("API", "Upload error", e)
+            false
+        }
+    }
 
 
-suspend fun deleteRestaurantPicture(context: Context, restaurantId: Long, pictureId: Long): Boolean = withContext(Dispatchers.IO) {
+suspend fun deleteRestaurantPicture(
+    context: Context,
+    restaurantId: Long,
+    pictureId: Long
+): Boolean = withContext(Dispatchers.IO) {
     try {
         val token = DataStoreManager(context).getBackendToken() ?: return@withContext false
         val response = RetrofitClient.picturesApi.deleteRestaurantPicture(
@@ -1049,34 +1257,38 @@ suspend fun deleteRestaurantPicture(context: Context, restaurantId: Long, pictur
     }
 }
 
-suspend fun uploadImageForRestaurant(context: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
-    try {
-        val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
-        val file = File(context.cacheDir, "main_image.jpg")
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(file).use { outputStream ->
-                inputStream.copyTo(outputStream)
+suspend fun uploadImageForRestaurant(context: Context, uri: Uri): String? =
+    withContext(Dispatchers.IO) {
+        try {
+            val token = DataStoreManager(context).getBackendToken() ?: return@withContext null
+            val file = File(context.cacheDir, "main_image.jpg")
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(file).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
-        }
-        val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+            val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 
 
-        val response = RetrofitClient.picturesApi.uploadPicture("Bearer $token", body, null)
+            val response = RetrofitClient.picturesApi.uploadPicture("Bearer $token", body, null)
 
-        if (response.isSuccessful) {
-            response.body()?.url
-        } else {
-            Log.e("Upload", "Upload of main image failed: ${response.code()}")
+            if (response.isSuccessful) {
+                response.body()?.url
+            } else {
+                Log.e("Upload", "Upload of main image failed: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("Upload", "Upload error for main image", e)
             null
         }
-    } catch (e: Exception) {
-        Log.e("Upload", "Upload error for main image", e)
-        null
     }
-}
 
-suspend fun fetchReviewsWithUserNamesForOwner(context: Context, restaurantId: Long): List<OwnerReviewWithUser> = withContext(Dispatchers.IO) {
+suspend fun fetchReviewsWithUserNamesForOwner(
+    context: Context,
+    restaurantId: Long
+): List<OwnerReviewWithUser> = withContext(Dispatchers.IO) {
     val token = DataStoreManager(context).getBackendToken() ?: return@withContext emptyList()
 
 
@@ -1089,7 +1301,8 @@ suspend fun fetchReviewsWithUserNamesForOwner(context: Context, restaurantId: Lo
         val userName = if (review.userId != null) {
             try {
 
-                val userResponse = RetrofitClient.userApi.getUserDetails("Bearer $token", review.userId)
+                val userResponse =
+                    RetrofitClient.userApi.getUserDetails("Bearer $token", review.userId)
                 if (userResponse.isSuccessful) {
                     userResponse.body()?.name ?: "User #${review.userId}"
                 } else {
@@ -1103,5 +1316,201 @@ suspend fun fetchReviewsWithUserNamesForOwner(context: Context, restaurantId: Lo
             review.phoneNumber ?: "Anonymous"
         }
         OwnerReviewWithUser(review, userName)
+    }
+}
+
+@Composable
+fun TagManagementSection(
+    restaurantId: Long?,
+    initialTagIds: Set<Long>,
+    onTagsChanged: (Set<Long>) -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var allTagsMap by remember { mutableStateOf(emptyMap<Long, String>()) }
+    var currentTagIds by remember { mutableStateOf(initialTagIds) }
+    var newTagText by remember { mutableStateOf("") }
+    var isDropdownExpanded by remember { mutableStateOf(false) }
+
+
+    LaunchedEffect(initialTagIds) {
+        currentTagIds = initialTagIds
+    }
+
+    LaunchedEffect(Unit) {
+
+
+        allTagsMap = fetchTagsMap(context)
+    }
+
+    val availableTags = remember(allTagsMap, currentTagIds) {
+        allTagsMap
+            .filterKeys { it !in currentTagIds }
+            .toList()
+            .sortedBy { it.second }
+    }
+
+    val assignedTags = remember(allTagsMap, currentTagIds) {
+        currentTagIds.mapNotNull { tagId ->
+            allTagsMap[tagId]?.let { name -> Pair(tagId, name) }
+        }
+    }
+
+
+    fun addTagLocally(tagId: Long) {
+        val newSet = currentTagIds + tagId
+        currentTagIds = newSet
+        onTagsChanged(newSet)
+    }
+
+
+    fun removeTagLocally(tagId: Long) {
+        val newSet = currentTagIds - tagId
+        currentTagIds = newSet
+        onTagsChanged(newSet)
+    }
+
+
+    suspend fun createAndAddTag(name: String) {
+        val token = DataStoreManager(context).getBackendToken() ?: return
+        val createDto = CreateTagDto(name = name)
+
+        try {
+
+            val response = RetrofitClient.restaurantApi.createTag("Bearer $token", createDto)
+            if (response.isSuccessful) {
+                val newTag = response.body() ?: return
+
+                allTagsMap = allTagsMap + (newTag.id to newTag.name)
+                newTagText = ""
+
+
+                addTagLocally(newTag.id)
+                Toast.makeText(context, "New tag created and added!", Toast.LENGTH_SHORT).show()
+
+            } else {
+                Toast.makeText(
+                    context,
+                    "Tag creation failed: ${response.code()}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Tag creation error", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+    ) {
+        Text("Tags", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RSRed)
+        Spacer(Modifier.height(8.dp))
+
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            assignedTags.forEach { (tagId, tagName) ->
+                AssistChip(
+                    onClick = { /* need to be like that, so it remains clickable */ },
+                    label = { Text(tagName, fontSize = 12.sp) },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Remove Tag",
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clickable {
+                                    removeTagLocally(tagId)
+                                }
+                        )
+                    },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = RSRed.copy(alpha = 0.1f),
+                        labelColor = RSRed
+                    )
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedTextField(
+                value = newTagText,
+                onValueChange = { newTagText = it },
+                label = { Text("Add or create tag") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+
+            Button(
+                onClick = {
+                    if (newTagText.isBlank()) {
+                        isDropdownExpanded = true
+                    } else {
+                        val matchingTag = allTagsMap.entries.find {
+                            it.value.equals(
+                                newTagText,
+                                ignoreCase = true
+                            )
+                        }
+
+                        if (matchingTag != null) {
+                            addTagLocally(matchingTag.key)
+                            newTagText = ""
+                        } else {
+                            if (newTagText.length >= 3) {
+                                scope.launch { createAndAddTag(newTagText) }
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Tag name must be at least 3 characters long.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = RSRed)
+            ) {
+                if (newTagText.isBlank()) {
+                    Icon(Icons.Default.Add, contentDescription = "Browse Tags")
+                } else {
+                    Text("Add / Create")
+                }
+            }
+
+            // DropdownMenu
+            DropdownMenu(
+                expanded = isDropdownExpanded,
+                onDismissRequest = { isDropdownExpanded = false },
+                modifier = Modifier.width(IntrinsicSize.Max)
+            ) {
+                if (availableTags.isEmpty()) {
+                    Text("No available tags", modifier = Modifier.padding(8.dp), color = Color.Gray)
+                } else {
+                    availableTags.forEach { (tagId, tagName) ->
+                        DropdownMenuItem(
+                            text = { Text(tagName) },
+                            onClick = {
+                                addTagLocally(tagId)
+                                isDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
     }
 }

@@ -39,6 +39,7 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var newRestaurantTagIds by remember { mutableStateOf(emptySet<Long>()) }
 
 
     var latitude by remember { mutableStateOf("") }
@@ -148,12 +149,19 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
                 }
             }
 
+            Spacer(Modifier.height(24.dp))
+            TagManagementSection(
+                restaurantId = null,
+                initialTagIds = newRestaurantTagIds,
+                onTagsChanged = { newIds -> newRestaurantTagIds = newIds }
+            )
+
             Spacer(Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     if (viewModel.name.value.isBlank() || viewModel.address.value.isBlank() || viewModel.city.value.isBlank()) {
-                        Toast.makeText(context, "Fill in the name, address, and city", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Fill in the name, address, city and tags", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
@@ -172,7 +180,8 @@ fun AddRestaurantScreen(navController: NavHostController, viewModel: RestaurantF
                             description = viewModel.description.value,
                             openingHours = openingHoursJson,
                             latitude = lat,
-                            longitude = lng
+                            longitude = lng,
+                            tagIds = newRestaurantTagIds
                         )
 
                         val success = createNewRestaurant(context, dto)

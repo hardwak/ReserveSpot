@@ -63,7 +63,7 @@ fun RestaurantInfoCard(
     }
 
     val restaurantName = info.name
-    val rating = ((info.averageRating ?: 1.0) * 100).roundToInt() / 100.0
+    val rating = info.averageRating ?: 0.0
     val views = info.reviewIds.size
     val id = info.id
     val context = LocalContext.current
@@ -136,7 +136,7 @@ fun RestaurantInfoCard(
         ){
 
             Text(
-                text = rating.toString(),
+                text = String.format("%.1f", rating),
                 color = Color.Yellow,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
